@@ -126,13 +126,17 @@ Token Lexer::readCharLiteral() {
     int startCol = col;
     std::string lexeme;
     lexeme += advance(); // '
+    if (current() == '\0' || current() == '\n')
+        return Token(TokenType::ERR, lexeme, line, startCol);
     if (current() == '\\') {
         lexeme += advance();
-        lexeme += advance();
+        if (current() != '\0') lexeme += advance();
     } else {
         lexeme += advance();
     }
-    if (current() == '\'') lexeme += advance();
+    if (current() != '\'')
+        return Token(TokenType::ERR, lexeme, line, startCol);
+    lexeme += advance();
     return Token(TokenType::CHAR_LIT, lexeme, line, startCol);
 }
 
