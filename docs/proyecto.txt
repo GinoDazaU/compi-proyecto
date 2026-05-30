@@ -1,0 +1,116 @@
+Diseño e Implementación de un Compilador x86 con Optimización y Evaluación Comparativa 
+================================================================================
+
+El objetivo del presente proyecto es diseñar e implementar un compilador completo para un lenguaje de programación sobre arquitectura x86, integrando las etapas fundamentales del proceso de compilación, desde el análisis léxico y sintáctico hasta la generación de código ensamblador y la optimización básica. Finalmente, el proyecto tiene como propósito fortalecer la capacidad de análisis, diseño e implementación de sistemas de software complejos, así como promover la evaluación experimental mediante la comparación del compilador desarrollado con herramientas de uso extendido en la industria.
+
+Los estudiantes deberán:
+
+■ Seleccionar un lenguaje de programación con características bien definidas y documentación formal. Este debe incluir, como mínimo, las siguientes características:
+ • Básicas:
+ - Tipos de datos básicos y definidos por el usuario.
+ - Variables y manejo de alcance (scope).
+ - Funciones.
+ - Estructuras de control.
+ • Struct, arreglos y cadenas de caracteres (strings).
+ • Avanzadas:
+ - Punteros, direccionamiento de memoria y manejo de memoria dinámica.
+ • Tipos genéricos y plantillas (templates).
+ - Inferencia, conversión y promoción automática de tipos.
+ • Arreglos multidimensionales y funciones lambda.
+
+■ Implementar un compilador completo que incluya las fases de análisis léxico, sintáctico y semántico.
+
+■ Implementar un sistema de verificación de tipos y manejo de errores léxicos, sintácticos y semánticos.
+
+■ Generar código ensamblador para arquitectura x86.
+
+■ Aplicar técnicas básicas de optimización sobre el código generado.
+
+■ Desarrollar un conjunto de benchmarks para evaluar el rendimiento del compilador.
+
+■ Realizar una comparación experimental con compiladores de uso extendido como GCC, Clang/LLVM, MSVC, Ruste o Go Compiler.
+
+■ Analizar y documentar los resultados obtenidos mediante tablas, gráficos y discusión técnica.
+
+■ Presentar y defender el proyecto mediante una exposición técnica.
+
+
+[LOGRO MÁXIMO DEL PROYECTO]
+El máximo logro del proyecto consistirá en la implementación de una aplicación funcional del compilador desarrollado que permita demostrar, de manera integrada, las distintas fases del proceso de compilación y las principales características del lenguaje implementado. Los grupos que logren desarrollar dicha aplicación podrán obtener hasta 3 puntos adicionales en la evaluación final del curso.
+
+La aplicación deberá incluir, como mínimo, los siguientes componentes:
+
+■ Editor de código para el lenguaje diseñado.
+■ Visualización del AST (Abstract Syntax Tree).
+■ Generación de código ensamblador x86.
+■ Ejecución o simulación del programa compilado.
+■ Visualización de resultados de ejecución.
+
+
+================================================================================
+RÚBRICA DE CALIFICACIÓN DEL PROYECTO 
+================================================================================
+La rúbrica se basa en los siguientes criterios detallados:
+
+- Criterio: "Diseño y Lexer" 
+ Excelente: [Vacío en origen] 
+ Bueno: "Diseño adecuado y lexer funcional con pocos errores." 
+ Regular: "Diseño limitado o lexer con fallos ocasionales." 
+ Deficiente: "Diseño incompleto o lexer incorrecto." 
+ Pts: "2" 
+
+- Criterio: "Sintaxis y AST" 
+ Excelente: "Lenguaje consistente y lexer robusto con manejo adecuado de errores. correcto, bien estructurado y tabla de simbolos organizada . sólida de tipos y errores. eficiente, correcto y optimizado. Implementa correctamente la mayoría de funcionalidades avanzadas. Parser AST" 
+ Bueno: "Implementación funcional con leves limitaciones." 
+ Regular: "Implementación parcial o poco organizada." 
+ Deficiente: "Implementación incorrecta o incompleta." 
+ Pts: "2" 
+
+- Criterio: "Análisis Semántico" 
+ Excelente: "Verificación de" 
+ Bueno: "Buen manejo semántico." 
+ Regular: "Validación parcial." 
+ Deficiente: "Escasa validación." 
+ Pts: "1" 
+
+- Criterio: "Generación x86" 
+ Excelente: "Código zado" 
+ Bueno: "Código funcional con leves limitaciones." 
+ Regular: "Código poco eficiente." 
+ Deficiente: "Código incorrecto o incompleto." 
+ Pts: "3" 
+
+- Criterio: "Características Avanzadas" 
+ Excelente: [Vacío en origen] 
+ Bueno: "Implementa varias funcionalidades relevantes." 
+ Regular: "Implementación parcial." 
+ Deficiente: "Muy pocas funcionalidades implementadas." 
+ Pts: "2" 
+
+- Criterio: "Optimización" 
+ Excelente: "Implementa optimizaciones relevantes y demuestra mejoras medibles." 
+ Bueno: "Implementa algunas optimizaciones funcionales." 
+ Regular: "Optimización minima." 
+ Deficiente: "No implementa optimizaciones." 
+ Pts: "3" 
+
+- Criterio: "Comparación Comercial" 
+ Excelente: "Benchmark riguroso y análisis sólido frente a compiladores comerciales." 
+ Bueno: "Comparación adecuada con métricas parciales." 
+ Regular: "Comparación superficial." 
+ Deficiente: "No realiza comparación." 
+ Pts: "2" 
+
+- Criterio: "Reporte Técnico" 
+ Excelente: "Documentación técnica completa, clara y bien estructurada." 
+ Bueno: "Documentación adecuada con algunos vacíos menores." 
+ Regular: "Documentación. parcial o poco clara." 
+ Deficiente: "Documentación insuficiente." 
+ Pts: "2" 
+
+- Criterio: "Exposición" 
+ Excelente: "Presentación clara, dominio técnico y demostración sólida del compilador." 
+ Bueno: "Buena presentación y explicación adecuada del funcionamiento." 
+ Regular: "Presentación limitada o con poco dominio del proyecto." 
+ Deficiente: "Escaso dominio o incapacidad de comunicar el trabajo." 
+ Pts: "3"
