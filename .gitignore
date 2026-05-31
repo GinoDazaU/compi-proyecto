@@ -34,3 +34,6 @@ backend/__pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Testing
+compiler/tests/output/

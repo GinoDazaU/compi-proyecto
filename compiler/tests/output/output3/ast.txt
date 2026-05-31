@@ -1,7 +1,0 @@
-Program
-  FuncDecl 'main' -> int
-    Block
-      ExprStmt
-        CallExpr
-          Id(print)
-          StringLit(""hello world"")
