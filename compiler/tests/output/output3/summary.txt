@@ -1,0 +1,4 @@
+archivo : input3.txt
+estado  : OK
+fecha   : 2026-05-31 18:14:07
+tokens  : 12

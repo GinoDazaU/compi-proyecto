@@ -16,13 +16,27 @@ static std::string readFile(const std::string& path) {
     return ss.str();
 }
 
+static void printUsage() {
+    std::cerr << "Uso: compiler [--tokens|--ast] <archivo>\n";
+}
+
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Uso: compiler <archivo.cpp>\n";
-        return 1;
+    if (argc < 2 || argc > 3) { printUsage(); return 1; }
+
+    std::string mode = "ast";
+    std::string filepath;
+
+    if (argc == 3) {
+        std::string flag = argv[1];
+        if (flag == "--tokens") mode = "tokens";
+        else if (flag == "--ast") mode = "ast";
+        else { printUsage(); return 1; }
+        filepath = argv[2];
+    } else {
+        filepath = argv[1];
     }
 
-    std::string source = readFile(argv[1]);
+    std::string source = readFile(filepath);
 
     // Fase 1: Léxico
     Lexer lexer(source);
@@ -36,14 +50,18 @@ int main(int argc, char* argv[]) {
         tokens.push_back(tok);
     }
 
-    // Fase 2: Parser
-    try {
-        Parser parser(std::move(tokens));
-        Program* program = parser.parse();
+    if (mode == "tokens") {
+        for (const Token& tok : tokens)
+            std::cout << tok << "\n";
+        return 0;
+    }
 
+    // Fase 2: Parser + AST
+    try {
+        Parser parser(tokens);
+        Program* program = parser.parse();
         ASTPrinter printer;
         printer.visit(program);
-
         delete program;
     } catch (const ParseError& e) {
         std::cerr << "Error sintáctico en " << e.line << ":" << e.col

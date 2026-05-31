@@ -1,0 +1,15 @@
+struct Point {
+    float x;
+    float y;
+};
+
+int main() {
+    Point p;
+    p.x = 1.0;
+    p.y = 2.0;
+    int arr[3] = {10, 20, 30};
+    for (int i : arr) {
+        println(i);
+    }
+    return 0;
+}
