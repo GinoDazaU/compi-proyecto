@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "visitor.h"
 
 // ─── Forward declarations ──────────────────────────────────────────────────
 struct TypeNode;
@@ -53,16 +54,19 @@ enum class UnaryOp {
 class Expr {
 public:
     virtual ~Expr() = default;
+    virtual void accept(Visitor* v) = 0;
 };
 
 class Stmt {
 public:
     virtual ~Stmt() = default;
+    virtual void accept(Visitor* v) = 0;
 };
 
 class TopDecl {
 public:
     virtual ~TopDecl() = default;
+    virtual void accept(Visitor* v) = 0;
 };
 
 // ─── Block (definido temprano porque LambdaExpr lo necesita) ──────────────
@@ -71,6 +75,7 @@ public:
     std::vector<Stmt*> stmts;
     explicit Block(std::vector<Stmt*> s) : stmts(std::move(s)) {}
     ~Block() override { for (auto s : stmts) delete s; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // ─── Param (compartido por FuncDecl y LambdaExpr) ─────────────────────────
@@ -98,30 +103,35 @@ class IntLitExpr : public Expr {
 public:
     long long value;
     explicit IntLitExpr(long long v) : value(v) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class FloatLitExpr : public Expr {
 public:
     double value;
     explicit FloatLitExpr(double v) : value(v) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class BoolLitExpr : public Expr {
 public:
     bool value;
     explicit BoolLitExpr(bool v) : value(v) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class CharLitExpr : public Expr {
 public:
     std::string value;
     explicit CharLitExpr(std::string v) : value(std::move(v)) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class StringLitExpr : public Expr {
 public:
     std::string value;
     explicit StringLitExpr(std::string v) : value(std::move(v)) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Identificador
@@ -129,6 +139,7 @@ class IdExpr : public Expr {
 public:
     std::string name;
     explicit IdExpr(std::string n) : name(std::move(n)) {}
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Operadores binarios: +, -, *, /, %, ==, !=, <, >, <=, >=, &&, ||
@@ -139,6 +150,7 @@ public:
     Expr*    right;
     BinaryExpr(Expr* l, BinaryOp o, Expr* r) : left(l), op(o), right(r) {}
     ~BinaryExpr() override { delete left; delete right; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Operadores unarios prefijos: -, !, ~, *, &, ++, --
@@ -148,6 +160,7 @@ public:
     Expr*   expr;
     UnaryExpr(UnaryOp o, Expr* e) : op(o), expr(e) {}
     ~UnaryExpr() override { delete expr; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Asignación: =, +=, -=, *=, /=, %=, &=, |=
@@ -158,6 +171,7 @@ public:
     Expr*    right;
     AssignExpr(Expr* l, AssignOp o, Expr* r) : left(l), op(o), right(r) {}
     ~AssignExpr() override { delete left; delete right; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // static_cast<Type>(Expr)
@@ -167,6 +181,7 @@ public:
     Expr*     expr;
     CastExpr(TypeNode* t, Expr* e) : type(t), expr(e) {}
     ~CastExpr() override { delete type; delete expr; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // new Type[Expr]
@@ -176,6 +191,7 @@ public:
     Expr*     size;
     NewArrayExpr(TypeNode* t, Expr* s) : type(t), size(s) {}
     ~NewArrayExpr() override { delete type; delete size; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // new Type(ArgList)
@@ -185,6 +201,7 @@ public:
     std::vector<Expr*> args;
     NewObjectExpr(TypeNode* t, std::vector<Expr*> a) : type(t), args(std::move(a)) {}
     ~NewObjectExpr() override { delete type; for (auto e : args) delete e; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Postfix: base[index]
@@ -194,6 +211,7 @@ public:
     Expr* index;
     IndexExpr(Expr* b, Expr* i) : base(b), index(i) {}
     ~IndexExpr() override { delete base; delete index; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Postfix: callee(args)
@@ -203,6 +221,7 @@ public:
     std::vector<Expr*> args;
     CallExpr(Expr* c, std::vector<Expr*> a) : callee(c), args(std::move(a)) {}
     ~CallExpr() override { delete callee; for (auto e : args) delete e; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Postfix: base.member  o  base->member
@@ -214,6 +233,7 @@ public:
     MemberExpr(Expr* b, std::string m, bool arrow)
         : base(b), member(std::move(m)), is_arrow(arrow) {}
     ~MemberExpr() override { delete base; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Postfix: base++  o  base--
@@ -223,6 +243,7 @@ public:
     bool  is_inc;           // true = ++, false = --
     PostfixExpr(Expr* b, bool inc) : base(b), is_inc(inc) {}
     ~PostfixExpr() override { delete base; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 
@@ -242,6 +263,7 @@ public:
         delete return_type;
         delete body;
     }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 
@@ -266,6 +288,7 @@ public:
         for (auto e : dimensions) delete e;
         for (auto e : init_list)  delete e;
     }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class ExprStmt : public Stmt {
@@ -273,6 +296,7 @@ public:
     Expr* expr;
     explicit ExprStmt(Expr* e) : expr(e) {}
     ~ExprStmt() override { delete expr; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // if (Expr) Block [else (Block | IfStmt)]
@@ -284,6 +308,7 @@ public:
     IfStmt(Expr* c, Block* t, Stmt* e)
         : condition(c), then_branch(t), else_branch(e) {}
     ~IfStmt() override { delete condition; delete then_branch; delete else_branch; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // while (Expr) Block
@@ -293,6 +318,7 @@ public:
     Block* body;
     WhileStmt(Expr* c, Block* b) : condition(c), body(b) {}
     ~WhileStmt() override { delete condition; delete body; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // for (ForInit ; Expr ; Expr) Block  —  ForInit es VarDecl, Expr, o vacío
@@ -314,6 +340,7 @@ public:
         delete init.decl; delete init.expr;
         delete condition; delete update; delete body;
     }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // for ([const] Type id : Expr) Block
@@ -327,6 +354,7 @@ public:
     ForRangeStmt(bool c, TypeNode* t, std::string n, Expr* it, Block* b)
         : is_const(c), type(t), name(std::move(n)), iterable(it), body(b) {}
     ~ForRangeStmt() override { delete type; delete iterable; delete body; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // return [Expr] ;
@@ -335,16 +363,19 @@ public:
     Expr* expr;  // nullptr si return void
     explicit ReturnStmt(Expr* e) : expr(e) {}
     ~ReturnStmt() override { delete expr; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class BreakStmt : public Stmt {
 public:
     BreakStmt() = default;
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 class ContinueStmt : public Stmt {
 public:
     ContinueStmt() = default;
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // delete [[ ]] Expr ;
@@ -354,6 +385,7 @@ public:
     Expr* expr;
     DeleteStmt(bool arr, Expr* e) : is_array(arr), expr(e) {}
     ~DeleteStmt() override { delete expr; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 
@@ -371,6 +403,7 @@ public:
     GlobalVarDecl(bool c, TypeNode* t, std::string n, Expr* e = nullptr)
         : is_const(c), type(t), name(std::move(n)), init(e) {}
     ~GlobalVarDecl() override { delete type; delete init; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // struct id { MemberDecl* } ;
@@ -386,6 +419,7 @@ public:
     StructDecl(std::string n, std::vector<MemberDecl> m)
         : name(std::move(n)), members(std::move(m)) {}
     ~StructDecl() override { for (auto& m : members) delete m.type; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // Type id ( ParamList ) Block
@@ -402,6 +436,7 @@ public:
         for (auto& p : params) { delete p.type; delete p.default_val; }
         delete body;
     }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 // template < typename id > FuncDecl
@@ -412,6 +447,7 @@ public:
     TemplateFuncDecl(std::string tp, FuncDecl* f)
         : template_param(std::move(tp)), func(f) {}
     ~TemplateFuncDecl() override { delete func; }
+    void accept(Visitor* v) override { v->visit(this); }
 };
 
 
@@ -424,4 +460,5 @@ public:
     std::vector<TopDecl*> decls;
     explicit Program(std::vector<TopDecl*> d) : decls(std::move(d)) {}
     ~Program() { for (auto d : decls) delete d; }
+    void accept(Visitor* v) { v->visit(this); }
 };
