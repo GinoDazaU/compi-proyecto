@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include "lexer/lexer.h"
+#include "parser/parser.h"
+#include "parser/ast_printer.h"
 
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -20,12 +22,33 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Lexer lexer(readFile(argv[1]));
+    std::string source = readFile(argv[1]);
+
+    // Fase 1: Léxico
+    Lexer lexer(source);
+    std::vector<Token> tokens;
     for (const Token& tok : lexer.tokenize()) {
-        std::cout << tok << "\n";
-        if (tok.type == TokenType::ERR)
+        if (tok.type == TokenType::ERR) {
             std::cerr << "Error léxico en " << tok.line << ":" << tok.col
                       << " — caracter inesperado: '" << tok.lexeme << "'\n";
+            return 1;
+        }
+        tokens.push_back(tok);
+    }
+
+    // Fase 2: Parser
+    try {
+        Parser parser(std::move(tokens));
+        Program* program = parser.parse();
+
+        ASTPrinter printer;
+        printer.visit(program);
+
+        delete program;
+    } catch (const ParseError& e) {
+        std::cerr << "Error sintáctico en " << e.line << ":" << e.col
+                  << " — " << e.what() << "\n";
+        return 1;
     }
 
     return 0;
