@@ -225,15 +225,7 @@ public:
     ~PostfixExpr() override { delete base; }
 };
 
-// id { Expr, Expr, ... }  — aggregate/struct init
-class StructInitExpr : public Expr {
-public:
-    std::string        name;
-    std::vector<Expr*> args;
-    StructInitExpr(std::string n, std::vector<Expr*> a)
-        : name(std::move(n)), args(std::move(a)) {}
-    ~StructInitExpr() override { for (auto e : args) delete e; }
-};
+
 
 // [ CaptureList ] ( ParamList ) [-> Type] Block
 class LambdaExpr : public Expr {
@@ -283,27 +275,27 @@ public:
     ~ExprStmt() override { delete expr; }
 };
 
-// if (Expr) Stmt [else Stmt]
+// if (Expr) Block [else (Block | IfStmt)]
 class IfStmt : public Stmt {
 public:
-    Expr* condition;
-    Stmt* then_branch;
-    Stmt* else_branch;  // nullptr si no hay else
-    IfStmt(Expr* c, Stmt* t, Stmt* e)
+    Expr*  condition;
+    Block* then_branch;
+    Stmt*  else_branch;  // nullptr si no hay else (puede ser Block* o IfStmt*)
+    IfStmt(Expr* c, Block* t, Stmt* e)
         : condition(c), then_branch(t), else_branch(e) {}
     ~IfStmt() override { delete condition; delete then_branch; delete else_branch; }
 };
 
-// while (Expr) Stmt
+// while (Expr) Block
 class WhileStmt : public Stmt {
 public:
-    Expr* condition;
-    Stmt* body;
-    WhileStmt(Expr* c, Stmt* b) : condition(c), body(b) {}
+    Expr*  condition;
+    Block* body;
+    WhileStmt(Expr* c, Block* b) : condition(c), body(b) {}
     ~WhileStmt() override { delete condition; delete body; }
 };
 
-// for (ForInit ; Expr ; Expr) Stmt  —  ForInit es VarDecl, Expr, o vacío
+// for (ForInit ; Expr ; Expr) Block  —  ForInit es VarDecl, Expr, o vacío
 struct ForInit {
     VarDeclStmt* decl = nullptr;
     Expr*        expr = nullptr;
@@ -315,8 +307,8 @@ public:
     ForInit init;
     Expr*   condition;  // nullptr si omitida
     Expr*   update;     // nullptr si omitida
-    Stmt*   body;
-    ForStmt(ForInit i, Expr* c, Expr* u, Stmt* b)
+    Block*  body;
+    ForStmt(ForInit i, Expr* c, Expr* u, Block* b)
         : init(i), condition(c), update(u), body(b) {}
     ~ForStmt() override {
         delete init.decl; delete init.expr;
@@ -324,15 +316,15 @@ public:
     }
 };
 
-// for ([const] Type id : Expr) Stmt
+// for ([const] Type id : Expr) Block
 class ForRangeStmt : public Stmt {
 public:
     bool        is_const;
     TypeNode*   type;
     std::string name;
     Expr*       iterable;
-    Stmt*       body;
-    ForRangeStmt(bool c, TypeNode* t, std::string n, Expr* it, Stmt* b)
+    Block*      body;
+    ForRangeStmt(bool c, TypeNode* t, std::string n, Expr* it, Block* b)
         : is_const(c), type(t), name(std::move(n)), iterable(it), body(b) {}
     ~ForRangeStmt() override { delete type; delete iterable; delete body; }
 };
