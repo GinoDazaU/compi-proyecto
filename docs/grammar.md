@@ -71,12 +71,12 @@ VarDeclStmt ::= [const] Type id [= Expr] ;
 
 ExprStmt    ::= Expr ;
 
-IfStmt      ::= if ( Expr ) Stmt [else Stmt]
+IfStmt      ::= if ( Expr ) Block [else (Block | IfStmt)]
 
-WhileStmt   ::= while ( Expr ) Stmt
+WhileStmt   ::= while ( Expr ) Block
 
-ForStmt     ::= for ( ForInit ; Expr ; Expr ) Stmt         -- for clásico
-              | for ( [const] Type id : Expr ) Stmt        -- range-based for
+ForStmt     ::= for ( ForInit ; Expr ; Expr ) Block         -- for clásico
+              | for ( [const] Type id : Expr ) Block        -- range-based for
 
 ForInit     ::= [const] Type id [= Expr]
               | Expr
@@ -126,7 +126,6 @@ Primary ::= id
           | CharLit
           | StringLit
           | ( Expr )
-          | id { InitList }     -- struct literal / aggregate init
           | Lambda
 
 InitList ::= ε | Expr (, Expr)*
@@ -165,7 +164,14 @@ id        ::= [a-zA-Z_][a-zA-Z0-9_]*
 
 ## Notas
 
-- La gramática de `IfStmt` es ambigua (dangling else). Se resuelve asociando el `else` al `if` más cercano.
-- `id { InitList }` como Primary es ambiguo en condiciones de `if`/`while`/`for` (¿struct literal o bloque?). Se resuelve con un flag contextual igual que en el compilador de referencia.
 - Las conversiones implícitas (`int` → `float`, etc.) se manejan en el semántico, no en la gramática.
 - Templates: solo se soportan funciones template con un parámetro de tipo (`typename T`). No se soportan clases template.
+
+---
+
+## Funciones Incorporadas (Built-ins)
+
+El compilador provee las siguientes funciones predefinidas de forma global para la salida estándar. No requieren una declaración previa para ser utilizadas:
+
+- **`print(arg1, arg2, ...)`**: Acepta uno o más argumentos de tipo básico (`int`, `long`, `float`, `double`, `bool`, `char`, `string`) y los imprime en la consola de manera secuencial sin agregar un salto de línea al final.
+- **`println(arg1, arg2, ...)`**: Funciona igual que `print`, pero añade automáticamente un salto de línea (`\n`) al final de la impresión.

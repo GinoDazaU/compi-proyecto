@@ -41,7 +41,7 @@ Convierte el texto fuente en tokens. Maneja:
 Parser recursivo descendente. Produce un AST tipado.
 - Nodos separados por categoría: expresiones, statements, declaraciones
 - Patrón Visitor para recorrer el árbol
-- Gramática documentada en `docs/grammar.md` (a crear)
+- Gramática documentada en `docs/grammar.md`
 
 ### 3. Semántico (`semantic/`)
 Dos pasadas sobre el AST:
@@ -59,7 +59,7 @@ Emite assembly x86-64 AT&T syntax, enlazable con `gcc`.
 - Variables locales en offsets negativos desde `%rbp`
 - Paso de argumentos: `%rdi, %rsi, %rdx, %rcx, %r8, %r9`, resto en stack
 - Structs: se pasan por referencia (dirección en registro)
-- Soporte de `printf` para output
+- Soporte de printf mediante funciones incorporadas print/println para output
 
 ### 5. Optimizador (`optimizer/`)
 Optimizaciones básicas sobre el AST o sobre el código intermedio:
@@ -73,6 +73,7 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 
 ### Básico
 - Tipos: `int`, `long`, `float`, `bool`, `char`
+- Funciones incorporadas de salida: `print`, `println`
 - Variables con scope, `const`
 - Funciones con parámetros y valor de retorno
 - Control: `if/else`, `while`, `for`, `break`, `continue`, `return`

@@ -92,8 +92,8 @@ Representa `if (condicion) { ... } else { ... }`:
 class IfStmt : public Stmt {
 public:
     Expr* condition;   // La expresión que evalúa a bool
-    Stmt* then_branch; // Sentencia o Bloque que se ejecuta si es true
-    Stmt* else_branch; // Sentencia o Bloque si es false (puede ser nullptr)
+    Stmt* then_branch; // Bloque que se ejecuta si es true (siempre es un Block*)
+    Stmt* else_branch; // Bloque o IfStmt (para 'else if') si es false (puede ser nullptr)
 };
 ```
 

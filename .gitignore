@@ -28,6 +28,9 @@ backend/__pycache__/
 # Claude Code
 .claude/
 
+# Antigravity
+.antigravitycli/
+
 # OS
 .DS_Store
 Thumbs.db
