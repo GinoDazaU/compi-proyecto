@@ -2,11 +2,16 @@
 
 Compilador de un subconjunto de C++ que genera ensamblador x86-64. Proyecto del curso de Compiladores.
 
-## Requisitos
+## Compilar y ejecutar
 
-- g++ con soporte C++17
-- Python 3
-- Node.js (solo para el frontend)
+Desde `compiler/`:
+
+```bash
+python3 build.py                                  # compila
+python3 build.py run tests/input/<archivo>.txt    # compila y ejecuta
+python3 build.py test                             # corre las pruebas
+python3 build.py clean                            # limpia el build
+```
 
 ## Estructura
 
@@ -18,17 +23,15 @@ benchmarks/ → comparación con GCC/Clang
 docs/       → documentación técnica
 ```
 
-## Compilar y ejecutar
-
-Desde `compiler/`:
-
-```bash
-python build.py                                  # compila
-python build.py run tests/input/<archivo>.txt    # compila y ejecuta
-python build.py clean                            # limpia el build
-```
-
 ## Documentación
 
 - `docs/overview.md` — arquitectura y decisiones de diseño
 - `docs/grammar.md` — gramática CFG del lenguaje
+- `docs/proyecto.txt` — requerimientos y especificaciones del proyecto
+
+## Requisitos
+
+- g++ con soporte C++17
+- Python 3
+- Node.js (solo para el frontend)
+
