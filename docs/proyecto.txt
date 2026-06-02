@@ -4,19 +4,19 @@ Diseño e Implementación de un Compilador x86 con Optimización y Evaluación C
 El objetivo del presente proyecto es diseñar e implementar un compilador completo para un lenguaje de programación sobre arquitectura x86, integrando las etapas fundamentales del proceso de compilación, desde el análisis léxico y sintáctico hasta la generación de código ensamblador y la optimización básica. Finalmente, el proyecto tiene como propósito fortalecer la capacidad de análisis, diseño e implementación de sistemas de software complejos, así como promover la evaluación experimental mediante la comparación del compilador desarrollado con herramientas de uso extendido en la industria.
 
 Los estudiantes deberán:
-
+a 
 ■ Seleccionar un lenguaje de programación con características bien definidas y documentación formal. Este debe incluir, como mínimo, las siguientes características:
  • Básicas:
  - Tipos de datos básicos y definidos por el usuario.
  - Variables y manejo de alcance (scope).
  - Funciones.
  - Estructuras de control.
- • Struct, arreglos y cadenas de caracteres (strings).
+ - Struct, arreglos y cadenas de caracteres (strings).
  • Avanzadas:
  - Punteros, direccionamiento de memoria y manejo de memoria dinámica.
- • Tipos genéricos y plantillas (templates).
+ - Tipos genéricos y plantillas (templates).
  - Inferencia, conversión y promoción automática de tipos.
- • Arreglos multidimensionales y funciones lambda.
+ - Arreglos multidimensionales y funciones lambda.
 
 ■ Implementar un compilador completo que incluya las fases de análisis léxico, sintáctico y semántico.
 
@@ -53,35 +53,35 @@ RÚBRICA DE CALIFICACIÓN DEL PROYECTO
 La rúbrica se basa en los siguientes criterios detallados:
 
 - Criterio: "Diseño y Lexer" 
- Excelente: [Vacío en origen] 
+ Excelente: "Lenguaje consistente y lexer robusto con manejo adecuado de errores."
  Bueno: "Diseño adecuado y lexer funcional con pocos errores." 
  Regular: "Diseño limitado o lexer con fallos ocasionales." 
  Deficiente: "Diseño incompleto o lexer incorrecto." 
  Pts: "2" 
 
 - Criterio: "Sintaxis y AST" 
- Excelente: "Lenguaje consistente y lexer robusto con manejo adecuado de errores. correcto, bien estructurado y tabla de simbolos organizada . sólida de tipos y errores. eficiente, correcto y optimizado. Implementa correctamente la mayoría de funcionalidades avanzadas. Parser AST" 
+ Excelente: "Parser correcto, AST bien estructurado y tabla de símbolos organizada."
  Bueno: "Implementación funcional con leves limitaciones." 
  Regular: "Implementación parcial o poco organizada." 
  Deficiente: "Implementación incorrecta o incompleta." 
  Pts: "2" 
 
 - Criterio: "Análisis Semántico" 
- Excelente: "Verificación de" 
+ Excelente: "Verificación sólida de tipos y errores" 
  Bueno: "Buen manejo semántico." 
  Regular: "Validación parcial." 
  Deficiente: "Escasa validación." 
  Pts: "1" 
 
 - Criterio: "Generación x86" 
- Excelente: "Código zado" 
+ Excelente: "Código eficiente, correcto y optimizado" 
  Bueno: "Código funcional con leves limitaciones." 
  Regular: "Código poco eficiente." 
  Deficiente: "Código incorrecto o incompleto." 
  Pts: "3" 
 
 - Criterio: "Características Avanzadas" 
- Excelente: [Vacío en origen] 
+ Excelente: "Implementa correctamente la mayoría de funcionalidades avanzadas" 
  Bueno: "Implementa varias funcionalidades relevantes." 
  Regular: "Implementación parcial." 
  Deficiente: "Muy pocas funcionalidades implementadas." 
