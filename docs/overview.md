@@ -19,7 +19,7 @@ compi-proyecto/
 │   │   ├── codegen/     # Emisión de assembly x86-64
 │   │   └── optimizer/   # Optimizaciones sobre el código generado
 │   ├── tests/           # Archivos .cpp de prueba por fase
-│   └── CMakeLists.txt
+│   └── build.py         # Script de compilación y pruebas
 ├── backend/             # API REST en Python que expone el compilador
 ├── frontend/            # App web React/Vite
 ├── benchmarks/          # Comparación con GCC y Clang
@@ -120,7 +120,7 @@ Los resultados se documentan con tablas, gráficos y discusión técnica en el r
 ## Decisiones de diseño
 
 - El compilador se implementa en **C++17**
-- Se usa **CMake** para el build system
+- Se usa un script de Python (**build.py**) como sistema de construcción y ejecutor de pruebas
 - El assembly generado se ensambla con `gcc` (actúa como linker)
 - Nomenclatura de labels internos: prefijo `__` para evitar colisiones con nombres de funciones del usuario
 - Los tipos numéricos usan siempre registros de 64 bits (`%rax`, etc.) para simplificar el codegen
