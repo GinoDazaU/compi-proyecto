@@ -83,7 +83,7 @@ const char* ASTJsonPrinter::unaryOpStr(UnaryOp op) {
 void ASTJsonPrinter::visit(Program* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"Program\",\n";
+    indent(); out << "\"type\": \"Program\",\n";
     indent(); out << "\"decls\": [\n";
     depth++;
     for (size_t i = 0; i < node->decls.size(); i++) {
@@ -105,7 +105,7 @@ void ASTJsonPrinter::visit(Program* node) {
 void ASTJsonPrinter::visit(IntLitExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"IntLitExpr\",\n";
+    indent(); out << "\"type\": \"IntLitExpr\",\n";
     indent(); out << "\"value\": " << node->value << "\n";
     depth--;
     indent(); out << "}";
@@ -114,7 +114,7 @@ void ASTJsonPrinter::visit(IntLitExpr* node) {
 void ASTJsonPrinter::visit(FloatLitExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"FloatLitExpr\",\n";
+    indent(); out << "\"type\": \"FloatLitExpr\",\n";
     indent(); out << "\"value\": " << node->value << "\n";
     depth--;
     indent(); out << "}";
@@ -123,7 +123,7 @@ void ASTJsonPrinter::visit(FloatLitExpr* node) {
 void ASTJsonPrinter::visit(BoolLitExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"BoolLitExpr\",\n";
+    indent(); out << "\"type\": \"BoolLitExpr\",\n";
     indent(); out << "\"value\": " << (node->value ? "true" : "false") << "\n";
     depth--;
     indent(); out << "}";
@@ -132,7 +132,7 @@ void ASTJsonPrinter::visit(BoolLitExpr* node) {
 void ASTJsonPrinter::visit(CharLitExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"CharLitExpr\",\n";
+    indent(); out << "\"type\": \"CharLitExpr\",\n";
     indent(); out << "\"value\": "; printString(node->value); out << "\n";
     depth--;
     indent(); out << "}";
@@ -141,7 +141,7 @@ void ASTJsonPrinter::visit(CharLitExpr* node) {
 void ASTJsonPrinter::visit(StringLitExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"StringLitExpr\",\n";
+    indent(); out << "\"type\": \"StringLitExpr\",\n";
     indent(); out << "\"value\": "; printString(node->value); out << "\n";
     depth--;
     indent(); out << "}";
@@ -150,7 +150,7 @@ void ASTJsonPrinter::visit(StringLitExpr* node) {
 void ASTJsonPrinter::visit(IdExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"IdExpr\",\n";
+    indent(); out << "\"type\": \"IdExpr\",\n";
     indent(); out << "\"name\": "; printString(node->name); out << "\n";
     depth--;
     indent(); out << "}";
@@ -161,7 +161,7 @@ void ASTJsonPrinter::visit(IdExpr* node) {
 void ASTJsonPrinter::visit(BinaryExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"BinaryExpr\",\n";
+    indent(); out << "\"type\": \"BinaryExpr\",\n";
     indent(); out << "\"op\": "; printString(binaryOpStr(node->op)); out << ",\n";
     indent(); out << "\"left\":\n";
     node->left->accept(this);
@@ -176,7 +176,7 @@ void ASTJsonPrinter::visit(BinaryExpr* node) {
 void ASTJsonPrinter::visit(UnaryExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"UnaryExpr\",\n";
+    indent(); out << "\"type\": \"UnaryExpr\",\n";
     indent(); out << "\"op\": "; printString(unaryOpStr(node->op)); out << ",\n";
     indent(); out << "\"expr\":\n";
     node->expr->accept(this);
@@ -188,7 +188,7 @@ void ASTJsonPrinter::visit(UnaryExpr* node) {
 void ASTJsonPrinter::visit(AssignExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"AssignExpr\",\n";
+    indent(); out << "\"type\": \"AssignExpr\",\n";
     indent(); out << "\"op\": "; printString(assignOpStr(node->op)); out << ",\n";
     indent(); out << "\"left\":\n";
     node->left->accept(this);
@@ -203,8 +203,8 @@ void ASTJsonPrinter::visit(AssignExpr* node) {
 void ASTJsonPrinter::visit(CastExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"CastExpr\",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"type\": \"CastExpr\",\n";
+    indent(); out << "\"targetType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"expr\":\n";
     node->expr->accept(this);
     out << "\n";
@@ -215,8 +215,8 @@ void ASTJsonPrinter::visit(CastExpr* node) {
 void ASTJsonPrinter::visit(NewArrayExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"NewArrayExpr\",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"type\": \"NewArrayExpr\",\n";
+    indent(); out << "\"elementType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"size\":\n";
     node->size->accept(this);
     out << "\n";
@@ -227,8 +227,8 @@ void ASTJsonPrinter::visit(NewArrayExpr* node) {
 void ASTJsonPrinter::visit(NewObjectExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"NewObjectExpr\",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"type\": \"NewObjectExpr\",\n";
+    indent(); out << "\"objectType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"args\": [\n";
     depth++;
     for (size_t i = 0; i < node->args.size(); i++) {
@@ -248,7 +248,7 @@ void ASTJsonPrinter::visit(NewObjectExpr* node) {
 void ASTJsonPrinter::visit(IndexExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"IndexExpr\",\n";
+    indent(); out << "\"type\": \"IndexExpr\",\n";
     indent(); out << "\"base\":\n";
     node->base->accept(this);
     out << ",\n";
@@ -262,7 +262,7 @@ void ASTJsonPrinter::visit(IndexExpr* node) {
 void ASTJsonPrinter::visit(CallExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"CallExpr\",\n";
+    indent(); out << "\"type\": \"CallExpr\",\n";
     indent(); out << "\"callee\":\n";
     node->callee->accept(this);
     out << ",\n";
@@ -285,7 +285,7 @@ void ASTJsonPrinter::visit(CallExpr* node) {
 void ASTJsonPrinter::visit(MemberExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"MemberExpr\",\n";
+    indent(); out << "\"type\": \"MemberExpr\",\n";
     indent(); out << "\"member\": "; printString(node->member); out << ",\n";
     indent(); out << "\"is_arrow\": " << (node->is_arrow ? "true" : "false") << ",\n";
     indent(); out << "\"base\":\n";
@@ -298,7 +298,7 @@ void ASTJsonPrinter::visit(MemberExpr* node) {
 void ASTJsonPrinter::visit(PostfixExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"PostfixExpr\",\n";
+    indent(); out << "\"type\": \"PostfixExpr\",\n";
     indent(); out << "\"is_inc\": " << (node->is_inc ? "true" : "false") << ",\n";
     indent(); out << "\"base\":\n";
     node->base->accept(this);
@@ -310,7 +310,7 @@ void ASTJsonPrinter::visit(PostfixExpr* node) {
 void ASTJsonPrinter::visit(LambdaExpr* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"LambdaExpr\",\n";
+    indent(); out << "\"type\": \"LambdaExpr\",\n";
     
     // Captures
     indent(); out << "\"captures\": [\n";
@@ -377,7 +377,7 @@ void ASTJsonPrinter::visit(LambdaExpr* node) {
 void ASTJsonPrinter::visit(Block* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"Block\",\n";
+    indent(); out << "\"type\": \"Block\",\n";
     indent(); out << "\"stmts\": [\n";
     depth++;
     for (size_t i = 0; i < node->stmts.size(); i++) {
@@ -397,9 +397,9 @@ void ASTJsonPrinter::visit(Block* node) {
 void ASTJsonPrinter::visit(VarDeclStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"VarDeclStmt\",\n";
+    indent(); out << "\"type\": \"VarDeclStmt\",\n";
     indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"name\": "; printString(node->name);
     
     if (node->init) {
@@ -442,7 +442,7 @@ void ASTJsonPrinter::visit(VarDeclStmt* node) {
 void ASTJsonPrinter::visit(ExprStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"ExprStmt\",\n";
+    indent(); out << "\"type\": \"ExprStmt\",\n";
     indent(); out << "\"expr\":\n";
     node->expr->accept(this);
     out << "\n";
@@ -453,7 +453,7 @@ void ASTJsonPrinter::visit(ExprStmt* node) {
 void ASTJsonPrinter::visit(IfStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"IfStmt\",\n";
+    indent(); out << "\"type\": \"IfStmt\",\n";
     indent(); out << "\"condition\":\n";
     node->condition->accept(this);
     out << ",\n";
@@ -472,7 +472,7 @@ void ASTJsonPrinter::visit(IfStmt* node) {
 void ASTJsonPrinter::visit(WhileStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"WhileStmt\",\n";
+    indent(); out << "\"type\": \"WhileStmt\",\n";
     indent(); out << "\"condition\":\n";
     node->condition->accept(this);
     out << ",\n";
@@ -486,7 +486,7 @@ void ASTJsonPrinter::visit(WhileStmt* node) {
 void ASTJsonPrinter::visit(ForStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"ForStmt\",\n";
+    indent(); out << "\"type\": \"ForStmt\",\n";
     
     // ForInit
     indent(); out << "\"init\": ";
@@ -533,9 +533,9 @@ void ASTJsonPrinter::visit(ForStmt* node) {
 void ASTJsonPrinter::visit(ForRangeStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"ForRangeStmt\",\n";
+    indent(); out << "\"type\": \"ForRangeStmt\",\n";
     indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"name\": "; printString(node->name); out << ",\n";
     indent(); out << "\"iterable\":\n";
     node->iterable->accept(this);
@@ -550,7 +550,7 @@ void ASTJsonPrinter::visit(ForRangeStmt* node) {
 void ASTJsonPrinter::visit(ReturnStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"ReturnStmt\"";
+    indent(); out << "\"type\": \"ReturnStmt\"";
     if (node->expr) {
         out << ",\n";
         indent(); out << "\"expr\":\n";
@@ -566,7 +566,7 @@ void ASTJsonPrinter::visit(ReturnStmt* node) {
 void ASTJsonPrinter::visit(BreakStmt*) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"BreakStmt\"\n";
+    indent(); out << "\"type\": \"BreakStmt\"\n";
     depth--;
     indent(); out << "}";
 }
@@ -574,7 +574,7 @@ void ASTJsonPrinter::visit(BreakStmt*) {
 void ASTJsonPrinter::visit(ContinueStmt*) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"ContinueStmt\"\n";
+    indent(); out << "\"type\": \"ContinueStmt\"\n";
     depth--;
     indent(); out << "}";
 }
@@ -582,7 +582,7 @@ void ASTJsonPrinter::visit(ContinueStmt*) {
 void ASTJsonPrinter::visit(DeleteStmt* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"DeleteStmt\",\n";
+    indent(); out << "\"type\": \"DeleteStmt\",\n";
     indent(); out << "\"is_array\": " << (node->is_array ? "true" : "false") << ",\n";
     indent(); out << "\"expr\":\n";
     node->expr->accept(this);
@@ -596,9 +596,9 @@ void ASTJsonPrinter::visit(DeleteStmt* node) {
 void ASTJsonPrinter::visit(GlobalVarDecl* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"GlobalVarDecl\",\n";
+    indent(); out << "\"type\": \"GlobalVarDecl\",\n";
     indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
-    indent(); out << "\"type\": "; printString(typeStr(node->type)); out << ",\n";
+    indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"name\": "; printString(node->name);
     if (node->init) {
         out << ",\n";
@@ -615,7 +615,7 @@ void ASTJsonPrinter::visit(GlobalVarDecl* node) {
 void ASTJsonPrinter::visit(StructDecl* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"StructDecl\",\n";
+    indent(); out << "\"type\": \"StructDecl\",\n";
     indent(); out << "\"name\": "; printString(node->name); out << ",\n";
     indent(); out << "\"members\": [\n";
     depth++;
@@ -638,7 +638,7 @@ void ASTJsonPrinter::visit(StructDecl* node) {
 void ASTJsonPrinter::visit(FuncDecl* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"FuncDecl\",\n";
+    indent(); out << "\"type\": \"FuncDecl\",\n";
     indent(); out << "\"name\": "; printString(node->name); out << ",\n";
     indent(); out << "\"return_type\": "; printString(typeStr(node->return_type)); out << ",\n";
     
@@ -680,7 +680,7 @@ void ASTJsonPrinter::visit(FuncDecl* node) {
 void ASTJsonPrinter::visit(TemplateFuncDecl* node) {
     indent(); out << "{\n";
     depth++;
-    indent(); out << "\"node\": \"TemplateFuncDecl\",\n";
+    indent(); out << "\"type\": \"TemplateFuncDecl\",\n";
     indent(); out << "\"template_param\": "; printString(node->template_param); out << ",\n";
     indent(); out << "\"func\":\n";
     node->func->accept(this);
