@@ -14,11 +14,25 @@ Makefile
 # Frontend
 frontend/node_modules/
 frontend/dist/
+node_modules/
+dist/
+.eslintcache
 
 # Python
 __pycache__/
 *.pyc
 backend/__pycache__/
+venv/
+.venv/
+env/
+backend/venv/
+
+# Environment variables & Logs
+.env
+.env.local
+.env.*.local
+*.env
+*.log
 
 # IDE
 .vscode/
