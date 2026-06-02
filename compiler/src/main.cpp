@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "parser/ast_printer.h"
@@ -21,11 +22,43 @@ static void printUsage() {
     std::cerr << "Uso: compiler [--tokens|--ast|--json] <archivo>\n";
 }
 
+static std::string escapeJson(const std::string& s) {
+    std::string out;
+    for (char c : s) {
+        if (c == '"') out += "\\\"";
+        else if (c == '\\') out += "\\\\";
+        else if (c == '\n') out += "\\n";
+        else if (c == '\t') out += "\\t";
+        else if (c == '\r') out += "\\r";
+        else out += c;
+    }
+    return out;
+}
+
+static std::string serializeTokens(const std::vector<Token>& tokens) {
+    std::ostringstream ss;
+    ss << "[\n";
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        const auto& tok = tokens[i];
+        ss << "    {\n";
+        ss << "      \"type\": \"" << tok.typeName() << "\",\n";
+        ss << "      \"lexeme\": \"" << escapeJson(tok.lexeme) << "\",\n";
+        ss << "      \"line\": " << tok.line << ",\n";
+        ss << "      \"col\": " << tok.col << "\n";
+        ss << "    }";
+        if (i + 1 < tokens.size()) {
+            ss << ",";
+        }
+        ss << "\n";
+    }
+    ss << "  ]";
+    return ss.str();
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2 || argc > 3) { printUsage(); return 1; }
 
     std::string mode = "ast";
-    std::string filepath;
 
     if (argc == 3) {
         std::string flag = argv[1];
@@ -43,13 +76,32 @@ int main(int argc, char* argv[]) {
     // Fase 1: Léxico
     Lexer lexer(source);
     std::vector<Token> tokens;
-    for (const Token& tok : lexer.tokenize()) {
-        if (tok.type == TokenType::ERR) {
-            std::cerr << "Error léxico en " << tok.line << ":" << tok.col
-                      << " — caracter inesperado: '" << tok.lexeme << "'\n";
-            return 1;
+    
+    if (mode == "json") {
+        for (const Token& tok : lexer.tokenize()) {
+            if (tok.type == TokenType::ERR) {
+                std::cout << "{\n"
+                          << "  \"success\": false,\n"
+                          << "  \"error\": {\n"
+                          << "    \"type\": \"léxico\",\n"
+                          << "    \"line\": " << tok.line << ",\n"
+                          << "    \"col\": " << tok.col << ",\n"
+                          << "    \"message\": \"caracter inesperado: '" << escapeJson(tok.lexeme) << "'\"\n"
+                          << "  }\n"
+                          << "}\n";
+                return 0;
+            }
+            tokens.push_back(tok);
         }
-        tokens.push_back(tok);
+    } else {
+        for (const Token& tok : lexer.tokenize()) {
+            if (tok.type == TokenType::ERR) {
+                std::cerr << "Error léxico en " << tok.line << ":" << tok.col
+                          << " — caracter inesperado: '" << tok.lexeme << "'\n";
+                return 1;
+            }
+            tokens.push_back(tok);
+        }
     }
 
     if (mode == "tokens") {
@@ -63,17 +115,37 @@ int main(int argc, char* argv[]) {
         Parser parser(tokens);
         Program* program = parser.parse();
         if (mode == "json") {
-            ASTJsonPrinter printer;
+            std::stringstream ss;
+            ASTJsonPrinter printer(ss);
             printer.visit(program);
+            
+            std::cout << "{\n"
+                      << "  \"success\": true,\n"
+                      << "  \"tokens\": " << serializeTokens(tokens) << ",\n"
+                      << "  \"ast\": " << ss.str() << "\n"
+                      << "}\n";
         } else {
             ASTPrinter printer;
             printer.visit(program);
         }
         delete program;
     } catch (const ParseError& e) {
-        std::cerr << "Error sintáctico en " << e.line << ":" << e.col
-                  << " — " << e.what() << "\n";
-        return 1;
+        if (mode == "json") {
+            std::cout << "{\n"
+                      << "  \"success\": false,\n"
+                      << "  \"error\": {\n"
+                      << "    \"type\": \"sintáctico\",\n"
+                      << "    \"line\": " << e.line << ",\n"
+                      << "    \"col\": " << e.col << ",\n"
+                      << "    \"message\": \"" << escapeJson(e.what()) << "\"\n"
+                      << "  }\n"
+                      << "}\n";
+            return 0;
+        } else {
+            std::cerr << "Error sintáctico en " << e.line << ":" << e.col
+                      << " — " << e.what() << "\n";
+            return 1;
+        }
     }
 
     return 0;
