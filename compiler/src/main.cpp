@@ -4,6 +4,7 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "parser/ast_printer.h"
+#include "parser/ast_json_printer.h"
 
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -17,7 +18,7 @@ static std::string readFile(const std::string& path) {
 }
 
 static void printUsage() {
-    std::cerr << "Uso: compiler [--tokens|--ast] <archivo>\n";
+    std::cerr << "Uso: compiler [--tokens|--ast|--json] <archivo>\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -30,6 +31,7 @@ int main(int argc, char* argv[]) {
         std::string flag = argv[1];
         if (flag == "--tokens") mode = "tokens";
         else if (flag == "--ast") mode = "ast";
+        else if (flag == "--json") mode = "json";
         else { printUsage(); return 1; }
         filepath = argv[2];
     } else {
@@ -60,8 +62,13 @@ int main(int argc, char* argv[]) {
     try {
         Parser parser(tokens);
         Program* program = parser.parse();
-        ASTPrinter printer;
-        printer.visit(program);
+        if (mode == "json") {
+            ASTJsonPrinter printer;
+            printer.visit(program);
+        } else {
+            ASTPrinter printer;
+            printer.visit(program);
+        }
         delete program;
     } catch (const ParseError& e) {
         std::cerr << "Error sintáctico en " << e.line << ":" << e.col

@@ -15,6 +15,7 @@ SOURCES = [
     "src/lexer/token.cpp",
     "src/lexer/lexer.cpp",
     "src/parser/ast_printer.cpp",
+    "src/parser/ast_json_printer.cpp",
     "src/parser/parser.cpp",
 ]
 
@@ -51,7 +52,7 @@ def run(args):
 # ─── Test all ─────────────────────────────────────────────────────────────────
 
 def run_one(input_path, out_dir):
-    """Corre el compilador sobre input_path y escribe tokens.txt, ast.txt y summary.txt en out_dir."""
+    """Corre el compilador sobre input_path y escribe tokens.txt, ast.txt, ast.json y summary.txt en out_dir."""
     os.makedirs(out_dir, exist_ok=True)
     name = os.path.basename(input_path)
     errors = []
@@ -72,8 +73,16 @@ def run_one(input_path, out_dir):
     if r_ast.stderr:
         errors.append(r_ast.stderr.strip())
 
+    # json
+    r_json = subprocess.run([f"./{BIN}", "--json", input_path],
+                            capture_output=True, text=True)
+    with open(os.path.join(out_dir, "ast.json"), "w") as f:
+        f.write(r_json.stdout)
+    if r_json.stderr:
+        errors.append(r_json.stderr.strip())
+
     # summary
-    ok = r_tok.returncode == 0 and r_ast.returncode == 0
+    ok = r_tok.returncode == 0 and r_ast.returncode == 0 and r_json.returncode == 0
     with open(os.path.join(out_dir, "summary.txt"), "w") as f:
         f.write(f"archivo : {name}\n")
         f.write(f"estado  : {'OK' if ok else 'ERROR'}\n")
