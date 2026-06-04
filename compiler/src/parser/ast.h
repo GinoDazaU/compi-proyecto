@@ -53,18 +53,21 @@ enum class UnaryOp {
 // ─── Clases base ───────────────────────────────────────────────────────────
 class Expr {
 public:
+    int line = 0, col = 0;
     virtual ~Expr() = default;
     virtual void accept(Visitor* v) = 0;
 };
 
 class Stmt {
 public:
+    int line = 0, col = 0;
     virtual ~Stmt() = default;
     virtual void accept(Visitor* v) = 0;
 };
 
 class TopDecl {
 public:
+    int line = 0, col = 0;
     virtual ~TopDecl() = default;
     virtual void accept(Visitor* v) = 0;
 };
