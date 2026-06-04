@@ -1,0 +1,5 @@
+// Error semántico: variable no declarada
+int main() {
+    x = 10;
+    return 0;
+}

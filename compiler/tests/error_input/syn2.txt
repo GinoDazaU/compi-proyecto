@@ -1,0 +1,5 @@
+// Error: paréntesis sin cerrar
+int main() {
+    int x = (3 + 4;
+    return x;
+}

@@ -38,7 +38,6 @@ void Parser::error(const std::string& msg) {
 
 // ─── Lookahead helpers ────────────────────────────────────────────────────────
 
-// true si el token actual puede comenzar un tipo
 bool Parser::isTypeStart() {
     switch (cur().type) {
         case TokenType::KW_CONST:
@@ -50,9 +49,8 @@ bool Parser::isTypeStart() {
             return true;
         case TokenType::ID: {
             TokenType n = peek().type;
-            if (n == TokenType::ID)  return true;  // MyType varName
-            if (n == TokenType::LT)  return true;  // MyType<T>
-            // MyType* varName  o  MyType& varName
+            if (n == TokenType::ID)  return true;
+            if (n == TokenType::LT)  return true;
             if ((n == TokenType::STAR || n == TokenType::AMP) &&
                 peek(2).type == TokenType::ID) return true;
             return false;
@@ -61,8 +59,6 @@ bool Parser::isTypeStart() {
     }
 }
 
-// true si el for actual (justo después de '(') es range-based
-// un range-for tiene ':' antes de ';'
 bool Parser::isRangeFor() {
     for (size_t i = pos; i < tokens.size(); i++) {
         if (tokens[i].type == TokenType::COLON)     return true;
@@ -125,14 +121,19 @@ TopDecl* Parser::parseTopDecl() {
     if (check(TokenType::KW_TEMPLATE)) return parseTemplateFuncDecl();
     if (check(TokenType::KW_STRUCT))   return parseStructDecl();
 
+    int ln = cur().line, cl = cur().col;
     TypeNode* type = parseType();
     std::string name = expect(TokenType::ID).lexeme;
 
-    if (check(TokenType::LPAREN)) return parseFuncDecl(type, std::move(name));
-    return parseGlobalVarDecl(type, std::move(name));
+    TopDecl* decl;
+    if (check(TokenType::LPAREN)) decl = parseFuncDecl(type, std::move(name));
+    else                          decl = parseGlobalVarDecl(type, std::move(name));
+    decl->line = ln; decl->col = cl;
+    return decl;
 }
 
 StructDecl* Parser::parseStructDecl() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_STRUCT);
     std::string name = expect(TokenType::ID).lexeme;
     expect(TokenType::LBRACE);
@@ -147,10 +148,13 @@ StructDecl* Parser::parseStructDecl() {
 
     expect(TokenType::RBRACE);
     expect(TokenType::SEMICOLON);
-    return new StructDecl(std::move(name), std::move(members));
+    auto* node = new StructDecl(std::move(name), std::move(members));
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 TemplateFuncDecl* Parser::parseTemplateFuncDecl() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_TEMPLATE);
     expect(TokenType::LT);
     expect(TokenType::KW_TYPENAME);
@@ -160,7 +164,9 @@ TemplateFuncDecl* Parser::parseTemplateFuncDecl() {
     TypeNode* ret = parseType();
     std::string name = expect(TokenType::ID).lexeme;
     FuncDecl* func = parseFuncDecl(ret, std::move(name));
-    return new TemplateFuncDecl(std::move(tparam), func);
+    auto* node = new TemplateFuncDecl(std::move(tparam), func);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 FuncDecl* Parser::parseFuncDecl(TypeNode* ret, std::string name) {
@@ -195,7 +201,6 @@ Param Parser::parseParam() {
     p.type = parseType();
     p.is_const = p.type->is_const;
 
-    // si el último modificador del tipo es &, es paso por referencia
     if (!p.type->mods.empty() && p.type->mods.back() == PtrMod::Reference) {
         p.is_ref = true;
         p.type->mods.pop_back();
@@ -209,12 +214,15 @@ Param Parser::parseParam() {
 // ─── Statements ───────────────────────────────────────────────────────────────
 
 Block* Parser::parseBlock() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::LBRACE);
     std::vector<Stmt*> stmts;
     while (!check(TokenType::RBRACE) && !check(TokenType::END))
         stmts.push_back(parseStmt());
     expect(TokenType::RBRACE);
-    return new Block(std::move(stmts));
+    auto* node = new Block(std::move(stmts));
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 Stmt* Parser::parseStmt() {
@@ -225,32 +233,44 @@ Stmt* Parser::parseStmt() {
     if (check(TokenType::KW_RETURN)) return parseReturnStmt();
     if (check(TokenType::KW_DELETE)) return parseDeleteStmt();
 
-    if (match(TokenType::KW_BREAK)) {
+    if (check(TokenType::KW_BREAK)) {
+        int ln = cur().line, cl = cur().col;
+        consume();
         expect(TokenType::SEMICOLON);
-        return new BreakStmt();
+        auto* node = new BreakStmt();
+        node->line = ln; node->col = cl;
+        return node;
     }
-    if (match(TokenType::KW_CONTINUE)) {
+    if (check(TokenType::KW_CONTINUE)) {
+        int ln = cur().line, cl = cur().col;
+        consume();
         expect(TokenType::SEMICOLON);
-        return new ContinueStmt();
+        auto* node = new ContinueStmt();
+        node->line = ln; node->col = cl;
+        return node;
     }
 
-    // declaración de variable o sentencia de expresión
     if (isTypeStart()) {
+        int ln = cur().line, cl = cur().col;
         TypeNode* type = parseType();
         std::string name = expect(TokenType::ID).lexeme;
-        return parseVarDeclStmt(type, std::move(name));
+        auto* node = parseVarDeclStmt(type, std::move(name));
+        node->line = ln; node->col = cl;
+        return node;
     }
 
+    int ln = cur().line, cl = cur().col;
     Expr* e = parseExpr();
     expect(TokenType::SEMICOLON);
-    return new ExprStmt(e);
+    auto* node = new ExprStmt(e);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 VarDeclStmt* Parser::parseVarDeclStmt(TypeNode* type, std::string name) {
     auto* node = new VarDeclStmt(type->is_const, type, std::move(name));
 
     if (check(TokenType::LBRACKET)) {
-        // array: int arr[n][m] [= { init_list }]
         while (match(TokenType::LBRACKET)) {
             node->dimensions.push_back(parseExpr());
             expect(TokenType::RBRACKET);
@@ -269,6 +289,7 @@ VarDeclStmt* Parser::parseVarDeclStmt(TypeNode* type, std::string name) {
 }
 
 IfStmt* Parser::parseIfStmt() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_IF);
     expect(TokenType::LPAREN);
     Expr* cond = parseExpr();
@@ -281,34 +302,40 @@ IfStmt* Parser::parseIfStmt() {
         else                         else_b = parseBlock();
     }
 
-    return new IfStmt(cond, then_b, else_b);
+    auto* node = new IfStmt(cond, then_b, else_b);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 WhileStmt* Parser::parseWhileStmt() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_WHILE);
     expect(TokenType::LPAREN);
     Expr* cond = parseExpr();
     expect(TokenType::RPAREN);
     Block* body = parseBlock();
-    return new WhileStmt(cond, body);
+    auto* node = new WhileStmt(cond, body);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 Stmt* Parser::parseForStmt() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_FOR);
     expect(TokenType::LPAREN);
 
     if (isRangeFor()) {
-        // for ([const] Type id : Expr) Block
         TypeNode* type = parseType();
         std::string name = expect(TokenType::ID).lexeme;
         expect(TokenType::COLON);
         Expr* iterable = parseExpr();
         expect(TokenType::RPAREN);
         Block* body = parseBlock();
-        return new ForRangeStmt(type->is_const, type, std::move(name), iterable, body);
+        auto* node = new ForRangeStmt(type->is_const, type, std::move(name), iterable, body);
+        node->line = ln; node->col = cl;
+        return node;
     }
 
-    // for (ForInit ; Expr ; Expr) Block
     ForInit init;
     if (!check(TokenType::SEMICOLON)) {
         if (isTypeStart()) {
@@ -322,24 +349,29 @@ Stmt* Parser::parseForStmt() {
     }
     expect(TokenType::SEMICOLON);
 
-    Expr* cond = check(TokenType::SEMICOLON) ? nullptr : parseExpr();
+    Expr* cond   = check(TokenType::SEMICOLON) ? nullptr : parseExpr();
     expect(TokenType::SEMICOLON);
-
-    Expr* update = check(TokenType::RPAREN) ? nullptr : parseExpr();
+    Expr* update = check(TokenType::RPAREN)    ? nullptr : parseExpr();
     expect(TokenType::RPAREN);
 
     Block* body = parseBlock();
-    return new ForStmt(init, cond, update, body);
+    auto* node = new ForStmt(init, cond, update, body);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 ReturnStmt* Parser::parseReturnStmt() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_RETURN);
     Expr* val = check(TokenType::SEMICOLON) ? nullptr : parseExpr();
     expect(TokenType::SEMICOLON);
-    return new ReturnStmt(val);
+    auto* node = new ReturnStmt(val);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 DeleteStmt* Parser::parseDeleteStmt() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::KW_DELETE);
     bool is_array = false;
     if (match(TokenType::LBRACKET)) {
@@ -348,14 +380,15 @@ DeleteStmt* Parser::parseDeleteStmt() {
     }
     Expr* expr = parseExpr();
     expect(TokenType::SEMICOLON);
-    return new DeleteStmt(is_array, expr);
+    auto* node = new DeleteStmt(is_array, expr);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 // ─── Expressions ──────────────────────────────────────────────────────────────
 
-Expr* Parser::parseExpr()    { return parseAssign(); }
+Expr* Parser::parseExpr() { return parseAssign(); }
 
-// Assign es right-associative: a = b = c  →  a = (b = c)
 Expr* Parser::parseAssign() {
     Expr* left = parseLogicOr();
 
@@ -373,14 +406,18 @@ Expr* Parser::parseAssign() {
     }
     consume();
     Expr* right = parseAssign();
-    return new AssignExpr(left, op, right);
+    auto* node = new AssignExpr(left, op, right);
+    node->line = left->line; node->col = left->col;
+    return node;
 }
 
 Expr* Parser::parseLogicOr() {
     Expr* left = parseLogicAnd();
     while (match(TokenType::OR)) {
         Expr* right = parseLogicAnd();
-        left = new BinaryExpr(left, BinaryOp::Or, right);
+        auto* node = new BinaryExpr(left, BinaryOp::Or, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
@@ -389,7 +426,9 @@ Expr* Parser::parseLogicAnd() {
     Expr* left = parseEquality();
     while (match(TokenType::AND)) {
         Expr* right = parseEquality();
-        left = new BinaryExpr(left, BinaryOp::And, right);
+        auto* node = new BinaryExpr(left, BinaryOp::And, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
@@ -398,7 +437,10 @@ Expr* Parser::parseEquality() {
     Expr* left = parseRelat();
     while (check(TokenType::EQ) || check(TokenType::NEQ)) {
         BinaryOp op = match(TokenType::EQ) ? BinaryOp::Eq : (consume(), BinaryOp::Neq);
-        left = new BinaryExpr(left, op, parseRelat());
+        Expr* right = parseRelat();
+        auto* node = new BinaryExpr(left, op, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
@@ -412,7 +454,10 @@ Expr* Parser::parseRelat() {
         else if (match(TokenType::LEQ)) op = BinaryOp::Leq;
         else if (match(TokenType::GEQ)) op = BinaryOp::Geq;
         else break;
-        left = new BinaryExpr(left, op, parseAdd());
+        Expr* right = parseAdd();
+        auto* node = new BinaryExpr(left, op, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
@@ -421,7 +466,10 @@ Expr* Parser::parseAdd() {
     Expr* left = parseMul();
     while (check(TokenType::PLUS) || check(TokenType::MINUS)) {
         BinaryOp op = match(TokenType::PLUS) ? BinaryOp::Add : (consume(), BinaryOp::Sub);
-        left = new BinaryExpr(left, op, parseMul());
+        Expr* right = parseMul();
+        auto* node = new BinaryExpr(left, op, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
@@ -433,21 +481,24 @@ Expr* Parser::parseMul() {
         if      (match(TokenType::STAR))    op = BinaryOp::Mul;
         else if (match(TokenType::SLASH))   op = BinaryOp::Div;
         else                                { consume(); op = BinaryOp::Mod; }
-        left = new BinaryExpr(left, op, parseUnary());
+        Expr* right = parseUnary();
+        auto* node = new BinaryExpr(left, op, right);
+        node->line = left->line; node->col = left->col;
+        left = node;
     }
     return left;
 }
 
 Expr* Parser::parseUnary() {
-    if (match(TokenType::MINUS))  return new UnaryExpr(UnaryOp::Neg,    parseUnary());
-    if (match(TokenType::NOT))    return new UnaryExpr(UnaryOp::Not,    parseUnary());
-    if (match(TokenType::TILDE))  return new UnaryExpr(UnaryOp::BitNot, parseUnary());
-    if (match(TokenType::INC))    return new UnaryExpr(UnaryOp::PreInc, parseUnary());
-    if (match(TokenType::DEC))    return new UnaryExpr(UnaryOp::PreDec, parseUnary());
+    int ln = cur().line, cl = cur().col;
 
-    // * y & en contexto unario: desreferencia y dirección-de
-    if (match(TokenType::STAR))   return new UnaryExpr(UnaryOp::Deref,  parseUnary());
-    if (match(TokenType::AMP))    return new UnaryExpr(UnaryOp::AddrOf, parseUnary());
+    if (match(TokenType::MINUS))  { auto* n = new UnaryExpr(UnaryOp::Neg,    parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::NOT))    { auto* n = new UnaryExpr(UnaryOp::Not,    parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::TILDE))  { auto* n = new UnaryExpr(UnaryOp::BitNot, parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::INC))    { auto* n = new UnaryExpr(UnaryOp::PreInc, parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::DEC))    { auto* n = new UnaryExpr(UnaryOp::PreDec, parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::STAR))   { auto* n = new UnaryExpr(UnaryOp::Deref,  parseUnary()); n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::AMP))    { auto* n = new UnaryExpr(UnaryOp::AddrOf, parseUnary()); n->line=ln; n->col=cl; return n; }
 
     if (match(TokenType::KW_STATIC_CAST)) {
         expect(TokenType::LT);
@@ -456,7 +507,9 @@ Expr* Parser::parseUnary() {
         expect(TokenType::LPAREN);
         Expr* expr = parseExpr();
         expect(TokenType::RPAREN);
-        return new CastExpr(type, expr);
+        auto* n = new CastExpr(type, expr);
+        n->line = ln; n->col = cl;
+        return n;
     }
 
     if (match(TokenType::KW_NEW)) {
@@ -464,12 +517,16 @@ Expr* Parser::parseUnary() {
         if (match(TokenType::LBRACKET)) {
             Expr* size = parseExpr();
             expect(TokenType::RBRACKET);
-            return new NewArrayExpr(type, size);
+            auto* n = new NewArrayExpr(type, size);
+            n->line = ln; n->col = cl;
+            return n;
         }
         expect(TokenType::LPAREN);
         auto args = parseArgList();
         expect(TokenType::RPAREN);
-        return new NewObjectExpr(type, std::move(args));
+        auto* n = new NewObjectExpr(type, std::move(args));
+        n->line = ln; n->col = cl;
+        return n;
     }
 
     return parsePostfix();
@@ -482,21 +539,33 @@ Expr* Parser::parsePostfix() {
         if (match(TokenType::LBRACKET)) {
             Expr* idx = parseExpr();
             expect(TokenType::RBRACKET);
-            base = new IndexExpr(base, idx);
+            auto* n = new IndexExpr(base, idx);
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else if (match(TokenType::LPAREN)) {
             auto args = parseArgList();
             expect(TokenType::RPAREN);
-            base = new CallExpr(base, std::move(args));
+            auto* n = new CallExpr(base, std::move(args));
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else if (match(TokenType::DOT)) {
             std::string member = expect(TokenType::ID).lexeme;
-            base = new MemberExpr(base, std::move(member), false);
+            auto* n = new MemberExpr(base, std::move(member), false);
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else if (match(TokenType::ARROW)) {
             std::string member = expect(TokenType::ID).lexeme;
-            base = new MemberExpr(base, std::move(member), true);
+            auto* n = new MemberExpr(base, std::move(member), true);
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else if (match(TokenType::INC)) {
-            base = new PostfixExpr(base, true);
+            auto* n = new PostfixExpr(base, true);
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else if (match(TokenType::DEC)) {
-            base = new PostfixExpr(base, false);
+            auto* n = new PostfixExpr(base, false);
+            n->line = base->line; n->col = base->col;
+            base = n;
         } else {
             break;
         }
@@ -506,30 +575,36 @@ Expr* Parser::parsePostfix() {
 }
 
 Expr* Parser::parsePrimary() {
-    if (check(TokenType::INT_LIT))
-        return new IntLitExpr(std::stoll(consume().lexeme));
+    int ln = cur().line, cl = cur().col;
 
-    if (check(TokenType::FLOAT_LIT))
-        return new FloatLitExpr(std::stod(consume().lexeme));
+    if (check(TokenType::INT_LIT)) {
+        auto* n = new IntLitExpr(std::stoll(consume().lexeme));
+        n->line = ln; n->col = cl; return n;
+    }
+    if (check(TokenType::FLOAT_LIT)) {
+        auto* n = new FloatLitExpr(std::stod(consume().lexeme));
+        n->line = ln; n->col = cl; return n;
+    }
+    if (match(TokenType::KW_TRUE))  { auto* n = new BoolLitExpr(true);  n->line=ln; n->col=cl; return n; }
+    if (match(TokenType::KW_FALSE)) { auto* n = new BoolLitExpr(false); n->line=ln; n->col=cl; return n; }
 
-    if (match(TokenType::KW_TRUE))  return new BoolLitExpr(true);
-    if (match(TokenType::KW_FALSE)) return new BoolLitExpr(false);
-
-    if (check(TokenType::CHAR_LIT))
-        return new CharLitExpr(consume().lexeme);
-
-    if (check(TokenType::STRING_LIT))
-        return new StringLitExpr(consume().lexeme);
-
-    if (check(TokenType::ID))
-        return new IdExpr(consume().lexeme);
-
+    if (check(TokenType::CHAR_LIT)) {
+        auto* n = new CharLitExpr(consume().lexeme);
+        n->line = ln; n->col = cl; return n;
+    }
+    if (check(TokenType::STRING_LIT)) {
+        auto* n = new StringLitExpr(consume().lexeme);
+        n->line = ln; n->col = cl; return n;
+    }
+    if (check(TokenType::ID)) {
+        auto* n = new IdExpr(consume().lexeme);
+        n->line = ln; n->col = cl; return n;
+    }
     if (match(TokenType::LPAREN)) {
         Expr* e = parseExpr();
         expect(TokenType::RPAREN);
         return e;
     }
-
     if (check(TokenType::LBRACKET))
         return parseLambda();
 
@@ -537,11 +612,11 @@ Expr* Parser::parsePrimary() {
 }
 
 LambdaExpr* Parser::parseLambda() {
+    int ln = cur().line, cl = cur().col;
     expect(TokenType::LBRACKET);
     std::vector<CaptureItem> captures;
 
     if (!check(TokenType::RBRACKET)) {
-        // [&] captura todo por referencia, [=] captura todo por valor
         if (check(TokenType::AMP) && peek().type == TokenType::RBRACKET) {
             consume();
             captures.push_back({true, ""});
@@ -567,7 +642,9 @@ LambdaExpr* Parser::parseLambda() {
     if (match(TokenType::ARROW)) ret_type = parseType();
 
     Block* body = parseBlock();
-    return new LambdaExpr(std::move(captures), std::move(params), ret_type, body);
+    auto* node = new LambdaExpr(std::move(captures), std::move(params), ret_type, body);
+    node->line = ln; node->col = cl;
+    return node;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

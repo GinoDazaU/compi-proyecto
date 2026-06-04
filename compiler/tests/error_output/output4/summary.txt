@@ -1,0 +1,4 @@
+archivo : syn1.txt
+estado  : OK (error detectado)
+fecha   : 2026-06-04 14:27:02
+error   : Error sintáctico en 4:5 — Unexpected token 'return'

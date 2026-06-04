@@ -8,7 +8,7 @@ Desde `compiler/`:
 
 ```bash
 python3 build.py                                  # compila
-python3 build.py run tests/input/<archivo>.txt    # compila y ejecuta
+python3 build.py run tests/ok_input/<archivo>.txt # compila y ejecuta
 python3 build.py test                             # corre las pruebas
 python3 build.py clean                            # limpia el build
 ```

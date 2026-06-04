@@ -1,0 +1,4 @@
+archivo : syn2.txt
+estado  : OK (error detectado)
+fecha   : 2026-06-04 14:27:02
+error   : Error sintáctico en 3:19 — Unexpected token ';'

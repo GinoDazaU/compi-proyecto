@@ -1,0 +1,5 @@
+// Error: falta punto y coma
+int main() {
+    int x = 5
+    return x;
+}

@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
     if (argc < 2 || argc > 3) { printUsage(); return 1; }
 
     std::string mode = "ast";
+    std::string filepath;
 
     if (argc == 3) {
         std::string flag = argv[1];
@@ -83,10 +84,10 @@ int main(int argc, char* argv[]) {
                 std::cout << "{\n"
                           << "  \"success\": false,\n"
                           << "  \"error\": {\n"
-                          << "    \"type\": \"léxico\",\n"
+                          << "    \"type\": \"lexical\",\n"
                           << "    \"line\": " << tok.line << ",\n"
                           << "    \"col\": " << tok.col << ",\n"
-                          << "    \"message\": \"caracter inesperado: '" << escapeJson(tok.lexeme) << "'\"\n"
+                          << "    \"message\": \"unexpected character: '" << escapeJson(tok.lexeme) << "'\"\n"
                           << "  }\n"
                           << "}\n";
                 return 0;
@@ -96,8 +97,8 @@ int main(int argc, char* argv[]) {
     } else {
         for (const Token& tok : lexer.tokenize()) {
             if (tok.type == TokenType::ERR) {
-                std::cerr << "Error léxico en " << tok.line << ":" << tok.col
-                          << " — caracter inesperado: '" << tok.lexeme << "'\n";
+                std::cerr << "lexical error at " << tok.line << ":" << tok.col
+                          << ": unexpected character '" << tok.lexeme << "'\n";
                 return 1;
             }
             tokens.push_back(tok);
@@ -134,7 +135,7 @@ int main(int argc, char* argv[]) {
             std::cout << "{\n"
                       << "  \"success\": false,\n"
                       << "  \"error\": {\n"
-                      << "    \"type\": \"sintáctico\",\n"
+                      << "    \"type\": \"syntax\",\n"
                       << "    \"line\": " << e.line << ",\n"
                       << "    \"col\": " << e.col << ",\n"
                       << "    \"message\": \"" << escapeJson(e.what()) << "\"\n"
@@ -142,8 +143,8 @@ int main(int argc, char* argv[]) {
                       << "}\n";
             return 0;
         } else {
-            std::cerr << "Error sintáctico en " << e.line << ":" << e.col
-                      << " — " << e.what() << "\n";
+            std::cerr << "syntax error at " << e.line << ":" << e.col
+                      << ": " << e.what() << "\n";
             return 1;
         }
     }

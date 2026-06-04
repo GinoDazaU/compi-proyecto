@@ -7,8 +7,9 @@ from datetime import datetime
 
 BUILD_DIR = "build"
 BIN       = os.path.join(BUILD_DIR, "compiler")
-TESTS_IN  = os.path.join("tests", "input")
-TESTS_OUT = os.path.join("tests", "output")
+TESTS_IN     = os.path.join("tests", "ok_input")
+TESTS_ERR_IN = os.path.join("tests", "error_input")
+TESTS_OUT    = os.path.join("tests", "output")
 
 SOURCES = [
     "src/main.cpp",
@@ -95,28 +96,57 @@ def run_one(input_path, out_dir):
                 f.write(f"  {e}\n")
 
     status = "OK " if ok else "ERR"
-    print(f"  [{status}] {name} → {out_dir}/")
+    print(f"  [{status}] {name}")
     return ok
+
+
+def run_error_test(input_path, out_dir):
+    """Igual que run_one pero el éxito es que el compilador reporte error."""
+    os.makedirs(out_dir, exist_ok=True)
+    name = os.path.basename(input_path)
+
+    r = subprocess.run([f"./{BIN}", "--ast", input_path],
+                       capture_output=True, text=True)
+
+    got_error = r.returncode != 0
+    error_msg = r.stderr.strip() if r.stderr else "(sin mensaje)"
+
+    with open(os.path.join(out_dir, "summary.txt"), "w") as f:
+        f.write(f"archivo : {name}\n")
+        f.write(f"estado  : {'OK' if got_error else 'ERR'}\n")
+        f.write(f"fecha   : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"error   : {error_msg}\n")
+
+    status = "OK " if got_error else "ERR"
+    print(f"  [{status}] {name}")
+    return got_error
 
 
 def test():
     ensure_built()
 
-    inputs = sorted(glob.glob(os.path.join(TESTS_IN, "*.txt")) +
-                    glob.glob(os.path.join(TESTS_IN, "*.cpp")))
+    valid_inputs = sorted(glob.glob(os.path.join(TESTS_IN, "*.txt")) +
+                          glob.glob(os.path.join(TESTS_IN, "*.cpp")))
+    error_inputs = sorted(glob.glob(os.path.join(TESTS_ERR_IN, "*.txt")) +
+                          glob.glob(os.path.join(TESTS_ERR_IN, "*.cpp")))
 
-    if not inputs:
-        print(f"No hay archivos en {TESTS_IN}/")
-        sys.exit(1)
+    total, passed = 0, 0
 
-    print(f"Corriendo {len(inputs)} test(s)...\n")
-    ok_count = 0
-    for i, path in enumerate(inputs, start=1):
-        out_dir = os.path.join(TESTS_OUT, f"output{i}")
-        if run_one(path, out_dir):
-            ok_count += 1
+    if valid_inputs:
+        print("ok_input/")
+        for i, path in enumerate(valid_inputs, start=1):
+            out_dir = os.path.join(TESTS_OUT, f"output{i}")
+            passed += run_one(path, out_dir)
+            total += 1
 
-    print(f"\n{ok_count}/{len(inputs)} tests pasaron.")
+    if error_inputs:
+        print("error_input/")
+        for i, path in enumerate(error_inputs, start=1):
+            out_dir = os.path.join(TESTS_OUT, f"error_output{i}")
+            passed += run_error_test(path, out_dir)
+            total += 1
+
+    print(f"\n{passed}/{total} pasaron.")
 
 
 # ─── Clean ────────────────────────────────────────────────────────────────────
