@@ -1,0 +1,51 @@
+Program
+  FuncDecl 'fibonacci' -> int
+    param 'n' : int
+    Block
+      IfStmt
+        cond:
+          BinaryExpr(<=)
+            Id(n)
+            IntLit(1)
+        then:
+          Block
+            ReturnStmt
+              Id(n)
+      ReturnStmt
+        BinaryExpr(+)
+          CallExpr
+            Id(fibonacci)
+            BinaryExpr(-)
+              Id(n)
+              IntLit(1)
+          CallExpr
+            Id(fibonacci)
+            BinaryExpr(-)
+              Id(n)
+              IntLit(2)
+  FuncDecl 'main' -> int
+    Block
+      VarDecl 'i' : int
+        init:
+          IntLit(0)
+      WhileStmt
+        cond:
+          BinaryExpr(<)
+            Id(i)
+            IntLit(10)
+        body:
+          Block
+            ExprStmt
+              CallExpr
+                Id(println)
+                CallExpr
+                  Id(fibonacci)
+                  Id(i)
+            ExprStmt
+              AssignExpr(=)
+                Id(i)
+                BinaryExpr(+)
+                  Id(i)
+                  IntLit(1)
+      ReturnStmt
+        IntLit(0)

@@ -18,7 +18,10 @@ compi-proyecto/
 │   │   ├── semantic/    # Type checker y manejo de scope
 │   │   ├── codegen/     # Emisión de assembly x86-64
 │   │   └── optimizer/   # Optimizaciones sobre el código generado
-│   ├── tests/           # Archivos .cpp de prueba por fase
+│   ├── tests/
+│   │   ├── input/       # ok_input/ y error_input/
+│   │   ├── output/      # ok_output/ y error_output/ (generado)
+│   │   └── sandbox/     # archivos de prueba libre (generado)
 │   └── build.py         # Script de compilación y pruebas
 ├── backend/             # API REST en Python que expone el compilador
 ├── frontend/            # App web React/Vite

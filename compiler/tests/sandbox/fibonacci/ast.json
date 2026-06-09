@@ -1,0 +1,658 @@
+{
+  "success": true,
+  "tokens": [
+    {
+      "type": "KW_INT",
+      "lexeme": "int",
+      "line": 1,
+      "col": 1
+    },
+    {
+      "type": "ID",
+      "lexeme": "fibonacci",
+      "line": 1,
+      "col": 5
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 1,
+      "col": 14
+    },
+    {
+      "type": "KW_INT",
+      "lexeme": "int",
+      "line": 1,
+      "col": 15
+    },
+    {
+      "type": "ID",
+      "lexeme": "n",
+      "line": 1,
+      "col": 19
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 1,
+      "col": 20
+    },
+    {
+      "type": "LBRACE",
+      "lexeme": "{",
+      "line": 1,
+      "col": 22
+    },
+    {
+      "type": "KW_IF",
+      "lexeme": "if",
+      "line": 2,
+      "col": 5
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 2,
+      "col": 8
+    },
+    {
+      "type": "ID",
+      "lexeme": "n",
+      "line": 2,
+      "col": 9
+    },
+    {
+      "type": "LEQ",
+      "lexeme": "<=",
+      "line": 2,
+      "col": 11
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "1",
+      "line": 2,
+      "col": 14
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 2,
+      "col": 15
+    },
+    {
+      "type": "LBRACE",
+      "lexeme": "{",
+      "line": 2,
+      "col": 17
+    },
+    {
+      "type": "KW_RETURN",
+      "lexeme": "return",
+      "line": 2,
+      "col": 19
+    },
+    {
+      "type": "ID",
+      "lexeme": "n",
+      "line": 2,
+      "col": 26
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 2,
+      "col": 27
+    },
+    {
+      "type": "RBRACE",
+      "lexeme": "}",
+      "line": 2,
+      "col": 29
+    },
+    {
+      "type": "KW_RETURN",
+      "lexeme": "return",
+      "line": 3,
+      "col": 5
+    },
+    {
+      "type": "ID",
+      "lexeme": "fibonacci",
+      "line": 3,
+      "col": 12
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 3,
+      "col": 21
+    },
+    {
+      "type": "ID",
+      "lexeme": "n",
+      "line": 3,
+      "col": 22
+    },
+    {
+      "type": "MINUS",
+      "lexeme": "-",
+      "line": 3,
+      "col": 24
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "1",
+      "line": 3,
+      "col": 26
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 3,
+      "col": 27
+    },
+    {
+      "type": "PLUS",
+      "lexeme": "+",
+      "line": 3,
+      "col": 29
+    },
+    {
+      "type": "ID",
+      "lexeme": "fibonacci",
+      "line": 3,
+      "col": 31
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 3,
+      "col": 40
+    },
+    {
+      "type": "ID",
+      "lexeme": "n",
+      "line": 3,
+      "col": 41
+    },
+    {
+      "type": "MINUS",
+      "lexeme": "-",
+      "line": 3,
+      "col": 43
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "2",
+      "line": 3,
+      "col": 45
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 3,
+      "col": 46
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 3,
+      "col": 47
+    },
+    {
+      "type": "RBRACE",
+      "lexeme": "}",
+      "line": 4,
+      "col": 1
+    },
+    {
+      "type": "KW_INT",
+      "lexeme": "int",
+      "line": 6,
+      "col": 1
+    },
+    {
+      "type": "ID",
+      "lexeme": "main",
+      "line": 6,
+      "col": 5
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 6,
+      "col": 9
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 6,
+      "col": 10
+    },
+    {
+      "type": "LBRACE",
+      "lexeme": "{",
+      "line": 6,
+      "col": 12
+    },
+    {
+      "type": "KW_INT",
+      "lexeme": "int",
+      "line": 7,
+      "col": 5
+    },
+    {
+      "type": "ID",
+      "lexeme": "i",
+      "line": 7,
+      "col": 9
+    },
+    {
+      "type": "ASSIGN",
+      "lexeme": "=",
+      "line": 7,
+      "col": 11
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "0",
+      "line": 7,
+      "col": 13
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 7,
+      "col": 14
+    },
+    {
+      "type": "KW_WHILE",
+      "lexeme": "while",
+      "line": 8,
+      "col": 5
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 8,
+      "col": 11
+    },
+    {
+      "type": "ID",
+      "lexeme": "i",
+      "line": 8,
+      "col": 12
+    },
+    {
+      "type": "LT",
+      "lexeme": "<",
+      "line": 8,
+      "col": 14
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "10",
+      "line": 8,
+      "col": 16
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 8,
+      "col": 18
+    },
+    {
+      "type": "LBRACE",
+      "lexeme": "{",
+      "line": 8,
+      "col": 20
+    },
+    {
+      "type": "ID",
+      "lexeme": "println",
+      "line": 9,
+      "col": 9
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 9,
+      "col": 16
+    },
+    {
+      "type": "ID",
+      "lexeme": "fibonacci",
+      "line": 9,
+      "col": 17
+    },
+    {
+      "type": "LPAREN",
+      "lexeme": "(",
+      "line": 9,
+      "col": 26
+    },
+    {
+      "type": "ID",
+      "lexeme": "i",
+      "line": 9,
+      "col": 27
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 9,
+      "col": 28
+    },
+    {
+      "type": "RPAREN",
+      "lexeme": ")",
+      "line": 9,
+      "col": 29
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 9,
+      "col": 30
+    },
+    {
+      "type": "ID",
+      "lexeme": "i",
+      "line": 10,
+      "col": 9
+    },
+    {
+      "type": "ASSIGN",
+      "lexeme": "=",
+      "line": 10,
+      "col": 11
+    },
+    {
+      "type": "ID",
+      "lexeme": "i",
+      "line": 10,
+      "col": 13
+    },
+    {
+      "type": "PLUS",
+      "lexeme": "+",
+      "line": 10,
+      "col": 15
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "1",
+      "line": 10,
+      "col": 17
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 10,
+      "col": 18
+    },
+    {
+      "type": "RBRACE",
+      "lexeme": "}",
+      "line": 11,
+      "col": 5
+    },
+    {
+      "type": "KW_RETURN",
+      "lexeme": "return",
+      "line": 12,
+      "col": 5
+    },
+    {
+      "type": "INT_LIT",
+      "lexeme": "0",
+      "line": 12,
+      "col": 12
+    },
+    {
+      "type": "SEMICOLON",
+      "lexeme": ";",
+      "line": 12,
+      "col": 13
+    },
+    {
+      "type": "RBRACE",
+      "lexeme": "}",
+      "line": 13,
+      "col": 1
+    },
+    {
+      "type": "END",
+      "lexeme": "",
+      "line": 14,
+      "col": 1
+    }
+  ],
+  "ast": {
+  "type": "Program",
+  "decls": [
+    {
+      "type": "FuncDecl",
+      "name": "fibonacci",
+      "return_type": "int",
+      "params": [
+        {
+          "is_const": false,
+          "type": "int",
+          "is_ref": false,
+          "name": "n"
+        }
+      ],
+      "body":
+      {
+        "type": "Block",
+        "stmts": [
+          {
+            "type": "IfStmt",
+            "condition":
+            {
+              "type": "BinaryExpr",
+              "op": "<=",
+              "left":
+              {
+                "type": "IdExpr",
+                "name": "n"
+              },
+              "right":
+              {
+                "type": "IntLitExpr",
+                "value": 1
+              }
+            },
+            "then_branch":
+            {
+              "type": "Block",
+              "stmts": [
+                {
+                  "type": "ReturnStmt",
+                  "expr":
+                  {
+                    "type": "IdExpr",
+                    "name": "n"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "ReturnStmt",
+            "expr":
+            {
+              "type": "BinaryExpr",
+              "op": "+",
+              "left":
+              {
+                "type": "CallExpr",
+                "callee":
+                {
+                  "type": "IdExpr",
+                  "name": "fibonacci"
+                },
+                "args": [
+                  {
+                    "type": "BinaryExpr",
+                    "op": "-",
+                    "left":
+                    {
+                      "type": "IdExpr",
+                      "name": "n"
+                    },
+                    "right":
+                    {
+                      "type": "IntLitExpr",
+                      "value": 1
+                    }
+                  }
+                ]
+              },
+              "right":
+              {
+                "type": "CallExpr",
+                "callee":
+                {
+                  "type": "IdExpr",
+                  "name": "fibonacci"
+                },
+                "args": [
+                  {
+                    "type": "BinaryExpr",
+                    "op": "-",
+                    "left":
+                    {
+                      "type": "IdExpr",
+                      "name": "n"
+                    },
+                    "right":
+                    {
+                      "type": "IntLitExpr",
+                      "value": 2
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "FuncDecl",
+      "name": "main",
+      "return_type": "int",
+      "params": [
+      ],
+      "body":
+      {
+        "type": "Block",
+        "stmts": [
+          {
+            "type": "VarDeclStmt",
+            "is_const": false,
+            "varType": "int",
+            "name": "i",
+            "init":
+            {
+              "type": "IntLitExpr",
+              "value": 0
+            }
+          },
+          {
+            "type": "WhileStmt",
+            "condition":
+            {
+              "type": "BinaryExpr",
+              "op": "<",
+              "left":
+              {
+                "type": "IdExpr",
+                "name": "i"
+              },
+              "right":
+              {
+                "type": "IntLitExpr",
+                "value": 10
+              }
+            },
+            "body":
+            {
+              "type": "Block",
+              "stmts": [
+                {
+                  "type": "ExprStmt",
+                  "expr":
+                  {
+                    "type": "CallExpr",
+                    "callee":
+                    {
+                      "type": "IdExpr",
+                      "name": "println"
+                    },
+                    "args": [
+                      {
+                        "type": "CallExpr",
+                        "callee":
+                        {
+                          "type": "IdExpr",
+                          "name": "fibonacci"
+                        },
+                        "args": [
+                          {
+                            "type": "IdExpr",
+                            "name": "i"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "ExprStmt",
+                  "expr":
+                  {
+                    "type": "AssignExpr",
+                    "op": "=",
+                    "left":
+                    {
+                      "type": "IdExpr",
+                      "name": "i"
+                    },
+                    "right":
+                    {
+                      "type": "BinaryExpr",
+                      "op": "+",
+                      "left":
+                      {
+                        "type": "IdExpr",
+                        "name": "i"
+                      },
+                      "right":
+                      {
+                        "type": "IntLitExpr",
+                        "value": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "type": "ReturnStmt",
+            "expr":
+            {
+              "type": "IntLitExpr",
+              "value": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+
+}

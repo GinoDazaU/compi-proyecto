@@ -3,13 +3,15 @@ import subprocess
 import sys
 import os
 import glob
-from datetime import datetime
 
-BUILD_DIR = "build"
-BIN       = os.path.join(BUILD_DIR, "compiler")
-TESTS_IN     = os.path.join("tests", "ok_input")
-TESTS_ERR_IN = os.path.join("tests", "error_input")
-TESTS_OUT    = os.path.join("tests", "output")
+BUILD_DIR     = "build"
+BIN           = os.path.join(BUILD_DIR, "compiler")
+TESTS_IN        = os.path.join("tests", "input", "ok_input")
+TESTS_ERR_IN    = os.path.join("tests", "input", "error_input")
+TESTS_OUT       = os.path.join("tests", "output")
+TESTS_OK_OUT    = os.path.join(TESTS_OUT, "ok_output")
+TESTS_ERR_OUT   = os.path.join(TESTS_OUT, "error_output")
+TESTS_SANDBOX   = os.path.join("tests", "sandbox")
 
 SOURCES = [
     "src/main.cpp",
@@ -55,100 +57,84 @@ def run(args):
 # ─── Test all ─────────────────────────────────────────────────────────────────
 
 def run_one(input_path, out_dir):
-    """Corre el compilador sobre input_path y escribe tokens.txt, ast.txt, ast.json y summary.txt en out_dir."""
+    """Genera tokens.txt, ast.txt y ast.json en out_dir."""
     os.makedirs(out_dir, exist_ok=True)
     name = os.path.basename(input_path)
-    errors = []
 
-    # tokens
-    r_tok = subprocess.run([f"./{BIN}", "--tokens", input_path],
-                           capture_output=True, text=True)
-    with open(os.path.join(out_dir, "tokens.txt"), "w") as f:
-        f.write(r_tok.stdout)
-    if r_tok.stderr:
-        errors.append(r_tok.stderr.strip())
+    r_tok  = subprocess.run([f"./{BIN}", "--tokens", input_path], capture_output=True, text=True)
+    r_ast  = subprocess.run([f"./{BIN}", "--ast",    input_path], capture_output=True, text=True)
+    r_json = subprocess.run([f"./{BIN}", "--json",   input_path], capture_output=True, text=True)
 
-    # ast
-    r_ast = subprocess.run([f"./{BIN}", "--ast", input_path],
-                           capture_output=True, text=True)
-    with open(os.path.join(out_dir, "ast.txt"), "w") as f:
-        f.write(r_ast.stdout)
-    if r_ast.stderr:
-        errors.append(r_ast.stderr.strip())
+    with open(os.path.join(out_dir, "tokens.txt"), "w") as f: f.write(r_tok.stdout)
+    with open(os.path.join(out_dir, "ast.txt"),    "w") as f: f.write(r_ast.stdout)
+    with open(os.path.join(out_dir, "ast.json"),   "w") as f: f.write(r_json.stdout)
 
-    # json
-    r_json = subprocess.run([f"./{BIN}", "--json", input_path],
-                            capture_output=True, text=True)
-    with open(os.path.join(out_dir, "ast.json"), "w") as f:
-        f.write(r_json.stdout)
-    if r_json.stderr:
-        errors.append(r_json.stderr.strip())
-
-    # summary
     ok = r_tok.returncode == 0 and r_ast.returncode == 0 and r_json.returncode == 0
-    with open(os.path.join(out_dir, "summary.txt"), "w") as f:
-        f.write(f"archivo : {name}\n")
-        f.write(f"estado  : {'OK' if ok else 'ERROR'}\n")
-        f.write(f"fecha   : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        token_count = len([l for l in r_tok.stdout.splitlines() if l.strip()])
-        f.write(f"tokens  : {token_count}\n")
-        if errors:
-            f.write("\nerrores:\n")
-            for e in errors:
-                f.write(f"  {e}\n")
-
-    status = "OK " if ok else "ERR"
-    print(f"  [{status}] {name}")
+    print(f"  [{'OK ' if ok else 'ERR'}] {name}")
     return ok
 
 
-def run_error_test(input_path, out_dir):
-    """Igual que run_one pero el éxito es que el compilador reporte error."""
-    os.makedirs(out_dir, exist_ok=True)
+def run_error_test(input_path, out_file):
+    """Escribe el mensaje de error en out_file. Éxito = el compilador reportó error."""
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
     name = os.path.basename(input_path)
 
-    r = subprocess.run([f"./{BIN}", "--ast", input_path],
-                       capture_output=True, text=True)
+    r = subprocess.run([f"./{BIN}", "--ast", input_path], capture_output=True, text=True)
 
     got_error = r.returncode != 0
-    error_msg = r.stderr.strip() if r.stderr else "(sin mensaje)"
+    with open(out_file, "w") as f:
+        f.write(r.stderr.strip() if r.stderr else "(sin mensaje)")
 
-    with open(os.path.join(out_dir, "summary.txt"), "w") as f:
-        f.write(f"archivo : {name}\n")
-        f.write(f"estado  : {'OK' if got_error else 'ERR'}\n")
-        f.write(f"fecha   : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"error   : {error_msg}\n")
-
-    status = "OK " if got_error else "ERR"
-    print(f"  [{status}] {name}")
+    print(f"  [{'OK ' if got_error else 'ERR'}] {name}")
     return got_error
+
+
+def run_section(label, paths, run_fn, out_fn):
+    """Corre una sección de tests y retorna (passed, total)."""
+    if not paths:
+        return 0, 0
+    print(f"{label}")
+    sec_passed = sum(run_fn(p, out_fn(p)) for p in paths)
+    sec_total  = len(paths)
+    print(f"  {sec_passed}/{sec_total}")
+    return sec_passed, sec_total
 
 
 def test():
     ensure_built()
 
-    valid_inputs = sorted(glob.glob(os.path.join(TESTS_IN, "*.txt")) +
-                          glob.glob(os.path.join(TESTS_IN, "*.cpp")))
-    error_inputs = sorted(glob.glob(os.path.join(TESTS_ERR_IN, "*.txt")) +
-                          glob.glob(os.path.join(TESTS_ERR_IN, "*.cpp")))
+    valid_inputs   = sorted(glob.glob(os.path.join(TESTS_IN,     "*.txt")) +
+                            glob.glob(os.path.join(TESTS_IN,     "*.cpp")))
+    error_inputs   = sorted(glob.glob(os.path.join(TESTS_ERR_IN, "*.txt")) +
+                            glob.glob(os.path.join(TESTS_ERR_IN, "*.cpp")))
+    sandbox_inputs = sorted(glob.glob(os.path.join(TESTS_SANDBOX, "*.txt")) +
+                            glob.glob(os.path.join(TESTS_SANDBOX, "*.cpp")))
 
     total, passed = 0, 0
 
-    if valid_inputs:
-        print("ok_input/")
-        for i, path in enumerate(valid_inputs, start=1):
-            out_dir = os.path.join(TESTS_OUT, f"output{i}")
-            passed += run_one(path, out_dir)
-            total += 1
+    def ok_out(p):
+        return os.path.join(TESTS_OK_OUT, os.path.splitext(os.path.basename(p))[0])
 
-    if error_inputs:
-        print("error_input/")
-        for i, path in enumerate(error_inputs, start=1):
-            out_dir = os.path.join(TESTS_OUT, f"error_output{i}")
-            passed += run_error_test(path, out_dir)
-            total += 1
+    def err_out(p):
+        return os.path.join(TESTS_ERR_OUT, os.path.splitext(os.path.basename(p))[0] + ".txt")
 
-    print(f"\n{passed}/{total} pasaron.")
+    def sb_out(p):
+        return os.path.join(TESTS_SANDBOX, os.path.splitext(os.path.basename(p))[0])
+
+    for label, paths, fn, out_fn in [
+        ("ok_input/",    valid_inputs,   run_one,        ok_out),
+        ("error_input/", error_inputs,   run_error_test, err_out),
+        ("sandbox/",     sandbox_inputs, run_one,        sb_out),
+    ]:
+        p, t = run_section(label, paths, fn, out_fn)
+        passed += p
+        total  += t
+
+    print(f"\n{'─' * 24}")
+    if passed == total:
+        print(f"{passed}/{total}  todo OK")
+    else:
+        print(f"{passed}/{total}  {total - passed} fallaron")
 
 
 # ─── Clean ────────────────────────────────────────────────────────────────────

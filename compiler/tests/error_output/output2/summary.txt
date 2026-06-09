@@ -1,4 +1,0 @@
-archivo : sem2.txt
-estado  : FALLO (se esperaba error)
-fecha   : 2026-06-04 14:27:02
-error   : (sin mensaje de error)
