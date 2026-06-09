@@ -18,7 +18,7 @@ Es un listado ordenado de todas las categorías posibles de tokens que el compil
 * **Literales**: `INT_LIT` (ej. `42`), `FLOAT_LIT` (ej. `3.14`), `CHAR_LIT` (ej. `'a'`), `STRING_LIT` (ej. `"hola"`).
 * **Identificadores**: `ID` para nombres de variables, funciones o structs (ej. `mi_variable`, `calcular`).
 * **Keywords (Palabras reservadas)**:
-  * Tipos básicos (`KW_INT`, `KW_LONG`, `KW_FLOAT`, etc.).
+  * Tipos básicos (`KW_INT`, `KW_FLOAT`, `KW_BOOL`, etc.).
   * Estructuras y templates (`KW_STRUCT`, `KW_TEMPLATE`, `KW_TYPENAME`).
   * Flujo de control (`KW_IF`, `KW_ELSE`, `KW_WHILE`, `KW_FOR`, `KW_RETURN`, etc.).
 * **Operadores**: Aritméticos (`PLUS`, `MINUS`, `STAR`...), Asignación (`ASSIGN`, `PLUS_ASSIGN`...), Comparación (`EQ`, `NEQ`...), Lógicos (`AND`, `OR`...) y Bit a bit.

@@ -34,7 +34,7 @@ compi-proyecto/
 Convierte el texto fuente en tokens. Maneja:
 - Keywords, identificadores, literales (int, float, bool, char, string)
 - Operadores, puntuación
-- Comentarios `//` y `/* */` (incluyendo anidados)
+- Comentarios `//` y `/* */`
 - Reporte de errores léxicos con línea y columna
 
 ### 2. Parser + AST (`parser/`)
@@ -72,7 +72,7 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 ## Subconjunto de C++ a soportar
 
 ### Básico
-- Tipos: `int`, `long`, `float`, `bool`, `char`
+- Tipos: `int`, `float`, `bool`, `char`
 - Funciones incorporadas de salida: `print`, `println`
 - Variables con scope, `const`
 - Funciones con parámetros y valor de retorno
@@ -123,4 +123,5 @@ Los resultados se documentan con tablas, gráficos y discusión técnica en el r
 - Se usa un script de Python (**build.py**) como sistema de construcción y ejecutor de pruebas
 - El assembly generado se ensambla con `gcc` (actúa como linker)
 - Nomenclatura de labels internos: prefijo `__` para evitar colisiones con nombres de funciones del usuario
-- Los tipos numéricos usan siempre registros de 64 bits (`%rax`, etc.) para simplificar el codegen
+- Tamaños de tipos: `bool` y `char` = 1 byte (`%al`, `movb`); `int` = 8 bytes (`%rax`, `movq`); `float` = 8 bytes (`%xmm0`, `movsd`)
+- `int` y `float` usan registros de 64 bits por decisión de diseño; `bool` y `char` usan registros de 8 bits

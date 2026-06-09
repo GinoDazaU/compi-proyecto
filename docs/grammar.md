@@ -25,7 +25,7 @@ Type        ::= [const] BaseType PtrMod*
               | [const] id < Type > PtrMod*    -- template instanciado
               | auto
 
-BaseType    ::= int | long | float | double | bool | char | void | string
+BaseType    ::= int | float | bool | char | void | string
 
 PtrMod      ::= * | &
 ```
@@ -173,5 +173,5 @@ id        ::= [a-zA-Z_][a-zA-Z0-9_]*
 
 El compilador provee las siguientes funciones predefinidas de forma global para la salida estándar. No requieren una declaración previa para ser utilizadas:
 
-- **`print(arg1, arg2, ...)`**: Acepta uno o más argumentos de tipo básico (`int`, `long`, `float`, `double`, `bool`, `char`, `string`) y los imprime en la consola de manera secuencial sin agregar un salto de línea al final.
+- **`print(arg1, arg2, ...)`**: Acepta uno o más argumentos de tipo básico (`int`, `float`, `bool`, `char`, `string`) y los imprime en la consola de manera secuencial sin agregar un salto de línea al final.
 - **`println(arg1, arg2, ...)`**: Funciona igual que `print`, pero añade automáticamente un salto de línea (`\n`) al final de la impresión.

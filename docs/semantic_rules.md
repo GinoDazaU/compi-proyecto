@@ -8,7 +8,7 @@ Notación: **error** = el checker lanza `SemanticError`. **warn** = advertencia 
 ## 1. Tipos y Compatibilidad
 
 ### 1.1 Tipos válidos
-- Los tipos base permitidos son: `int`, `long`, `float`, `double`, `bool`, `char`, `string`, `void`.
+- Los tipos base permitidos son: `int`, `float`, `bool`, `char`, `string`, `void`.
 - Un tipo de usuario (identificador) solo es válido si un `struct` con ese nombre fue declarado antes o en la primera pasada.
 - `void` **solo** es válido como tipo de retorno de función. Usarlo como tipo de variable es **error**.
 - `auto` requiere inicializador para inferir el tipo; sin inicializador es **error**.
@@ -16,19 +16,17 @@ Notación: **error** = el checker lanza `SemanticError`. **warn** = advertencia 
 ### 1.2 Compatibilidad implícita (coerción permitida)
 Estas conversiones se aceptan sin `static_cast`:
 
-| De       | A                        |
-|----------|--------------------------|
-| `bool`   | `int`, `long`, `float`, `double` |
-| `char`   | `int`, `long`, `float`, `double` |
-| `int`    | `long`, `float`, `double` |
-| `long`   | `float`, `double`         |
-| `float`  | `double`                  |
-| numérico | `bool` (en condiciones)   |
+| De       | A                   |
+|----------|---------------------|
+| `bool`   | `int`, `float`      |
+| `char`   | `int`, `float`      |
+| `int`    | `float`             |
+| numérico | `bool` (en condiciones) |
 
 No se permite conversión implícita entre `string`, structs, punteros y tipos numéricos.
 
 ### 1.3 `static_cast`
-- Solo es válido entre tipos numéricos: `int`, `long`, `float`, `double`, `char`, `bool`.
+- Solo es válido entre tipos numéricos: `int`, `float`, `char`, `bool`.
 - Castear structs, `void` o punteros es **error**.
 
 ---
@@ -72,7 +70,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Tipo `void` → **error**.
 - `const` sin inicializador → **error**.
 - Si tiene inicializador, el tipo debe ser compatible → **error**.
-- **Array estático**: cada dimensión debe ser de tipo entero (`int` o `long`) → **error**.
+- **Array estático**: cada dimensión debe ser de tipo entero (`int`) → **error**.
 - Si tiene `init_list`, cada elemento debe ser compatible con el tipo base del array → **error**.
 - Si usa `auto`, el inicializador infiere el tipo; la variable toma ese tipo de ahí en adelante.
 
@@ -113,7 +111,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 | Literal       | Tipo inferido |
 |---------------|---------------|
 | `IntLit`      | `int`         |
-| `FloatLit`    | `double`      |
+| `FloatLit`    | `float`       |
 | `true/false`  | `bool`        |
 | `CharLit`     | `char`        |
 | `StringLit`   | `string`      |
@@ -126,7 +124,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 **Aritméticos** (`+`, `-`, `*`, `/`, `%`):
 - Ambos operandos deben ser numéricos → **error**.
-- `%` solo para `int` o `long` → **error** con `float`/`double`.
+- `%` solo para `int` → **error** con `float`.
 - Resultado: se aplica promoción numérica (el tipo "mayor" de los dos).
 
 **Comparación** (`==`, `!=`, `<`, `>`, `<=`, `>=`):
@@ -134,13 +132,13 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Resultado: `bool`.
 
 **Lógicos** (`&&`, `||`):
-- Operandos deben ser `bool` o convertibles (`bool`, `int`, `long`, `float`, `double`) → **error** para `string`, struct.
+- Operandos deben ser `bool` o convertibles (`bool`, `int`, `float`) → **error** para `string`, struct.
 - Resultado: `bool`.
 
 ### 4.4 Operadores unarios (`UnaryExpr`)
 - `-` (negación): operando numérico → resultado mismo tipo.
 - `!` (not lógico): operando `bool` o numérico → resultado `bool`.
-- `~` (bitwise not): operando `int` o `long` → resultado mismo tipo.
+- `~` (bitwise not): operando `int` → resultado mismo tipo.
 - `*` (deref): operando debe ser puntero (`T*`) → resultado `T` → **error** si no es puntero.
 - `&` (address-of): operando debe ser lvalue → resultado `T*`.
 - `++` / `--` prefijos: operando debe ser lvalue de tipo numérico o puntero → resultado mismo tipo.
@@ -150,8 +148,8 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - El lado izquierdo no puede ser `const` → **error**.
 - El tipo del lado derecho debe ser compatible con el izquierdo → **error**.
 - `+=`, `-=`, `*=`, `/=`: lvalue debe ser numérico → **error**.
-- `%=`: lvalue debe ser `int` o `long` → **error**.
-- `&=`, `|=`: lvalue debe ser `int` o `long` (bitwise) → **error**.
+- `%=`: lvalue debe ser `int` → **error**.
+- `&=`, `|=`: lvalue debe ser `int` (bitwise) → **error**.
 - Resultado de la expresión: tipo del lvalue.
 
 ### 4.6 Llamadas a función (`CallExpr`)
@@ -163,7 +161,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 ### 4.7 Built-ins `print` / `println`
 - Aceptan cualquier número de argumentos ≥ 1.
-- Cada argumento debe ser de tipo básico: `int`, `long`, `float`, `double`, `bool`, `char`, `string` → **error** para structs o punteros.
+- Cada argumento debe ser de tipo básico: `int`, `float`, `bool`, `char`, `string` → **error** para structs o punteros.
 - Resultado: `void`.
 
 ### 4.8 Acceso a miembro (`MemberExpr`)
@@ -174,7 +172,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 ### 4.9 Indexado (`IndexExpr`)
 - El base debe ser de tipo array o puntero → **error** para otros tipos.
-- El índice debe ser de tipo `int` o `long` → **error**.
+- El índice debe ser de tipo `int` → **error**.
 - Resultado: tipo del elemento (el tipo base sin el modificador de puntero/array).
 
 ### 4.10 Postfix `++` / `--`
