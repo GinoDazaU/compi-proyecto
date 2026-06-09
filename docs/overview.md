@@ -3,8 +3,6 @@
 Compilador de un subconjunto de C++ que genera código ensamblador x86-64 (AT&T syntax).
 Escrito desde cero en C++. Incluye frontend web para visualización (bonus del proyecto).
 
-Referencia del ciclo anterior: `~/Desktop/rust-compiler` — compilador de Rust→x86 con la misma arquitectura, útil para consultar decisiones de diseño en codegen y manejo de structs.
-
 ---
 
 ## Estructura del proyecto
@@ -56,7 +54,7 @@ Tabla de símbolos con soporte de scopes anidados.
 El compilador debe reportar errores claros en las tres fases: léxico (token inválido), sintáctico (estructura inesperada) y semántico (tipo incorrecto, variable no declarada, etc.), con número de línea y columna.
 
 ### 4. Generación de código (`codegen/`)
-Emite assembly x86-64 AT&T syntax, enlazable con `gcc`.
+Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 - Convención de llamada System V AMD64 (Linux)
 - Stack frame estándar: `pushq %rbp / movq %rsp, %rbp`
 - Variables locales en offsets negativos desde `%rbp`
@@ -124,7 +122,7 @@ Los resultados se documentan con tablas, gráficos y discusión técnica en el r
 
 - El compilador se implementa en **C++17**
 - Se usa un script de Python (**build.py**) como sistema de construcción y ejecutor de pruebas
-- El assembly generado se ensambla con `gcc` (actúa como linker)
+- El assembly generado se ensambla con `g++` (actúa como linker)
 - Nomenclatura de labels internos: prefijo `__` para evitar colisiones con nombres de funciones del usuario
 - Tamaños de tipos: `bool` y `char` = 1 byte (`%al`, `movb`); `int` = 8 bytes (`%rax`, `movq`); `float` = 8 bytes (`%xmm0`, `movsd`)
 - `int` y `float` usan registros de 64 bits por decisión de diseño; `bool` y `char` usan registros de 8 bits
