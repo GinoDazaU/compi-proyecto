@@ -36,16 +36,13 @@ SemType SemType::promote(const SemType& a, const SemType& b) {
 SemType SemType::fromTypeNode(const TypeNode* node) {
     if (!node) return SemType{"void"};
     SemType t;
-    t.base     = node->base;
-    t.mods     = node->mods;
-    t.is_const = node->is_const;
+    t.base = node->base;
+    t.mods = node->mods;
     return t;
 }
 
 std::string SemType::toString() const {
-    std::string s;
-    if (is_const) s += "const ";
-    s += base;
+    std::string s = base;
     for (auto m : mods)
         s += (m == PtrMod::Pointer ? "*" : "&");
     return s;

@@ -6,6 +6,7 @@
 #include "parser/parser.h"
 #include "parser/ast_printer.h"
 #include "parser/ast_json_printer.h"
+#include "semantic/type_checker.h"
 
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -115,6 +116,11 @@ int main(int argc, char* argv[]) {
     try {
         Parser parser(tokens);
         Program* program = parser.parse();
+
+        // Fase 3: Semántico
+        TypeChecker checker;
+        checker.check(program);
+
         if (mode == "json") {
             std::stringstream ss;
             ASTJsonPrinter printer(ss);
@@ -144,6 +150,23 @@ int main(int argc, char* argv[]) {
             return 0;
         } else {
             std::cerr << "syntax error at " << e.line << ":" << e.col
+                      << ": " << e.what() << "\n";
+            return 1;
+        }
+    } catch (const SemanticError& e) {
+        if (mode == "json") {
+            std::cout << "{\n"
+                      << "  \"success\": false,\n"
+                      << "  \"error\": {\n"
+                      << "    \"type\": \"semantic\",\n"
+                      << "    \"line\": " << e.line << ",\n"
+                      << "    \"col\": " << e.col << ",\n"
+                      << "    \"message\": \"" << escapeJson(e.what()) << "\"\n"
+                      << "  }\n"
+                      << "}\n";
+            return 0;
+        } else {
+            std::cerr << "semantic error at " << e.line << ":" << e.col
                       << ": " << e.what() << "\n";
             return 1;
         }

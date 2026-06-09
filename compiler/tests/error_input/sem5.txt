@@ -1,0 +1,5 @@
+// Error semántico: break fuera de bucle
+int main() {
+    break;
+    return 0;
+}

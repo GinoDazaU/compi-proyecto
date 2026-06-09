@@ -18,6 +18,8 @@ SOURCES = [
     "src/parser/ast_printer.cpp",
     "src/parser/ast_json_printer.cpp",
     "src/parser/parser.cpp",
+    "src/semantic/sem_type.cpp",
+    "src/semantic/type_checker.cpp",
 ]
 
 FLAGS = ["-std=c++17", "-Wall", "-Wextra", "-I", "src"]

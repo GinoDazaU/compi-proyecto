@@ -1,0 +1,6 @@
+// Error semántico: delete sobre no-puntero
+int main() {
+    int x = 5;
+    delete x;
+    return 0;
+}

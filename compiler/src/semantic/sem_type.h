@@ -6,7 +6,6 @@
 struct SemType {
     std::string         base;       // "int", "float", "void", nombre de struct, etc.
     std::vector<PtrMod> mods;       // modificadores en orden: *, &
-    bool                is_const = false;
 
     SemType() = default;
     explicit SemType(std::string b) : base(std::move(b)) {}

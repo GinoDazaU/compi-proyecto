@@ -1,0 +1,4 @@
+// Error sintáctico: falta nombre de función
+int () {
+    return 0;
+}

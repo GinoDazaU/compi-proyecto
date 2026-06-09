@@ -1,0 +1,8 @@
+int main() {
+    auto x = 42;
+    auto y = 3.14;
+    int z = static_cast<int>(y);
+    float w = static_cast<float>(x);
+    println(x, z, w);
+    return 0;
+}

@@ -1,0 +1,16 @@
+int suma(int n) {
+    int total = 0;
+    for (int i = 0; i < n; i++) {
+        total += i;
+    }
+    return total;
+}
+
+int main() {
+    int* arr = new int[5];
+    arr[0] = suma(3);
+    arr[1] = suma(5);
+    println(arr[0], arr[1]);
+    delete[] arr;
+    return 0;
+}

@@ -1,0 +1,18 @@
+int main() {
+    int i = 0;
+    while (i < 10) {
+        if (i == 5) {
+            break;
+        }
+        i += 1;
+    }
+    int j = 0;
+    for (int k = 0; k < 5; k++) {
+        if (k == 2) {
+            continue;
+        }
+        j += k;
+    }
+    println(i, j);
+    return 0;
+}

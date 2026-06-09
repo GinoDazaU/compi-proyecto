@@ -1,0 +1,6 @@
+// Error semántico: variable redeclarada en mismo scope
+int main() {
+    int x = 5;
+    int x = 10;
+    return 0;
+}
