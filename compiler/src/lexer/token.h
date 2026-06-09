@@ -15,9 +15,7 @@ enum class TokenType {
 
     // Keywords — tipos básicos
     KW_INT,
-    KW_LONG,
     KW_FLOAT,
-    KW_DOUBLE,
     KW_BOOL,
     KW_CHAR,
     KW_VOID,

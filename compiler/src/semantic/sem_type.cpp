@@ -6,9 +6,7 @@ static int numericRank(const std::string& base) {
     if (base == "bool")   return 0;
     if (base == "char")   return 1;
     if (base == "int")    return 2;
-    if (base == "long")   return 3;
-    if (base == "float")  return 4;
-    if (base == "double") return 5;
+    if (base == "float")  return 3;
     return -1;
 }
 

@@ -14,8 +14,8 @@ struct SemType {
 
     // ─── Consultas ────────────────────────────────────────────────────────────
     bool isVoid()      const { return base == "void" && mods.empty(); }
-    bool isNumeric()   const { return !hasPointer() && (base=="int"||base=="long"||base=="float"||base=="double"); }
-    bool isIntegral()  const { return !hasPointer() && (base=="int"||base=="long"); }
+    bool isNumeric()   const { return !hasPointer() && (base=="int"||base=="float"); }
+    bool isIntegral()  const { return !hasPointer() && base=="int"; }
     bool isBool()      const { return base == "bool" && mods.empty(); }
     bool hasPointer()  const { return !mods.empty() && mods.back() == PtrMod::Pointer; }
     bool hasRef()      const { return !mods.empty() && mods.back() == PtrMod::Reference; }

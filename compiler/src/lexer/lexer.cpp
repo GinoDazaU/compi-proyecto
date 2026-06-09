@@ -6,9 +6,7 @@
 
 static const std::unordered_map<std::string, TokenType> KEYWORDS = {
     {"int",         TokenType::KW_INT},
-    {"long",        TokenType::KW_LONG},
     {"float",       TokenType::KW_FLOAT},
-    {"double",      TokenType::KW_DOUBLE},
     {"bool",        TokenType::KW_BOOL},
     {"char",        TokenType::KW_CHAR},
     {"void",        TokenType::KW_VOID},
@@ -148,7 +146,9 @@ Token Lexer::readStringLiteral() {
         if (current() == '\\') lexeme += advance(); // escape
         lexeme += advance();
     }
-    if (current() == '"') lexeme += advance();
+    if (current() != '"')
+        return Token(TokenType::ERR, lexeme, line, startCol);
+    lexeme += advance();
     return Token(TokenType::STRING_LIT, lexeme, line, startCol);
 }
 

@@ -42,8 +42,8 @@ bool Parser::isTypeStart() {
     switch (cur().type) {
         case TokenType::KW_CONST:
         case TokenType::KW_AUTO:
-        case TokenType::KW_INT:  case TokenType::KW_LONG:
-        case TokenType::KW_FLOAT: case TokenType::KW_DOUBLE:
+        case TokenType::KW_INT:
+        case TokenType::KW_FLOAT:
         case TokenType::KW_BOOL: case TokenType::KW_CHAR:
         case TokenType::KW_VOID: case TokenType::KW_STRING:
             return true;
@@ -80,8 +80,8 @@ TypeNode* Parser::parseType() {
         t->is_auto = true;
     } else {
         switch (cur().type) {
-            case TokenType::KW_INT: case TokenType::KW_LONG:
-            case TokenType::KW_FLOAT: case TokenType::KW_DOUBLE:
+            case TokenType::KW_INT:
+            case TokenType::KW_FLOAT:
             case TokenType::KW_BOOL: case TokenType::KW_CHAR:
             case TokenType::KW_VOID: case TokenType::KW_STRING:
                 t->base = consume().lexeme;

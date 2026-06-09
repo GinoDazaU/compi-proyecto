@@ -12,9 +12,7 @@ const char* Token::typeName() const {
         case TokenType::ID:             return "ID";
 
         case TokenType::KW_INT:         return "KW_INT";
-        case TokenType::KW_LONG:        return "KW_LONG";
         case TokenType::KW_FLOAT:       return "KW_FLOAT";
-        case TokenType::KW_DOUBLE:      return "KW_DOUBLE";
         case TokenType::KW_BOOL:        return "KW_BOOL";
         case TokenType::KW_CHAR:        return "KW_CHAR";
         case TokenType::KW_VOID:        return "KW_VOID";
