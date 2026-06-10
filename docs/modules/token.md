@@ -1,3 +1,5 @@
+# Componentes Léxicos (Token)
+
 ### 1. ¿Qué es un Token?
 En teoría de compiladores, un token es la unidad mínima con significado léxico. Por ejemplo, en la línea de código `int x = 42;`, los tokens son:
 

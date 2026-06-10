@@ -1,3 +1,5 @@
+# Árbol de Sintaxis Abstracta (AST)
+
 El AST (Abstract Syntax Tree o Árbol de Sintaxis Abstracta) es la estructura intermedia más importante del compilador. Después de que el Lexer agrupa los caracteres en Tokens, el Parser toma esos tokens y construye un árbol que representa la estructura gramatical del programa.
 
 El archivo ast.h define las clases para cada tipo de nodo en este árbol. Vamos a desglosarlo por partes:

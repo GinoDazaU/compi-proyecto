@@ -1,3 +1,5 @@
+# Analizador Léxico (Lexer)
+
 El Lexer (también conocido como **Scanner** o **Analizador Léxico**) es el encargado de masticar el archivo de texto plano caracter por caracter y agruparlos en los `Token` que acabamos de estudiar.
 
 Vamos a analizar cómo está diseñado y cómo funciona cada parte en lexer.h y lexer.cpp.
