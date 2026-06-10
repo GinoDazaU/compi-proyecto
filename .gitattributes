@@ -1,0 +1,16 @@
+# Normalizar finales de línea a LF al subir al repositorio
+* text=auto
+
+# Asegurar que código, scripts y docs usen estrictamente LF en todas las plataformas
+*.cpp text eol=lf
+*.h text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+
+# Marcar archivos binarios para que Git no intente modificarlos
+*.pdf binary
+*.png binary
+*.jpg binary
