@@ -6,9 +6,9 @@ Basado en `docs/refs/guia_assembly.pdf` y las convenciones del curso CS3402.
 
 ## 1. Arquitectura general
 
-- `GenCodeVisitor` escribe a un `std::ostream` mientras recorre el AST — igual que el proyecto anterior.
+- `CodeGenerator` escribe a un `std::ostream` mientras recorre el AST — igual que el proyecto anterior.
 - **Sin IR.** AST → assembly directo.
-- El type checker precalcula el tamaño del frame de cada función.
+- El propio CodeGenerator precalcula el tamaño del frame de cada función en una primera pasada.
 - El archivo generado se ensambla con `g++` que actúa como linker.
 
 Estructura del `.s` generado:
@@ -177,12 +177,13 @@ movzbq %al, %rax
 
 ### Precálculo del frame
 
-El type checker acumula el tamaño del frame de cada función en un mapa `frame_sizes_`:
+El CodeGenerator acumula el tamaño del frame de cada función en un mapa
+`frame_sizes_` durante su `firstPass` (recorre el cuerpo contando declaraciones
+locales y parámetros, 8 bytes cada uno):
 
 ```cpp
-// en visit(VarDeclStmt) del TypeChecker:
-frame_sizes_[current_func_] += 8;  // todos los tipos: 8 bytes en stack
-// también los parámetros al entrar a FuncDecl
+// firstPass: por cada FuncDecl
+frame_sizes_[f->name] = frameSize(f);  // params + locales, ×8, redondeado a 16
 ```
 
 El frame se redondea al múltiplo de 16 más cercano (requisito del ABI):
@@ -422,25 +423,47 @@ Esto le dice al linker que el stack no es ejecutable (requerido en Linux moderno
 
 ---
 
-## 15. Estructura del GenCodeVisitor
+## 15. Estructura del CodeGenerator
 
 ```cpp
-class GenCodeVisitor : public Visitor {
-    std::ostream&  out;
-    SymbolTable<std::pair<SemType, int>> env_;  // tipo + offset
-    std::unordered_map<std::string, int>  frame_sizes_;   // del type checker
-    std::unordered_map<std::string, int>  func_ret_size_; // tamaño retorno struct
-    std::unordered_map<std::string, StructInfo> structs_; // del type checker
+class CodeGenerator : public Visitor {
+    std::ostream&  out_;
+    SymbolTable<VarEntry> env_;  // VarEntry = { SemType type; int offset; }
+    std::unordered_map<std::string, int>               frame_sizes_;
+    std::unordered_map<std::string, CodegenStructInfo> structs_;  // offsets + size
 
-    int  offset_       = -8;     // offset de la próxima var local
-    int  label_counter_= 0;      // para labels únicos
-    int  str_counter_  = 0;      // para string literals
-    std::stack<std::string> loop_labels_; // para break/continue
+    int  offset_        = -8;    // offset de la próxima var local
+    int  label_counter_ = 0;     // para labels únicos
+    int  str_counter_   = 0;     // para string literals
+    int  float_counter_ = 0;     // para float literals
     std::string current_func_;
+
+    SemType cur_type_;           // tipo de la última expresión evaluada (ver abajo)
+
+    std::stack<std::pair<std::string, std::string>> loop_labels_; // break/continue
+
+    // Constantes recolectadas durante la emisión, volcadas luego a .rodata
+    std::vector<std::pair<std::string, std::string>> string_literals_;
+    std::vector<std::pair<std::string, double>>      float_literals_;
 };
 ```
 
-El GenCodeVisitor **recibe** `frame_sizes_` y `structs_` del TypeChecker (o los recalcula en una primera pasada propia).
+El CodeGenerator es **autosuficiente**: calcula `frame_sizes_` y `structs_` en su propia
+primera pasada y no depende de lo que dejó el TypeChecker (el AST no se anota).
+
+### Tipo de cada expresión: `cur_type_`
+
+Como nuestro `Visitor::visit(...)` devuelve `void`, una expresión no puede *retornar*
+su tipo. En su lugar, cada `visit` de expresión deja su `SemType` en el miembro
+`cur_type_` justo después de dejar el valor en `%rax`/`%xmm0`, y el nodo padre lo
+consulta. Es el equivalente a "devolver el tipo desde `accept()`", pero vía miembro.
+Esto es lo que permite, por ejemplo, que `print`/`println` elijan el formato y el
+registro (`%rax` vs `%xmm0`) según el tipo real de cada argumento.
+
+Los `float` y `string` literales no caben como inmediato: se registran en
+`float_literals_`/`string_literals_` (con dedup) y se emiten en `.rodata`. Por eso el
+`.text` se genera primero a un buffer y las secciones de datos se escriben después,
+cuando ya se conocen todas las constantes.
 
 ---
 

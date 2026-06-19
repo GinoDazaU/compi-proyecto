@@ -17,9 +17,10 @@ compi-proyecto/
 │   │   ├── codegen/     # Emisión de assembly x86-64
 │   │   └── optimizer/   # Optimizaciones sobre el código generado
 │   ├── tests/
-│   │   ├── input/       # ok_input/ y error_input/
-│   │   ├── output/      # ok_output/ y error_output/ (generado)
-│   │   └── sandbox/     # archivos de prueba libre (generado)
+│   │   ├── analysis/    # programas válidos (deben pasar el frontend)
+│   │   ├── errors/      # programas que deben ser rechazados
+│   │   ├── e2e/         # compilan, ejecutan y comparan stdout (.txt + .expected)
+│   │   └── sandbox/     # archivos de prueba libre
 │   └── build.py         # Script de compilación y pruebas
 ├── backend/             # API REST en Python que expone el compilador
 ├── frontend/            # App web React/Vite

@@ -7,11 +7,14 @@ Compilador de un subconjunto de C++ que genera ensamblador x86-64. Proyecto del 
 Desde `compiler/`:
 
 ```bash
-python3 build.py build                                   # compila
-python3 build.py test                                    # compila si hace falta y corre pruebas
-python3 build.py run tests/input/ok_input/<archivo>.txt  # ejecuta un archivo
-python3 build.py clean                                   # limpia el build
+python3 build.py build                                # compila
+python3 build.py test                                 # corre todas las pruebas
+python3 build.py e2e                                  # solo las pruebas end-to-end
+python3 build.py run --asm tests/analysis/input1.txt  # genera el assembly de un archivo
+python3 build.py clean                                # limpia el build
 ```
+
+`run` reenvía sus argumentos al compilador, que acepta `--tokens`, `--ast`, `--json` y `--asm`.
 
 ## Estructura
 
