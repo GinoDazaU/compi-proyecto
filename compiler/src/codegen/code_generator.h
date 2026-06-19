@@ -44,7 +44,14 @@ private:
     int         offset_        = -8;  // offset de la próxima var local
     int         label_counter_ = 0;   // contador global de labels únicos
     int         str_counter_   = 0;   // contador de string literals
+    int         float_counter_ = 0;   // contador de float literals
     std::string current_func_;
+
+    // Tipo de la última expresión evaluada (el "resultado" del visit actual).
+    // Mecanismo equivalente a devolver el tipo desde accept(): cada visit de
+    // expresión lo deja aquí, y el padre lo consulta (p.ej. print elige formato
+    // y registro según esto, %rax vs %xmm0).
+    SemType cur_type_;
 
     // {label_inicio, label_fin} del loop actual (para break/continue)
     std::stack<std::pair<std::string, std::string>> loop_labels_;
@@ -62,6 +69,10 @@ private:
     int         nextLabel();
     std::string newStrLabel();
 
+    // Registran (o reutilizan) una constante en .rodata y devuelven su label.
+    std::string floatLabel(double v);
+    std::string strLabel(const std::string& lexeme);
+
     // load/store según tipo (int→%rax, float→%xmm0, bool/char→%al+movzbq)
     void emitLoad (const SemType& t, int offset);
     void emitStore(const SemType& t, int offset);
@@ -72,6 +83,8 @@ private:
 
     // sección .data al inicio
     void emitDataSection();
+    // sección .rodata con float/string literals recolectados
+    void emitRodataSection();
 
 public:
     // ─── Expresiones ─────────────────────────────────────────────────────

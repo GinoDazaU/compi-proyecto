@@ -22,6 +22,7 @@ SOURCES = [
     "src/parser/parser.cpp",
     "src/semantic/sem_type.cpp",
     "src/semantic/type_checker.cpp",
+    "src/codegen/code_generator.cpp",
 ]
 
 FLAGS = ["-std=c++17", "-Wall", "-Wextra", "-I", "src"]

@@ -7,6 +7,7 @@
 #include "parser/ast_printer.h"
 #include "parser/ast_json_printer.h"
 #include "semantic/type_checker.h"
+#include "codegen/code_generator.h"
 
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -20,7 +21,7 @@ static std::string readFile(const std::string& path) {
 }
 
 static void printUsage() {
-    std::cerr << "Uso: compiler [--tokens|--ast|--json] <archivo>\n";
+    std::cerr << "Uso: compiler [--tokens|--ast|--json|--asm] <archivo>\n";
 }
 
 static std::string escapeJson(const std::string& s) {
@@ -67,6 +68,7 @@ int main(int argc, char* argv[]) {
         if (flag == "--tokens") mode = "tokens";
         else if (flag == "--ast") mode = "ast";
         else if (flag == "--json") mode = "json";
+        else if (flag == "--asm") mode = "asm";
         else { printUsage(); return 1; }
         filepath = argv[2];
     } else {
@@ -131,6 +133,10 @@ int main(int argc, char* argv[]) {
                       << "  \"tokens\": " << serializeTokens(tokens) << ",\n"
                       << "  \"ast\": " << ss.str() << "\n"
                       << "}\n";
+        } else if (mode == "asm") {
+            // Fase 4: Generación de código x86-64
+            CodeGenerator gen(std::cout);
+            gen.gencode(program);
         } else {
             ASTPrinter printer;
             printer.visit(program);
