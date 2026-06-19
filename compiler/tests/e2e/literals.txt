@@ -1,0 +1,8 @@
+int main() {
+    println(42);
+    println(3.14);
+    println('A');
+    println(true);
+    println("hola mundo");
+    return 0;
+}

@@ -6,12 +6,15 @@ import glob
 
 BUILD_DIR     = "build"
 BIN           = os.path.join(BUILD_DIR, "compiler")
-TESTS_IN        = os.path.join("tests", "input", "ok_input")
-TESTS_ERR_IN    = os.path.join("tests", "input", "error_input")
-TESTS_OUT       = os.path.join("tests", "output")
-TESTS_OK_OUT    = os.path.join(TESTS_OUT, "ok_output")
-TESTS_ERR_OUT   = os.path.join(TESTS_OUT, "error_output")
-TESTS_SANDBOX   = os.path.join("tests", "sandbox")
+
+TESTS_ANALYSIS = os.path.join("tests", "analysis")   # válidos: pasan el frontend
+TESTS_ERRORS   = os.path.join("tests", "errors")     # deben ser rechazados
+TESTS_SANDBOX  = os.path.join("tests", "sandbox")    # pruebas libres
+TESTS_E2E      = os.path.join("tests", "e2e")        # compilan, ejecutan y comparan
+
+# Artefactos generados (no versionados): viven bajo build/
+TEST_OUT  = os.path.join(BUILD_DIR, "test-output")
+E2E_BUILD = os.path.join(BUILD_DIR, "e2e")
 
 SOURCES = [
     "src/main.cpp",
@@ -45,6 +48,11 @@ def ensure_built():
         build()
 
 
+def inputs_in(folder):
+    return sorted(glob.glob(os.path.join(folder, "*.txt")) +
+                  glob.glob(os.path.join(folder, "*.cpp")))
+
+
 # ─── Run one file ─────────────────────────────────────────────────────────────
 
 def run(args):
@@ -55,10 +63,10 @@ def run(args):
     subprocess.run([f"./{BIN}"] + args)
 
 
-# ─── Test all ─────────────────────────────────────────────────────────────────
+# ─── Tests del frontend (analysis / errors / sandbox) ─────────────────────────
 
-def run_one(input_path, out_dir):
-    """Genera tokens.txt, ast.txt y ast.json en out_dir."""
+def run_analysis_one(input_path, out_dir):
+    """Genera tokens.txt, ast.txt y ast.json. Éxito = el compilador no falla."""
     os.makedirs(out_dir, exist_ok=True)
     name = os.path.basename(input_path)
 
@@ -75,8 +83,8 @@ def run_one(input_path, out_dir):
     return ok
 
 
-def run_error_test(input_path, out_file):
-    """Escribe el mensaje de error en out_file. Éxito = el compilador reportó error."""
+def run_error_one(input_path, out_file):
+    """Escribe el mensaje de error. Éxito = el compilador reportó error."""
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     name = os.path.basename(input_path)
 
@@ -90,43 +98,79 @@ def run_error_test(input_path, out_file):
     return got_error
 
 
+# ─── Tests end-to-end (e2e) ───────────────────────────────────────────────────
+# Para cada tests/e2e/*.txt: genera el .s, lo ensambla con g++, ejecuta el
+# binario y compara su stdout contra el .expected del mismo nombre.
+
+def run_e2e_one(src, _out=None):
+    name = os.path.basename(src)
+    base = os.path.splitext(name)[0]
+    expected_file = os.path.join(TESTS_E2E, base + ".expected")
+    asm = os.path.join(E2E_BUILD, base + ".s")
+    exe = os.path.join(E2E_BUILD, base)
+
+    if not os.path.isfile(expected_file):
+        print(f"  [ERR] {name}  (falta {base}.expected)")
+        return False
+
+    # 1. Generar assembly
+    r = subprocess.run([f"./{BIN}", "--asm", src], capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"  [ERR] {name}  (el compilador falló)")
+        return False
+    with open(asm, "w") as f:
+        f.write(r.stdout)
+
+    # 2. Ensamblar con g++
+    asm_r = subprocess.run(["g++", "-no-pie", "-o", exe, asm], capture_output=True, text=True)
+    if asm_r.returncode != 0:
+        print(f"  [ERR] {name}  (g++ no pudo ensamblar)")
+        return False
+
+    # 3. Ejecutar y comparar stdout
+    out = subprocess.run([exe], capture_output=True, text=True).stdout
+    with open(expected_file) as f:
+        expected = f.read()
+
+    ok = out.rstrip("\n") == expected.rstrip("\n")
+    print(f"  [{'OK ' if ok else 'ERR'}] {name}")
+    return ok
+
+
+# ─── Orquestación de secciones ────────────────────────────────────────────────
+
 def run_section(label, paths, run_fn, out_fn):
-    """Corre una sección de tests y retorna (passed, total)."""
     if not paths:
         return 0, 0
     print(f"{label}")
-    sec_passed = sum(run_fn(p, out_fn(p)) for p in paths)
-    sec_total  = len(paths)
-    print(f"  {sec_passed}/{sec_total}")
-    return sec_passed, sec_total
+    passed = sum(run_fn(p, out_fn(p)) for p in paths)
+    total  = len(paths)
+    print(f"  {passed}/{total}")
+    return passed, total
 
 
 def test():
     ensure_built()
+    os.makedirs(E2E_BUILD, exist_ok=True)
 
-    valid_inputs   = sorted(glob.glob(os.path.join(TESTS_IN,     "*.txt")) +
-                            glob.glob(os.path.join(TESTS_IN,     "*.cpp")))
-    error_inputs   = sorted(glob.glob(os.path.join(TESTS_ERR_IN, "*.txt")) +
-                            glob.glob(os.path.join(TESTS_ERR_IN, "*.cpp")))
-    sandbox_inputs = sorted(glob.glob(os.path.join(TESTS_SANDBOX, "*.txt")) +
-                            glob.glob(os.path.join(TESTS_SANDBOX, "*.cpp")))
+    def analysis_out(p):
+        return os.path.join(TEST_OUT, "analysis", os.path.splitext(os.path.basename(p))[0])
 
-    total, passed = 0, 0
+    def error_out(p):
+        return os.path.join(TEST_OUT, "errors", os.path.splitext(os.path.basename(p))[0] + ".txt")
 
-    def ok_out(p):
-        return os.path.join(TESTS_OK_OUT, os.path.splitext(os.path.basename(p))[0])
+    def sandbox_out(p):
+        return os.path.join(TEST_OUT, "sandbox", os.path.splitext(os.path.basename(p))[0])
 
-    def err_out(p):
-        return os.path.join(TESTS_ERR_OUT, os.path.splitext(os.path.basename(p))[0] + ".txt")
+    sections = [
+        ("analysis/", inputs_in(TESTS_ANALYSIS), run_analysis_one, analysis_out),
+        ("errors/",   inputs_in(TESTS_ERRORS),   run_error_one,    error_out),
+        ("sandbox/",  inputs_in(TESTS_SANDBOX),  run_analysis_one, sandbox_out),
+        ("e2e/",      inputs_in(TESTS_E2E),      run_e2e_one,      lambda p: None),
+    ]
 
-    def sb_out(p):
-        return os.path.join(TESTS_SANDBOX, os.path.splitext(os.path.basename(p))[0])
-
-    for label, paths, fn, out_fn in [
-        ("ok_input/",    valid_inputs,   run_one,        ok_out),
-        ("error_input/", error_inputs,   run_error_test, err_out),
-        ("sandbox/",     sandbox_inputs, run_one,        sb_out),
-    ]:
+    passed, total = 0, 0
+    for label, paths, fn, out_fn in sections:
         p, t = run_section(label, paths, fn, out_fn)
         passed += p
         total  += t
@@ -138,11 +182,22 @@ def test():
         print(f"{passed}/{total}  {total - passed} fallaron")
 
 
+def e2e():
+    ensure_built()
+    os.makedirs(E2E_BUILD, exist_ok=True)
+    paths = inputs_in(TESTS_E2E)
+    if not paths:
+        print("No hay tests en tests/e2e/")
+        return
+    p, t = run_section("e2e/", paths, run_e2e_one, lambda x: None)
+    print(f"\n{'─' * 24}")
+    print(f"{p}/{t}  {'todo OK' if p == t else str(t - p) + ' fallaron'}")
+
+
 # ─── Clean ────────────────────────────────────────────────────────────────────
 
 def clean():
     subprocess.run(["rm", "-rf", BUILD_DIR])
-    subprocess.run(["rm", "-rf", TESTS_OUT])
     print("Limpio.")
 
 
@@ -152,6 +207,7 @@ COMMANDS = {
     "build": lambda: build(),
     "run":   lambda: run(sys.argv[2:]),
     "test":  lambda: test(),
+    "e2e":   lambda: e2e(),
     "clean": lambda: clean(),
 }
 

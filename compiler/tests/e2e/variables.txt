@@ -1,0 +1,14 @@
+int main() {
+    int x = 5;
+    int y = x;
+    y = 99;
+    println(x);
+    println(y);
+    float f = 1.5;
+    println(f);
+    char c = 'Z';
+    println(c);
+    bool b = true;
+    println(b);
+    return 0;
+}
