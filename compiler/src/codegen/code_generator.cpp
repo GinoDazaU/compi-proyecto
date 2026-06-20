@@ -146,8 +146,23 @@ void CodeGenerator::emitStore(const SemType& t, int offset) {
         out_ << "    movq %rax, " << offset << "(%rbp)\n";
     }
 }
-void CodeGenerator::emitPush(const SemType& /*t*/)                  { /* TODO */ }
-void CodeGenerator::emitPop(const SemType& /*t*/, const std::string& /*reg*/) { /* TODO */ }
+void CodeGenerator::emitPush(const SemType& t) {
+    if (t.base == "float" && !t.hasPointer()) {
+        out_ << "    subq $8, %rsp\n";
+        out_ << "    movsd %xmm0, (%rsp)\n";
+    } else {
+        out_ << "    pushq %rax\n";
+    }
+}
+
+void CodeGenerator::emitPop(const SemType& t, const std::string& reg) {
+    if (t.base == "float" && !t.hasPointer()) {
+        out_ << "    movsd (%rsp), " << reg << "\n";
+        out_ << "    addq $8, %rsp\n";
+    } else {
+        out_ << "    popq " << reg << "\n";
+    }
+}
 
 void CodeGenerator::emitDataSection() {
     out_ << ".data\n";
@@ -348,9 +363,189 @@ void CodeGenerator::visit(AssignExpr* node) {
     // TODO: ops compuestos (+=, -=, ...), lvalues IndexExpr/MemberExpr/Deref
 }
 
+void CodeGenerator::visit(BinaryExpr* node) {
+    // Evaluamos al left primero en todos los casos
+    node->left->accept(this);
+    SemType leftType = cur_type_;
+
+    // Guardar resultado de left en la pila
+    emitPush(leftType);
+
+    node->right->accept(this);
+    SemType rightType = cur_type_;
+
+    // El TypeChecker permite mezclar int y float, pero no modifica el AST.
+    // Como los operandos conservan su tipo original, hacemos la conversión
+    // a float (cvtsi2sdq) aquí en el codegen si es necesario.
+
+    auto isFloat = [](const SemType& t) {
+        return t.base == "float" && !t.hasPointer();
+    };
+
+    bool leftIsFloat  = isFloat(leftType);
+    bool rightIsFloat = isFloat(rightType);
+    bool useFloatPath = leftIsFloat || rightIsFloat;
+
+    if (useFloatPath) {
+        // Ruta float (ambos o mixto)
+        if (rightIsFloat) {
+            out_ << "    movsd %xmm0, %xmm1\n";
+        } else {
+            out_ << "    cvtsi2sdq %rax, %xmm1\n";
+        }
+
+        if (leftIsFloat) {
+            emitPop(leftType, "%xmm0");
+        } else {
+            emitPop(leftType, "%rax");
+            out_ << "    cvtsi2sdq %rax, %xmm0\n";
+        }
+
+        switch (node->op) {
+            case BinaryOp::Add: out_ << "    addsd %xmm1, %xmm0\n"; break;
+            case BinaryOp::Sub: out_ << "    subsd %xmm1, %xmm0\n"; break;
+            case BinaryOp::Mul: out_ << "    mulsd %xmm1, %xmm0\n"; break;
+            case BinaryOp::Div: out_ << "    divsd %xmm1, %xmm0\n"; break;
+
+            case BinaryOp::Lt:  case BinaryOp::Leq:
+            case BinaryOp::Gt:  case BinaryOp::Geq:
+            case BinaryOp::Eq:  case BinaryOp::Neq: {
+                out_ << "    ucomisd %xmm1, %xmm0\n";
+                out_ << "    movl $0, %eax\n";
+                const char* cc = "sete";
+                switch (node->op) {
+                    case BinaryOp::Lt:  cc = "setb";  break;
+                    case BinaryOp::Leq: cc = "setbe"; break;
+                    case BinaryOp::Gt:  cc = "seta";  break;
+                    case BinaryOp::Geq: cc = "setae"; break;
+                    case BinaryOp::Eq:  cc = "sete";  break;
+                    case BinaryOp::Neq: cc = "setne"; break;
+                    default: break;
+                }
+                out_ << "    " << cc << " %al\n";
+                out_ << "    movzbq %al, %rax\n";
+                cur_type_ = SemType{"bool"};
+                return;
+            }
+
+            default: break;
+        }
+        cur_type_ = SemType{"float"};
+        return;
+    }
+
+    // Ruta entera (ambos int)
+    out_ << "    movq %rax, %rcx\n";
+    emitPop(leftType, "%rax");
+
+    switch (node->op) {
+        // Aritmeticos
+        case BinaryOp::Add: out_ << "    addq %rcx, %rax\n"; break;
+        case BinaryOp::Sub: out_ << "    subq %rcx, %rax\n"; break;
+        case BinaryOp::Mul: out_ << "    imulq %rcx, %rax\n"; break;
+        case BinaryOp::Div:
+            out_ << "    cqto\n";
+            out_ << "    idivq %rcx\n";
+            break;
+        case BinaryOp::Mod:
+            out_ << "    cqto\n";
+            out_ << "    idivq %rcx\n";
+            out_ << "    movq %rdx, %rax\n";
+            break;
+
+        // Comparaciones
+        case BinaryOp::Lt:  case BinaryOp::Leq:
+        case BinaryOp::Gt:  case BinaryOp::Geq:
+        case BinaryOp::Eq:  case BinaryOp::Neq: {
+            out_ << "    cmpq %rcx, %rax\n";
+            out_ << "    movl $0, %eax\n";
+            const char* cc = "sete";
+            switch (node->op) {
+                case BinaryOp::Lt:  cc = "setl";  break;
+                case BinaryOp::Leq: cc = "setle"; break;
+                case BinaryOp::Gt:  cc = "setg";  break;
+                case BinaryOp::Geq: cc = "setge"; break;
+                case BinaryOp::Eq:  cc = "sete";  break;
+                case BinaryOp::Neq: cc = "setne"; break;
+                default: break;
+            }
+            out_ << "    " << cc << " %al\n";
+            out_ << "    movzbq %al, %rax\n";
+            cur_type_ = SemType{"bool"};
+            return;
+        }
+
+        case BinaryOp::And:
+            out_ << "    and %cl, %al\n";
+            out_ << "    movzbq %al, %rax\n";
+            cur_type_ = SemType{"bool"};
+            return;
+        case BinaryOp::Or:
+            out_ << "    or %cl, %al\n";
+            out_ << "    movzbq %al, %rax\n";
+            cur_type_ = SemType{"bool"};
+            return;
+    }
+    cur_type_ = leftType;
+}
+
+void CodeGenerator::visit(UnaryExpr* node) {
+    switch (node->op) {
+        case UnaryOp::Neg: {
+            node->expr->accept(this);
+            if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+                out_ << "    movsd %xmm0, %xmm1\n";
+                out_ << "    xorpd %xmm0, %xmm0\n";
+                out_ << "    subsd %xmm1, %xmm0\n";
+            } else {
+                out_ << "    negq %rax\n";
+            }
+            break;
+        }
+        case UnaryOp::Not: {
+            node->expr->accept(this);
+            out_ << "    cmpq $0, %rax\n";
+            out_ << "    movl $0, %eax\n";
+            out_ << "    sete %al\n";
+            out_ << "    movzbq %al, %rax\n";
+            cur_type_ = SemType{"bool"};
+            break;
+        }
+        case UnaryOp::PreInc: {
+            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) {
+                VarEntry* e = env_.lookup(id->name);
+                if (!e) return;
+                emitLoad(e->type, e->offset);
+                out_ << "    addq $1, %rax\n";
+                emitStore(e->type, e->offset);
+                cur_type_ = e->type;
+            }
+            break;
+        }
+        case UnaryOp::PreDec: {
+            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) {
+                VarEntry* e = env_.lookup(id->name);
+                if (!e) return;
+                emitLoad(e->type, e->offset);
+                out_ << "    subq $1, %rax\n";
+                emitStore(e->type, e->offset);
+                cur_type_ = e->type;
+            }
+            break;
+        }
+        case UnaryOp::BitNot: {
+            node->expr->accept(this);
+            out_ << "    notq %rax\n";
+            break;
+        }
+        case UnaryOp::Deref:
+        case UnaryOp::AddrOf:
+            // TODO: punteros
+            break;
+    }
+}
+
 // ── Resto de expresiones (pendientes) ────────────────────────────────────────
-void CodeGenerator::visit(BinaryExpr* /*node*/)    { /* TODO */ }
-void CodeGenerator::visit(UnaryExpr* /*node*/)     { /* TODO */ }
 void CodeGenerator::visit(CastExpr* /*node*/)      { /* TODO */ }
 void CodeGenerator::visit(NewArrayExpr* /*node*/)  { /* TODO */ }
 void CodeGenerator::visit(NewObjectExpr* /*node*/) { /* TODO */ }

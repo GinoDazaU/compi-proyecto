@@ -1,0 +1,9 @@
+int main() {
+    float a = 3.5;
+    float b = 1.5;
+    println(a + b);
+    println(a - b);
+    println(a * b);
+    println(a / b);
+    return 0;
+}

@@ -1,0 +1,13 @@
+int main() {
+    int x = 5;
+    int y = 10;
+    println(x < y);
+    println(x > y);
+    println(x <= 5);
+    println(x >= 6);
+    println(x == 5);
+    println(x != 5);
+    println(10 == 10);
+    println(10 != 10);
+    return 0;
+}

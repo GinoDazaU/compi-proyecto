@@ -1,0 +1,12 @@
+int main() {
+    int a = 10;
+    int b = 3;
+    println(a + b);
+    println(a - b);
+    println(a * b);
+    println(a / b);
+    println(a % b);
+    println(2 + 3 * 4);
+    println(100 / 10 - 5);
+    return 0;
+}

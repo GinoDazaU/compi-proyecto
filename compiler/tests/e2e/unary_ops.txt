@@ -1,0 +1,13 @@
+int main() {
+    int x = 5;
+    println(-x);
+    println(-42);
+    println(!true);
+    println(!false);
+    int y = 10;
+    ++y;
+    println(y);
+    --y;
+    println(y);
+    return 0;
+}

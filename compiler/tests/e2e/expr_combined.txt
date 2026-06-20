@@ -1,0 +1,13 @@
+int main() {
+    int a = 2;
+    int b = 3;
+    int c = 4;
+    println(a + b * c);
+    println((a + b) * c);
+    int d = a * b + c;
+    println(d);
+    println(-(a + b));
+    println(a * b == 6);
+    println(a + b > c);
+    return 0;
+}
