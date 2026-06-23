@@ -1,0 +1,9 @@
+int main() {
+    auto suma = [](int a, int b) -> int { return a + b; };
+    auto cuadrado = [](int n) -> int { return n * n; };
+
+    int r = suma(3, 4);
+    int c = cuadrado(r);
+    println(r, c);
+    return 0;
+}

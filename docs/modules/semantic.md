@@ -28,6 +28,8 @@ El orden de promoción se define en un único lugar (`numericRank`): `bool=0, ch
 
 Los arrays no se modelan aparte: decaen a puntero (un `PtrMod::Pointer` por dimensión), reusando `hasPointer()`/`deref()` para el indexado. El layout real queda en `dimensions` del AST.
 
+Las **lambdas** tienen tipo propio: `base == "fn"` con la firma en `params` y `ret`. Así una lambda guardada en `auto` puede llamarse.
+
 ---
 
 ## 2. `SymbolTable<T>` — manejo de scopes

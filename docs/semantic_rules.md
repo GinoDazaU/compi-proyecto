@@ -136,7 +136,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Resultado de la expresión: tipo del lvalue.
 
 ### 4.6 Llamadas a función (`CallExpr`)
-- El callee debe ser un identificador de función declarada, una lambda, o un built-in → **error** si no existe.
+- El callee debe ser una función declarada, un built-in, o un valor de tipo función (variable con una lambda, o lambda inline) → **error** si no existe o no es invocable.
 - El número de argumentos debe coincidir con el número de parámetros → **error**.
 - El tipo de cada argumento debe ser compatible con el tipo del parámetro correspondiente → **error**.
 - Pasar por referencia (`&`): se requiere lvalue como argumento → **error** con literales.
@@ -167,6 +167,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - `new Type`: el tipo debe ser un struct declarado → **error**. Reserva un objeto con sus campos en cero. Resultado: `Type*`.
 
 ### 4.12 Lambda (`LambdaExpr`)
+- El tipo de la lambda es su firma (`params -> retorno`); puede guardarse en `auto` y llamarse (ver 4.6).
 - Solo se permiten lambdas **sin capturas** (`[]`). Una lista de captura no vacía → **error**.
 - Sin capturas, el cuerpo solo puede usar sus propios parámetros, variables globales y funciones; referenciar una variable local del scope exterior → **error**.
 - Las reglas del cuerpo son iguales a las de una función normal.

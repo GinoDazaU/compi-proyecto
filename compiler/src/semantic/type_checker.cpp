@@ -482,18 +482,33 @@ void TypeChecker::visit(IndexExpr* node) {
 
 void TypeChecker::visit(CallExpr* node) {
     auto* id = dynamic_cast<IdExpr*>(node->callee);
-    if (!id) {
-        visitExpr(node->callee);
-        for (auto* a : node->args) visitExpr(a);
-        expr_type_ = SemType{"void"};
+
+    // Función de usuario o built-in por nombre (con prioridad solo si no está
+    // sombreada por una variable del mismo nombre).
+    bool isNamedFunc = id && funcs_.count(id->name) && !vars_.lookup(id->name);
+
+    if (!isNamedFunc) {
+        // Nombre inexistente como función y como variable: error claro de siempre.
+        if (id && !vars_.lookup(id->name))
+            semError("call to undeclared function '" + id->name + "'", node->line, node->col);
+
+        // Llamada a un valor de tipo función: lambda guardada en variable
+        // (auto f = ...; f(...)) o lambda inline ([](...){...}(...)).
+        SemType ct = visitExpr(node->callee);
+        if (!ct.isFunc())
+            semError("call target is not callable", node->line, node->col);
+        if (node->args.size() != ct.params.size())
+            semError("wrong number of arguments in call", node->line, node->col);
+        for (size_t i = 0; i < node->args.size(); ++i) {
+            SemType at = visitExpr(node->args[i]);
+            if (!ct.params[i].accepts(at) && !isTemplateType(ct.params[i]) && !isTemplateType(at))
+                semError("argument " + std::to_string(i+1) + " incompatible in call", node->line, node->col);
+        }
+        expr_type_ = ct.ret ? *ct.ret : SemType{"void"};
         return;
     }
 
-    auto it = funcs_.find(id->name);
-    if (it == funcs_.end())
-        semError("call to undeclared function '" + id->name + "'", node->line, node->col);
-
-    const FuncInfo& fi = it->second;
+    const FuncInfo& fi = funcs_[id->name];
 
     if (fi.is_variadic) {
         if (node->args.empty())
@@ -584,14 +599,19 @@ void TypeChecker::visit(LambdaExpr* node) {
         : SemType{"void"};
 
     vars_.enterScope();
+    std::vector<SemType> ptypes;
     for (auto& p : node->params) {
         SemType pt = resolveType(p.type, node->line, node->col);
+        ptypes.push_back(pt);
         vars_.declare(p.name, {pt});
     }
     node->body->accept(this);
     vars_.exitScope();
 
+    SemType lambda_ret = ret_type_;
     ret_type_ = prev_ret;
     in_loop_  = prev_loop;
-    expr_type_ = SemType{"void"};
+    // El tipo de la lambda es su firma (params -> retorno), no void: así puede
+    // guardarse en una variable (auto f = ...) y llamarse (f(...)).
+    expr_type_ = SemType::makeFunc(std::move(ptypes), lambda_ret);
 }
