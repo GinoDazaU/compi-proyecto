@@ -26,6 +26,8 @@ Sus operaciones clave:
 
 El orden de promoción se define en un único lugar (`numericRank`): `bool=0, char=1, int=2, float=3`.
 
+Los arrays no se modelan aparte: decaen a puntero (un `PtrMod::Pointer` por dimensión), reusando `hasPointer()`/`deref()` para el indexado. El layout real queda en `dimensions` del AST.
+
 ---
 
 ## 2. `SymbolTable<T>` — manejo de scopes

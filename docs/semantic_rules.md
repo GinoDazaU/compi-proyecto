@@ -63,7 +63,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
   Shadowing de scopes exteriores **se permite** (igual que C++).
 - Tipo `void` → **error**.
 - Si tiene inicializador, el tipo debe ser compatible → **error**.
-- **Array estático**: cada dimensión debe ser de tipo entero (`int`) → **error**.
+- **Array estático**: cada dimensión debe ser de tipo entero (`int`) → **error**. La variable decae a puntero (un nivel por dimensión: `int arr[3]` → `int*`), por eso `arr[i]` queda tipado.
 - Si tiene `init_list`, cada elemento debe ser compatible con el tipo base del array → **error**.
 - Si usa `auto`, el inicializador infiere el tipo; la variable toma ese tipo de ahí en adelante.
 
