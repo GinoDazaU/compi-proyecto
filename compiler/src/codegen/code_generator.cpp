@@ -179,6 +179,17 @@ void CodeGenerator::emitPop(const SemType& t, const std::string& reg) {
     }
 }
 
+void CodeGenerator::emitCondJumpIfFalse(Expr* cond, const std::string& label) {
+    cond->accept(this);  // valor → %rax (o %xmm0 si float)
+    if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+        out_ << "    xorpd %xmm1, %xmm1\n";
+        out_ << "    ucomisd %xmm1, %xmm0\n";  // %xmm0 == 0 → falso
+    } else {
+        out_ << "    cmpq $0, %rax\n";
+    }
+    out_ << "    je " << label << "\n";
+}
+
 void CodeGenerator::emitDataSection() {
     out_ << ".data\n";
     out_ << "__fmt_int:   .string \"%ld\"\n";
@@ -279,7 +290,23 @@ void CodeGenerator::visit(VarDeclStmt* node) {
     }
     // TODO: arrays (node->dimensions / node->init_list)
 }
-void CodeGenerator::visit(IfStmt* /*node*/)       { /* TODO */ }
+void CodeGenerator::visit(IfStmt* node) {
+    int n = nextLabel();
+    std::string endLabel = "__endif_" + std::to_string(n);
+
+    if (node->else_branch) {
+        std::string elseLabel = "__else_" + std::to_string(n);
+        emitCondJumpIfFalse(node->condition, elseLabel);
+        node->then_branch->accept(this);
+        out_ << "    jmp " << endLabel << "\n";
+        out_ << elseLabel << ":\n";
+        node->else_branch->accept(this);  // Block o IfStmt (else if)
+    } else {
+        emitCondJumpIfFalse(node->condition, endLabel);
+        node->then_branch->accept(this);
+    }
+    out_ << endLabel << ":\n";
+}
 void CodeGenerator::visit(WhileStmt* /*node*/)    { /* TODO */ }
 void CodeGenerator::visit(ForStmt* /*node*/)      { /* TODO */ }
 void CodeGenerator::visit(ForRangeStmt* /*node*/) { /* TODO */ }

@@ -1,0 +1,25 @@
+int main() {
+    int x = 5;
+    int y = 10;
+    bool flag = true;
+
+    if (x < y && y < 20) {
+        println(1);
+    }
+    if (x > y || y == 10) {
+        println(2);
+    }
+    if (flag) {
+        println(3);
+    }
+    if (!flag) {
+        println(4);
+    } else {
+        println(5);
+    }
+    char ch = 'A';
+    if (ch == 'A') {
+        println(6);
+    }
+    return 0;
+}

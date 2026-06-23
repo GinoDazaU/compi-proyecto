@@ -81,6 +81,9 @@ private:
     void emitPush(const SemType& t);
     void emitPop (const SemType& t, const std::string& reg); // reg: %rax o %xmm0
 
+    // Evalúa una condición y salta a 'label' si es falsa (==0). Usado por if/while/for.
+    void emitCondJumpIfFalse(Expr* cond, const std::string& label);
+
     // sección .data al inicio
     void emitDataSection();
     // sección .rodata con float/string literals recolectados

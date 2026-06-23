@@ -1,0 +1,25 @@
+int main() {
+    int x = 7;
+    if (x > 5) {
+        println(1);
+    }
+    if (x > 100) {
+        println(2);
+    } else {
+        println(3);
+    }
+    if (x < 0) {
+        println(4);
+    } else if (x == 7) {
+        println(5);
+    } else {
+        println(6);
+    }
+    float f = 0.0;
+    if (f) {
+        println(7);
+    } else {
+        println(8);
+    }
+    return 0;
+}
