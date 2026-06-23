@@ -307,11 +307,33 @@ void CodeGenerator::visit(IfStmt* node) {
     }
     out_ << endLabel << ":\n";
 }
-void CodeGenerator::visit(WhileStmt* /*node*/)    { /* TODO */ }
+void CodeGenerator::visit(WhileStmt* node) {
+    int n = nextLabel();
+    std::string startLabel = "__while_"    + std::to_string(n);
+    std::string endLabel   = "__endwhile_" + std::to_string(n);
+
+    // {target de continue, target de break}
+    loop_labels_.push({startLabel, endLabel});
+
+    out_ << startLabel << ":\n";
+    emitCondJumpIfFalse(node->condition, endLabel);
+    node->body->accept(this);
+    out_ << "    jmp " << startLabel << "\n";
+    out_ << endLabel << ":\n";
+
+    loop_labels_.pop();
+}
 void CodeGenerator::visit(ForStmt* /*node*/)      { /* TODO */ }
 void CodeGenerator::visit(ForRangeStmt* /*node*/) { /* TODO */ }
-void CodeGenerator::visit(BreakStmt* /*node*/)    { /* TODO */ }
-void CodeGenerator::visit(ContinueStmt* /*node*/) { /* TODO */ }
+
+void CodeGenerator::visit(BreakStmt* /*node*/) {
+    if (loop_labels_.empty()) return;  // el semántico ya garantiza estar en un loop
+    out_ << "    jmp " << loop_labels_.top().second << "\n";
+}
+void CodeGenerator::visit(ContinueStmt* /*node*/) {
+    if (loop_labels_.empty()) return;
+    out_ << "    jmp " << loop_labels_.top().first << "\n";
+}
 void CodeGenerator::visit(DeleteStmt* /*node*/)   { /* TODO */ }
 
 // ═════════════════════════════════════════════════════════════════════════════
