@@ -72,6 +72,7 @@ void CodeGenerator::firstPass(Program* program) {
     for (auto d : program->decls) {
         if (auto* f = dynamic_cast<FuncDecl*>(d)) {
             frame_sizes_[f->name] = frameSize(f);
+            func_rets_[f->name]   = SemType::fromTypeNode(f->return_type);
         }
         // TODO: StructDecl → buildStructInfo(s);
         // TODO: TemplateFuncDecl, GlobalVarDecl
@@ -226,16 +227,24 @@ void CodeGenerator::visit(FuncDecl* node) {
     int frame = frame_sizes_[node->name];
     if (frame > 0) out_ << "    subq $" << frame << ", %rsp\n";
 
-    // Guardar parámetros (solo int/ptr por ahora)
-    static const char* argRegs[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    int i = 0;
+    // Guardar parámetros: enteros/ptr desde %rdi…, floats desde %xmm0…
+    // (System V usa bancos de registros separados, con índice propio cada uno).
+    static const char* intRegs[]   = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+    static const char* floatRegs[] = {"%xmm0","%xmm1","%xmm2","%xmm3",
+                                      "%xmm4","%xmm5","%xmm6","%xmm7"};
+    int nInt = 0, nFloat = 0;
     for (auto& p : node->params) {
         SemType pt = SemType::fromTypeNode(p.type);
         int off = offset_;
         env_.declare(p.name, VarEntry{pt, off});
         offset_ -= 8;
-        if (i < 6) out_ << "    movq " << argRegs[i] << ", " << off << "(%rbp)\n";
-        ++i;
+        if (pt.base == "float" && !pt.hasPointer()) {
+            if (nFloat < 8) out_ << "    movsd " << floatRegs[nFloat] << ", " << off << "(%rbp)\n";
+            ++nFloat;
+        } else {
+            if (nInt < 6) out_ << "    movq " << intRegs[nInt] << ", " << off << "(%rbp)\n";
+            ++nInt;
+        }
     }
 
     node->body->accept(this);
@@ -424,7 +433,47 @@ void CodeGenerator::visit(CallExpr* node) {
             return;
         }
     }
-    // TODO: llamada a función de usuario
+
+    // ── Llamada a función de usuario ──────────────────────────────────────────
+    // Convención System V (codegen.md §8): evaluar args en orden y apilarlos,
+    // luego sacarlos en orden inverso a los registros de su banco (int en
+    // %rdi…/%r9, float en %xmm0…%xmm7). Resultado en %rax (o %xmm0 si float).
+    if (auto* id = dynamic_cast<IdExpr*>(node->callee)) {
+        if (frame_sizes_.count(id->name)) {
+            static const char* intRegs[]   = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+            static const char* floatRegs[] = {"%xmm0","%xmm1","%xmm2","%xmm3",
+                                              "%xmm4","%xmm5","%xmm6","%xmm7"};
+            size_t n = node->args.size();
+
+            // 1. Evaluar y apilar cada arg; recordar su banco y su índice de registro.
+            std::vector<bool> isFloat(n);
+            std::vector<int>  regIdx(n);
+            int nInt = 0, nFloat = 0;
+            for (size_t i = 0; i < n; ++i) {
+                node->args[i]->accept(this);   // valor → %rax o %xmm0; tipo → cur_type_
+                bool f = (cur_type_.base == "float" && !cur_type_.hasPointer());
+                isFloat[i] = f;
+                regIdx[i]  = f ? nFloat++ : nInt++;
+                emitPush(cur_type_);
+            }
+
+            // 2. Sacar de la pila en orden inverso (la cima es el último arg).
+            for (size_t k = n; k-- > 0; ) {
+                if (isFloat[k]) {
+                    if (regIdx[k] < 8) emitPop(SemType{"float"}, floatRegs[regIdx[k]]);
+                } else {
+                    if (regIdx[k] < 6) out_ << "    popq " << intRegs[regIdx[k]] << "\n";
+                }
+            }
+
+            out_ << "    call " << id->name << "\n";
+
+            auto it = func_rets_.find(id->name);
+            cur_type_ = (it != func_rets_.end()) ? it->second : SemType{"int"};
+            return;
+        }
+    }
+    // TODO: llamada a lambda (valor de tipo función) — junto al codegen de lambdas
 }
 
 void CodeGenerator::visit(IdExpr* node) {

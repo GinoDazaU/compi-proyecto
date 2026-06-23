@@ -246,7 +246,8 @@ pushq %rax               ; int/bool/char
 ; (o: subq $8,%rsp + movsd %xmm0,(%rsp)  para float)
 ```
 
-Luego, en orden inverso, sacar de la pila a los registros de argumento:
+Luego, en orden inverso, sacar de la pila a los registros de argumento (cada
+banco lleva su propio índice):
 - int args: `%rdi, %rsi, %rdx, %rcx, %r8, %r9`
 - float args: `%xmm0, %xmm1, %xmm2, ..., %xmm7`
 
@@ -254,6 +255,10 @@ Luego, en orden inverso, sacar de la pila a los registros de argumento:
 call funcname
 ; resultado en %rax (int) o %xmm0 (float)
 ```
+
+> Por ahora soportamos hasta 6 args int y 8 float; los que excedan no se pasan
+> por stack todavía. El tipo de retorno de cada función se precalcula en
+> `firstPass` (`func_rets_`) para dejar `cur_type_` correcto tras la llamada.
 
 ---
 

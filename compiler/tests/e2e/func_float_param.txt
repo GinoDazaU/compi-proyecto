@@ -1,0 +1,13 @@
+float promedio(float a, float b) {
+    return (a + b) / 2.0;
+}
+
+int suma(int x, int y, int z) {
+    return x + y + z;
+}
+
+int main() {
+    println(promedio(3.0, 5.0));
+    println(suma(1, 2, 3));
+    return 0;
+}

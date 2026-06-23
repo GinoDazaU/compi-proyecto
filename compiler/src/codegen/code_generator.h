@@ -38,6 +38,7 @@ private:
 
     // Precalculados en firstPass
     std::unordered_map<std::string, int>               frame_sizes_; // func → bytes
+    std::unordered_map<std::string, SemType>           func_rets_;   // func → tipo de retorno
     std::unordered_map<std::string, CodegenStructInfo> structs_;
 
     // Estado durante la emisión
