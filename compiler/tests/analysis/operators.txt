@@ -1,0 +1,10 @@
+int main() {
+    int a = 7;
+    int b = 2;
+    bool r = (a > b) && (a < 10) || !(a == 5);
+    int m = a % b;
+    int neg = -a;
+    bool eq = (a != b);
+    println(r, m, neg, eq);
+    return 0;
+}

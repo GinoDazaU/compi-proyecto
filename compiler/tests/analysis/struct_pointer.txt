@@ -1,0 +1,11 @@
+struct Node {
+    int val;
+};
+
+int main() {
+    Node* n = new Node;
+    n->val = 7;
+    println(n->val);
+    delete n;
+    return 0;
+}

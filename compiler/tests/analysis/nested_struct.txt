@@ -1,0 +1,16 @@
+struct Inner {
+    int v;
+};
+
+struct Outer {
+    Inner in;
+    int k;
+};
+
+int main() {
+    Outer o;
+    o.k = 1;
+    o.in.v = 2;
+    println(o.in.v);
+    return 0;
+}

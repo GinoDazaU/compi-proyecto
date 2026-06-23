@@ -1,0 +1,13 @@
+int counter = 0;
+
+int next() {
+    counter = counter + 1;
+    return counter;
+}
+
+int main() {
+    next();
+    next();
+    println(counter);
+    return 0;
+}

@@ -1,0 +1,8 @@
+int main() {
+    char c = 'a';
+    bool b = true;
+    string s = "hola";
+    float f = 3.5;
+    println(c, b, s, f);
+    return 0;
+}

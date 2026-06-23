@@ -1,0 +1,10 @@
+void greet(int n) {
+    if (n <= 0) { return; }
+    println("hi");
+}
+
+int main() {
+    greet(1);
+    greet(0);
+    return 0;
+}
