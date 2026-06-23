@@ -22,9 +22,6 @@ enum class TokenType {
     KW_AUTO,
     KW_STRING,
 
-    // Keywords — modificadores
-    KW_CONST,
-
     // Keywords — estructuras y templates
     KW_STRUCT,
     KW_TEMPLATE,
@@ -47,9 +44,6 @@ enum class TokenType {
     KW_TRUE,
     KW_FALSE,
 
-    // Keywords — conversión de tipos
-    KW_STATIC_CAST,
-
     // Operadores aritméticos
     PLUS,       // +
     MINUS,      // -
@@ -63,9 +57,6 @@ enum class TokenType {
     MINUS_ASSIGN,   // -=
     STAR_ASSIGN,    // *=
     SLASH_ASSIGN,   // /=
-    PERCENT_ASSIGN, // %=
-    AMP_ASSIGN,     // &=
-    PIPE_ASSIGN,    // |=
 
     // Operadores de comparación
     EQ,   // ==
@@ -80,10 +71,8 @@ enum class TokenType {
     OR,   // ||
     NOT,  // !
 
-    // Operadores bit a bit
+    // Operador de dirección / referencia
     AMP,    // &
-    PIPE,   // |
-    TILDE,  // ~
 
     // Incremento y decremento
     INC,  // ++
@@ -102,7 +91,6 @@ enum class TokenType {
     RBRACKET,  // ]
     SEMICOLON, // ;
     COMMA,     // ,
-    COLON,     // :
 
     // Especiales
     END,  // fin de entrada

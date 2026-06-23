@@ -117,7 +117,7 @@ void TypeChecker::firstPass(Program* program) {
                 SemType pt = resolveType(p.type, f->line, f->col);
                 if (pt.isVoid())
                     semError("parameter '" + p.name + "' cannot be void", f->line, f->col);
-                info.params.push_back({pt, p.is_ref, p.default_val != nullptr});
+                info.params.push_back({pt, p.is_ref});
             }
             funcs_[f->name] = info;
 
@@ -132,7 +132,7 @@ void TypeChecker::firstPass(Program* program) {
                 : SemType{"void"};
             for (auto& p : f->params) {
                 SemType pt{p.type ? p.type->base : "void"};
-                info.params.push_back({pt, p.is_ref, p.default_val != nullptr});
+                info.params.push_back({pt, p.is_ref});
             }
             funcs_[f->name] = info;
 
@@ -140,7 +140,7 @@ void TypeChecker::firstPass(Program* program) {
             SemType gt = resolveType(g->type, g->line, g->col);
             if (gt.isVoid())
                 semError("variable '" + g->name + "' cannot be void", g->line, g->col);
-            if (!vars_.declare(g->name, {gt, g->is_const}))
+            if (!vars_.declare(g->name, {gt}))
                 semError("global variable '" + g->name + "' already declared", g->line, g->col);
         }
     }
@@ -162,8 +162,6 @@ void TypeChecker::visit(Program* node) {
 
 void TypeChecker::visit(GlobalVarDecl* node) {
     SemType t = resolveType(node->type, node->line, node->col);
-    if (node->is_const && !node->init)
-        semError("const '" + node->name + "' requires an initializer", node->line, node->col);
     if (node->init) {
         SemType it = visitExpr(node->init);
         if (!t.accepts(it) && !isTemplateType(t))
@@ -185,13 +183,8 @@ void TypeChecker::visit(FuncDecl* node) {
         SemType pt = resolveType(p.type, node->line, node->col);
         if (pt.isVoid())
             semError("parameter '" + p.name + "' cannot be void", node->line, node->col);
-        if (!vars_.declare(p.name, {pt, p.is_const}))
+        if (!vars_.declare(p.name, {pt}))
             semError("duplicate parameter '" + p.name + "'", node->line, node->col);
-        if (p.default_val) {
-            SemType dv = visitExpr(p.default_val);
-            if (!pt.accepts(dv) && !isTemplateType(pt) && !isTemplateType(dv))
-                semError("incompatible type in default value of '" + p.name + "'", node->line, node->col);
-        }
     }
 
     if (!ret_type_.isVoid() && !isTemplateType(ret_type_)) {
@@ -238,9 +231,6 @@ void TypeChecker::visit(VarDeclStmt* node) {
             semError("variable '" + node->name + "' cannot be void", node->line, node->col);
     }
 
-    if (node->is_const && !has_init && node->dimensions.empty())
-        semError("const '" + node->name + "' requires an initializer", node->line, node->col);
-
     for (auto* dim : node->dimensions) {
         SemType dt = visitExpr(dim);
         if (!dt.isIntegral())
@@ -258,7 +248,15 @@ void TypeChecker::visit(VarDeclStmt* node) {
             semError("incompatible type in initializer of '" + node->name + "'", node->line, node->col);
     }
 
-    if (!vars_.declare(node->name, {t, node->is_const}))
+    // Un array estático decae a puntero: cada dimensión añade un nivel de
+    // indirección al tipo de la variable. Así 'int arr[3]' se registra como
+    // 'int*' (e 'int m[2][3]' como 'int**'), y arr[i] / m[i][j] tipan bien.
+    // 't' se mantiene como tipo elemento para el chequeo del init_list de arriba.
+    SemType var_t = t;
+    for (size_t i = 0; i < node->dimensions.size(); ++i)
+        var_t.mods.push_back(PtrMod::Pointer);
+
+    if (!vars_.declare(node->name, {var_t}))
         semError("redeclaration of '" + node->name + "' in this scope", node->line, node->col);
 }
 
@@ -295,34 +293,6 @@ void TypeChecker::visit(ForStmt* node) {
             semError("for condition must be bool, int, float or char", node->line, node->col);
     }
     if (node->update) visitExpr(node->update);
-
-    bool prev = in_loop_;
-    in_loop_ = true;
-    node->body->accept(this);
-    in_loop_ = prev;
-    vars_.exitScope();
-}
-
-void TypeChecker::visit(ForRangeStmt* node) {
-    vars_.enterScope();
-    SemType iter_t = visitExpr(node->iterable);
-
-    SemType elem_t;
-    if (iter_t.hasPointer())         elem_t = iter_t.deref();
-    else if (iter_t.base == "string") elem_t = SemType{"char"};
-    else                              elem_t = iter_t; // array estático: mismo tipo base
-
-    SemType var_t;
-    if (node->type->is_auto) {
-        var_t = elem_t;
-    } else {
-        var_t = resolveType(node->type, node->line, node->col);
-        if (!var_t.accepts(elem_t) && !isTemplateType(var_t))
-            semError("range variable type incompatible with iterable", node->line, node->col);
-    }
-
-    if (!vars_.declare(node->name, {var_t, node->is_const}))
-        semError("redeclaration of '" + node->name + "'", node->line, node->col);
 
     bool prev = in_loop_;
     in_loop_ = true;
@@ -436,11 +406,6 @@ void TypeChecker::visit(UnaryExpr* node) {
                 semError("'!' requires a bool or numeric operand", node->line, node->col);
             expr_type_ = SemType{"bool"};
             break;
-        case UnaryOp::BitNot:
-            if (!t.isIntegral())
-                semError("'~' requires an int operand", node->line, node->col);
-            expr_type_ = t;
-            break;
         case UnaryOp::Deref:
             if (!t.hasPointer())
                 semError("'*' requires a pointer", node->line, node->col);
@@ -468,12 +433,6 @@ void TypeChecker::visit(AssignExpr* node) {
     SemType lt = visitExpr(node->left);
     SemType rt = visitExpr(node->right);
 
-    if (auto* id = dynamic_cast<IdExpr*>(node->left)) {
-        VarInfo* v = vars_.lookup(id->name);
-        if (v && v->is_const)
-            semError("cannot assign to const '" + id->name + "'", node->line, node->col);
-    }
-
     if (isTemplateType(lt) || isTemplateType(rt)) { expr_type_ = lt; return; }
 
     switch (node->op) {
@@ -486,28 +445,8 @@ void TypeChecker::visit(AssignExpr* node) {
             if (!isArithmetic(lt))
                 semError("compound arithmetic assignment requires a numeric lvalue", node->line, node->col);
             break;
-        case AssignOp::ModAssign:
-            if (!lt.isIntegral())
-                semError("'%=' requires an int lvalue", node->line, node->col);
-            break;
-        case AssignOp::AndAssign: case AssignOp::OrAssign:
-            if (!lt.isIntegral())
-                semError("'&='/'|=' requires an int lvalue", node->line, node->col);
-            break;
     }
     expr_type_ = lt;
-}
-
-void TypeChecker::visit(CastExpr* node) {
-    SemType target = resolveType(node->type, node->line, node->col);
-    SemType src    = visitExpr(node->expr);
-    auto castable  = [](const SemType& t) {
-        return !t.hasPointer() &&
-               (t.base=="int"||t.base=="float"||t.base=="char"||t.base=="bool");
-    };
-    if (!castable(target) || (!castable(src) && !isTemplateType(src)))
-        semError("static_cast is only valid between int, float, char, bool", node->line, node->col);
-    expr_type_ = target;
 }
 
 void TypeChecker::visit(NewArrayExpr* node) {
@@ -568,9 +507,7 @@ void TypeChecker::visit(CallExpr* node) {
         return;
     }
 
-    size_t required = 0;
-    for (auto& p : fi.params) if (!p.has_default) required++;
-    if (node->args.size() < required || node->args.size() > fi.params.size())
+    if (node->args.size() != fi.params.size())
         semError("wrong number of arguments in call to '" + id->name + "'", node->line, node->col);
 
     // Para funciones template: inferir T de los argumentos
@@ -638,10 +575,6 @@ void TypeChecker::visit(PostfixExpr* node) {
 }
 
 void TypeChecker::visit(LambdaExpr* node) {
-    for (auto& c : node->captures)
-        if (!c.name.empty() && !vars_.lookup(c.name))
-            semError("captured variable '" + c.name + "' does not exist in scope", node->line, node->col);
-
     SemType prev_ret  = ret_type_;
     bool    prev_loop = in_loop_;
     in_loop_ = false;
@@ -653,7 +586,7 @@ void TypeChecker::visit(LambdaExpr* node) {
     vars_.enterScope();
     for (auto& p : node->params) {
         SemType pt = resolveType(p.type, node->line, node->col);
-        vars_.declare(p.name, {pt, p.is_const});
+        vars_.declare(p.name, {pt});
     }
     node->body->accept(this);
     vars_.exitScope();

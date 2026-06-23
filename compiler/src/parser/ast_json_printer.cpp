@@ -24,7 +24,6 @@ std::string ASTJsonPrinter::typeStr(TypeNode* t) {
     if (!t) return "";
     if (t->is_auto) return "auto";
     std::string s;
-    if (t->is_const) s += "const ";
     s += t->base;
     if (t->template_arg) s += "<" + typeStr(t->template_arg) + ">";
     for (auto mod : t->mods)
@@ -58,9 +57,6 @@ const char* ASTJsonPrinter::assignOpStr(AssignOp op) {
         case AssignOp::MinusAssign: return "-=";
         case AssignOp::MulAssign:   return "*=";
         case AssignOp::DivAssign:   return "/=";
-        case AssignOp::ModAssign:   return "%=";
-        case AssignOp::AndAssign:   return "&=";
-        case AssignOp::OrAssign:    return "|=";
     }
     return "?";
 }
@@ -69,7 +65,6 @@ const char* ASTJsonPrinter::unaryOpStr(UnaryOp op) {
     switch (op) {
         case UnaryOp::Neg:    return "-";
         case UnaryOp::Not:    return "!";
-        case UnaryOp::BitNot: return "~";
         case UnaryOp::Deref:  return "*";
         case UnaryOp::AddrOf: return "&";
         case UnaryOp::PreInc: return "++";
@@ -200,18 +195,6 @@ void ASTJsonPrinter::visit(AssignExpr* node) {
     indent(); out << "}";
 }
 
-void ASTJsonPrinter::visit(CastExpr* node) {
-    indent(); out << "{\n";
-    depth++;
-    indent(); out << "\"type\": \"CastExpr\",\n";
-    indent(); out << "\"targetType\": "; printString(typeStr(node->type)); out << ",\n";
-    indent(); out << "\"expr\":\n";
-    node->expr->accept(this);
-    out << "\n";
-    depth--;
-    indent(); out << "}";
-}
-
 void ASTJsonPrinter::visit(NewArrayExpr* node) {
     indent(); out << "{\n";
     depth++;
@@ -228,19 +211,7 @@ void ASTJsonPrinter::visit(NewObjectExpr* node) {
     indent(); out << "{\n";
     depth++;
     indent(); out << "\"type\": \"NewObjectExpr\",\n";
-    indent(); out << "\"objectType\": "; printString(typeStr(node->type)); out << ",\n";
-    indent(); out << "\"args\": [\n";
-    depth++;
-    for (size_t i = 0; i < node->args.size(); i++) {
-        node->args[i]->accept(this);
-        if (i + 1 < node->args.size()) {
-            out << ",\n";
-        } else {
-            out << "\n";
-        }
-    }
-    depth--;
-    indent(); out << "]\n";
+    indent(); out << "\"objectType\": "; printString(typeStr(node->type)); out << "\n";
     depth--;
     indent(); out << "}";
 }
@@ -311,22 +282,6 @@ void ASTJsonPrinter::visit(LambdaExpr* node) {
     indent(); out << "{\n";
     depth++;
     indent(); out << "\"type\": \"LambdaExpr\",\n";
-    
-    // Captures
-    indent(); out << "\"captures\": [\n";
-    depth++;
-    for (size_t i = 0; i < node->captures.size(); i++) {
-        indent(); out << "{\n";
-        depth++;
-        indent(); out << "\"is_ref\": " << (node->captures[i].is_ref ? "true" : "false") << ",\n";
-        indent(); out << "\"name\": "; printString(node->captures[i].name); out << "\n";
-        depth--;
-        indent(); out << "}";
-        if (i + 1 < node->captures.size()) out << ",\n";
-        else out << "\n";
-    }
-    depth--;
-    indent(); out << "],\n";
 
     // Params
     indent(); out << "\"params\": [\n";
@@ -334,18 +289,9 @@ void ASTJsonPrinter::visit(LambdaExpr* node) {
     for (size_t i = 0; i < node->params.size(); i++) {
         indent(); out << "{\n";
         depth++;
-        indent(); out << "\"is_const\": " << (node->params[i].is_const ? "true" : "false") << ",\n";
         indent(); out << "\"type\": "; printString(typeStr(node->params[i].type)); out << ",\n";
         indent(); out << "\"is_ref\": " << (node->params[i].is_ref ? "true" : "false") << ",\n";
-        indent(); out << "\"name\": "; printString(node->params[i].name);
-        if (node->params[i].default_val) {
-            out << ",\n";
-            indent(); out << "\"default_val\":\n";
-            node->params[i].default_val->accept(this);
-            out << "\n";
-        } else {
-            out << "\n";
-        }
+        indent(); out << "\"name\": "; printString(node->params[i].name); out << "\n";
         depth--;
         indent(); out << "}";
         if (i + 1 < node->params.size()) out << ",\n";
@@ -398,7 +344,6 @@ void ASTJsonPrinter::visit(VarDeclStmt* node) {
     indent(); out << "{\n";
     depth++;
     indent(); out << "\"type\": \"VarDeclStmt\",\n";
-    indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
     indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"name\": "; printString(node->name);
     
@@ -530,23 +475,6 @@ void ASTJsonPrinter::visit(ForStmt* node) {
     indent(); out << "}";
 }
 
-void ASTJsonPrinter::visit(ForRangeStmt* node) {
-    indent(); out << "{\n";
-    depth++;
-    indent(); out << "\"type\": \"ForRangeStmt\",\n";
-    indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
-    indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
-    indent(); out << "\"name\": "; printString(node->name); out << ",\n";
-    indent(); out << "\"iterable\":\n";
-    node->iterable->accept(this);
-    out << ",\n";
-    indent(); out << "\"body\":\n";
-    node->body->accept(this);
-    out << "\n";
-    depth--;
-    indent(); out << "}";
-}
-
 void ASTJsonPrinter::visit(ReturnStmt* node) {
     indent(); out << "{\n";
     depth++;
@@ -597,7 +525,6 @@ void ASTJsonPrinter::visit(GlobalVarDecl* node) {
     indent(); out << "{\n";
     depth++;
     indent(); out << "\"type\": \"GlobalVarDecl\",\n";
-    indent(); out << "\"is_const\": " << (node->is_const ? "true" : "false") << ",\n";
     indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
     indent(); out << "\"name\": "; printString(node->name);
     if (node->init) {
@@ -648,18 +575,9 @@ void ASTJsonPrinter::visit(FuncDecl* node) {
     for (size_t i = 0; i < node->params.size(); i++) {
         indent(); out << "{\n";
         depth++;
-        indent(); out << "\"is_const\": " << (node->params[i].is_const ? "true" : "false") << ",\n";
         indent(); out << "\"type\": "; printString(typeStr(node->params[i].type)); out << ",\n";
         indent(); out << "\"is_ref\": " << (node->params[i].is_ref ? "true" : "false") << ",\n";
-        indent(); out << "\"name\": "; printString(node->params[i].name);
-        if (node->params[i].default_val) {
-            out << ",\n";
-            indent(); out << "\"default_val\":\n";
-            node->params[i].default_val->accept(this);
-            out << "\n";
-        } else {
-            out << "\n";
-        }
+        indent(); out << "\"name\": "; printString(node->params[i].name); out << "\n";
         depth--;
         indent(); out << "}";
         if (i + 1 < node->params.size()) out << ",\n";

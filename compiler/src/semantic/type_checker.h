@@ -19,14 +19,12 @@ struct SemanticError : std::runtime_error {
 // ─── Info de variable ─────────────────────────────────────────────────────────
 struct VarInfo {
     SemType type;
-    bool    is_const = false;
 };
 
 // ─── Info de parámetro ────────────────────────────────────────────────────────
 struct ParamInfo {
     SemType type;
-    bool    is_ref      = false;
-    bool    has_default = false;
+    bool    is_ref = false;
 };
 
 // ─── Info de función ─────────────────────────────────────────────────────────
@@ -96,7 +94,6 @@ public:
     void visit(BinaryExpr* node)       override;
     void visit(UnaryExpr* node)        override;
     void visit(AssignExpr* node)       override;
-    void visit(CastExpr* node)         override;
     void visit(NewArrayExpr* node)     override;
     void visit(NewObjectExpr* node)    override;
     void visit(IndexExpr* node)        override;
@@ -111,7 +108,6 @@ public:
     void visit(IfStmt* node)           override;
     void visit(WhileStmt* node)        override;
     void visit(ForStmt* node)          override;
-    void visit(ForRangeStmt* node)     override;
     void visit(ReturnStmt* node)       override;
     void visit(BreakStmt* node)        override;
     void visit(ContinueStmt* node)     override;

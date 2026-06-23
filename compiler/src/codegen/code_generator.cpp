@@ -96,9 +96,6 @@ int CodeGenerator::frameSize(FuncDecl* f) {
         } else if (auto* fr = dynamic_cast<ForStmt*>(s)) {
             if (fr->init.decl) slots += 1;
             countStmt(fr->body);
-        } else if (auto* rg = dynamic_cast<ForRangeStmt*>(s)) {
-            slots += 1;
-            countStmt(rg->body);
         }
     };
     countStmt(f->body);
@@ -350,7 +347,6 @@ void CodeGenerator::visit(ForStmt* node) {
 
     env_.exitScope();
 }
-void CodeGenerator::visit(ForRangeStmt* /*node*/) { /* TODO */ }
 
 void CodeGenerator::visit(BreakStmt* /*node*/) {
     if (loop_labels_.empty()) return;  // el semántico ya garantiza estar en un loop
@@ -647,11 +643,6 @@ void CodeGenerator::visit(UnaryExpr* node) {
             if (auto* id = dynamic_cast<IdExpr*>(node->expr)) emitIncDec(id, false);
             // TODO: ++/-- sobre otros lvalues (arr[i], s.x, *p)
             break;
-        case UnaryOp::BitNot: {
-            node->expr->accept(this);
-            out_ << "    notq %rax\n";
-            break;
-        }
         case UnaryOp::Deref:
         case UnaryOp::AddrOf:
             // TODO: punteros
@@ -660,7 +651,6 @@ void CodeGenerator::visit(UnaryExpr* node) {
 }
 
 // ── Resto de expresiones (pendientes) ────────────────────────────────────────
-void CodeGenerator::visit(CastExpr* /*node*/)      { /* TODO */ }
 void CodeGenerator::visit(NewArrayExpr* /*node*/)  { /* TODO */ }
 void CodeGenerator::visit(NewObjectExpr* /*node*/) { /* TODO */ }
 void CodeGenerator::visit(IndexExpr* /*node*/)     { /* TODO */ }

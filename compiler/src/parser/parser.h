@@ -31,7 +31,6 @@ private:
 
     // Lookahead helpers
     bool isTypeStart();
-    bool isRangeFor();
 
     // Types
     TypeNode* parseType();

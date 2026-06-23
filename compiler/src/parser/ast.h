@@ -18,7 +18,6 @@ enum class PtrMod { Pointer, Reference };
 
 // Representa cualquier tipo del lenguaje, incluyendo const, punteros y templates
 struct TypeNode {
-    bool                is_const      = false;
     bool                is_auto       = false;
     std::string         base;           // "int", "float", "void", id definido por usuario
     TypeNode*           template_arg   = nullptr;  // para id<Type>
@@ -36,14 +35,12 @@ enum class BinaryOp {
 
 enum class AssignOp {
     Assign,
-    PlusAssign, MinusAssign, MulAssign, DivAssign, ModAssign,
-    AndAssign, OrAssign
+    PlusAssign, MinusAssign, MulAssign, DivAssign
 };
 
 enum class UnaryOp {
     Neg,    // -
     Not,    // !
-    BitNot, // ~
     Deref,  // *
     AddrOf, // &
     PreInc, // ++
@@ -83,17 +80,9 @@ public:
 
 // ─── Param (compartido por FuncDecl y LambdaExpr) ─────────────────────────
 struct Param {
-    bool        is_const;
     TypeNode*   type;
     bool        is_ref;          // el & explícito del parámetro
     std::string name;
-    Expr*       default_val = nullptr;
-};
-
-// ─── Captura de lambda ─────────────────────────────────────────────────────
-struct CaptureItem {
-    bool        is_ref;
-    std::string name;   // vacío = captura todo (& o =)
 };
 
 
@@ -156,7 +145,7 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// Operadores unarios prefijos: -, !, ~, *, &, ++, --
+// Operadores unarios prefijos: -, !, *, &, ++, --
 class UnaryExpr : public Expr {
 public:
     UnaryOp op;
@@ -166,7 +155,7 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// Asignación: =, +=, -=, *=, /=, %=, &=, |=
+// Asignación: =, +=, -=, *=, /=
 class AssignExpr : public Expr {
 public:
     Expr*    left;
@@ -174,16 +163,6 @@ public:
     Expr*    right;
     AssignExpr(Expr* l, AssignOp o, Expr* r) : left(l), op(o), right(r) {}
     ~AssignExpr() override { delete left; delete right; }
-    void accept(Visitor* v) override { v->visit(this); }
-};
-
-// static_cast<Type>(Expr)
-class CastExpr : public Expr {
-public:
-    TypeNode* type;
-    Expr*     expr;
-    CastExpr(TypeNode* t, Expr* e) : type(t), expr(e) {}
-    ~CastExpr() override { delete type; delete expr; }
     void accept(Visitor* v) override { v->visit(this); }
 };
 
@@ -197,13 +176,12 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// new Type(ArgList)
+// new Type  (objeto dinámico, campos en cero)
 class NewObjectExpr : public Expr {
 public:
-    TypeNode*          type;
-    std::vector<Expr*> args;
-    NewObjectExpr(TypeNode* t, std::vector<Expr*> a) : type(t), args(std::move(a)) {}
-    ~NewObjectExpr() override { delete type; for (auto e : args) delete e; }
+    TypeNode* type;
+    explicit NewObjectExpr(TypeNode* t) : type(t) {}
+    ~NewObjectExpr() override { delete type; }
     void accept(Visitor* v) override { v->visit(this); }
 };
 
@@ -251,18 +229,16 @@ public:
 
 
 
-// [ CaptureList ] ( ParamList ) [-> Type] Block
+// [ ] ( ParamList ) [-> Type] Block  (lambdas sin capturas)
 class LambdaExpr : public Expr {
 public:
-    std::vector<CaptureItem> captures;
-    std::vector<Param>       params;
-    TypeNode*                return_type;  // nullptr si no hay ->
-    Block*                   body;
-    LambdaExpr(std::vector<CaptureItem> c, std::vector<Param> p,
-               TypeNode* rt, Block* b)
-        : captures(std::move(c)), params(std::move(p)), return_type(rt), body(b) {}
+    std::vector<Param> params;
+    TypeNode*          return_type;  // nullptr si no hay ->
+    Block*             body;
+    LambdaExpr(std::vector<Param> p, TypeNode* rt, Block* b)
+        : params(std::move(p)), return_type(rt), body(b) {}
     ~LambdaExpr() override {
-        for (auto& p : params) { delete p.type; delete p.default_val; }
+        for (auto& p : params) { delete p.type; }
         delete return_type;
         delete body;
     }
@@ -274,18 +250,17 @@ public:
 // SENTENCIAS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// [const] Type id [= Expr] ;
-// [const] Type id[Expr]([Expr])* [= { InitList }] ;
+// Type id [= Expr] ;
+// Type id[Expr]([Expr])* [= { InitList }] ;
 class VarDeclStmt : public Stmt {
 public:
-    bool               is_const;
     TypeNode*          type;
     std::string        name;
     Expr*              init       = nullptr;  // init para variable simple
     std::vector<Expr*> dimensions;             // dimensiones si es array
     std::vector<Expr*> init_list;              // lista init de array
-    VarDeclStmt(bool c, TypeNode* t, std::string n)
-        : is_const(c), type(t), name(std::move(n)) {}
+    VarDeclStmt(TypeNode* t, std::string n)
+        : type(t), name(std::move(n)) {}
     ~VarDeclStmt() override {
         delete type; delete init;
         for (auto e : dimensions) delete e;
@@ -346,20 +321,6 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// for ([const] Type id : Expr) Block
-class ForRangeStmt : public Stmt {
-public:
-    bool        is_const;
-    TypeNode*   type;
-    std::string name;
-    Expr*       iterable;
-    Block*      body;
-    ForRangeStmt(bool c, TypeNode* t, std::string n, Expr* it, Block* b)
-        : is_const(c), type(t), name(std::move(n)), iterable(it), body(b) {}
-    ~ForRangeStmt() override { delete type; delete iterable; delete body; }
-    void accept(Visitor* v) override { v->visit(this); }
-};
-
 // return [Expr] ;
 class ReturnStmt : public Stmt {
 public:
@@ -396,15 +357,14 @@ public:
 // DECLARACIONES GLOBALES
 // ═══════════════════════════════════════════════════════════════════════════
 
-// [const] Type id [= Expr] ;
+// Type id [= Expr] ;
 class GlobalVarDecl : public TopDecl {
 public:
-    bool        is_const;
     TypeNode*   type;
     std::string name;
     Expr*       init = nullptr;
-    GlobalVarDecl(bool c, TypeNode* t, std::string n, Expr* e = nullptr)
-        : is_const(c), type(t), name(std::move(n)), init(e) {}
+    GlobalVarDecl(TypeNode* t, std::string n, Expr* e = nullptr)
+        : type(t), name(std::move(n)), init(e) {}
     ~GlobalVarDecl() override { delete type; delete init; }
     void accept(Visitor* v) override { v->visit(this); }
 };
@@ -436,7 +396,7 @@ public:
         : return_type(rt), name(std::move(n)), params(std::move(p)), body(b) {}
     ~FuncDecl() override {
         delete return_type;
-        for (auto& p : params) { delete p.type; delete p.default_val; }
+        for (auto& p : params) { delete p.type; }
         delete body;
     }
     void accept(Visitor* v) override { v->visit(this); }

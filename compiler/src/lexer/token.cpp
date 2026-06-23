@@ -18,7 +18,6 @@ const char* Token::typeName() const {
         case TokenType::KW_VOID:        return "KW_VOID";
         case TokenType::KW_AUTO:        return "KW_AUTO";
         case TokenType::KW_STRING:      return "KW_STRING";
-        case TokenType::KW_CONST:       return "KW_CONST";
         case TokenType::KW_STRUCT:      return "KW_STRUCT";
         case TokenType::KW_TEMPLATE:    return "KW_TEMPLATE";
         case TokenType::KW_TYPENAME:    return "KW_TYPENAME";
@@ -33,7 +32,6 @@ const char* Token::typeName() const {
         case TokenType::KW_RETURN:      return "KW_RETURN";
         case TokenType::KW_TRUE:        return "KW_TRUE";
         case TokenType::KW_FALSE:       return "KW_FALSE";
-        case TokenType::KW_STATIC_CAST: return "KW_STATIC_CAST";
 
         case TokenType::PLUS:           return "PLUS";
         case TokenType::MINUS:          return "MINUS";
@@ -46,9 +44,6 @@ const char* Token::typeName() const {
         case TokenType::MINUS_ASSIGN:   return "MINUS_ASSIGN";
         case TokenType::STAR_ASSIGN:    return "STAR_ASSIGN";
         case TokenType::SLASH_ASSIGN:   return "SLASH_ASSIGN";
-        case TokenType::PERCENT_ASSIGN: return "PERCENT_ASSIGN";
-        case TokenType::AMP_ASSIGN:     return "AMP_ASSIGN";
-        case TokenType::PIPE_ASSIGN:    return "PIPE_ASSIGN";
 
         case TokenType::EQ:             return "EQ";
         case TokenType::NEQ:            return "NEQ";
@@ -62,8 +57,6 @@ const char* Token::typeName() const {
         case TokenType::NOT:            return "NOT";
 
         case TokenType::AMP:            return "AMP";
-        case TokenType::PIPE:           return "PIPE";
-        case TokenType::TILDE:          return "TILDE";
 
         case TokenType::INC:            return "INC";
         case TokenType::DEC:            return "DEC";
@@ -79,7 +72,6 @@ const char* Token::typeName() const {
         case TokenType::RBRACKET:       return "RBRACKET";
         case TokenType::SEMICOLON:      return "SEMICOLON";
         case TokenType::COMMA:          return "COMMA";
-        case TokenType::COLON:          return "COLON";
 
         case TokenType::END:            return "END";
         case TokenType::ERR:            return "ERR";

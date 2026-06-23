@@ -40,7 +40,6 @@ void Parser::error(const std::string& msg) {
 
 bool Parser::isTypeStart() {
     switch (cur().type) {
-        case TokenType::KW_CONST:
         case TokenType::KW_AUTO:
         case TokenType::KW_INT:
         case TokenType::KW_FLOAT:
@@ -59,22 +58,10 @@ bool Parser::isTypeStart() {
     }
 }
 
-bool Parser::isRangeFor() {
-    for (size_t i = pos; i < tokens.size(); i++) {
-        if (tokens[i].type == TokenType::COLON)     return true;
-        if (tokens[i].type == TokenType::SEMICOLON) return false;
-        if (tokens[i].type == TokenType::RPAREN)    return false;
-        if (tokens[i].type == TokenType::END)       return false;
-    }
-    return false;
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 TypeNode* Parser::parseType() {
     auto* t = new TypeNode();
-
-    if (match(TokenType::KW_CONST)) t->is_const = true;
 
     if (match(TokenType::KW_AUTO)) {
         t->is_auto = true;
@@ -181,7 +168,7 @@ GlobalVarDecl* Parser::parseGlobalVarDecl(TypeNode* type, std::string name) {
     Expr* init = nullptr;
     if (match(TokenType::ASSIGN)) init = parseExpr();
     expect(TokenType::SEMICOLON);
-    return new GlobalVarDecl(type->is_const, type, std::move(name), init);
+    return new GlobalVarDecl(type, std::move(name), init);
 }
 
 std::vector<Param> Parser::parseParamList() {
@@ -195,11 +182,8 @@ std::vector<Param> Parser::parseParamList() {
 
 Param Parser::parseParam() {
     Param p;
-    p.is_const    = false;
-    p.is_ref      = false;
-    p.default_val = nullptr;
+    p.is_ref = false;
     p.type = parseType();
-    p.is_const = p.type->is_const;
 
     if (!p.type->mods.empty() && p.type->mods.back() == PtrMod::Reference) {
         p.is_ref = true;
@@ -207,7 +191,6 @@ Param Parser::parseParam() {
     }
 
     p.name = expect(TokenType::ID).lexeme;
-    if (match(TokenType::ASSIGN)) p.default_val = parseExpr();
     return p;
 }
 
@@ -268,7 +251,7 @@ Stmt* Parser::parseStmt() {
 }
 
 VarDeclStmt* Parser::parseVarDeclStmt(TypeNode* type, std::string name) {
-    auto* node = new VarDeclStmt(type->is_const, type, std::move(name));
+    auto* node = new VarDeclStmt(type, std::move(name));
 
     if (check(TokenType::LBRACKET)) {
         while (match(TokenType::LBRACKET)) {
@@ -324,24 +307,12 @@ Stmt* Parser::parseForStmt() {
     expect(TokenType::KW_FOR);
     expect(TokenType::LPAREN);
 
-    if (isRangeFor()) {
-        TypeNode* type = parseType();
-        std::string name = expect(TokenType::ID).lexeme;
-        expect(TokenType::COLON);
-        Expr* iterable = parseExpr();
-        expect(TokenType::RPAREN);
-        Block* body = parseBlock();
-        auto* node = new ForRangeStmt(type->is_const, type, std::move(name), iterable, body);
-        node->line = ln; node->col = cl;
-        return node;
-    }
-
     ForInit init;
     if (!check(TokenType::SEMICOLON)) {
         if (isTypeStart()) {
             TypeNode* type = parseType();
             std::string name = expect(TokenType::ID).lexeme;
-            init.decl = new VarDeclStmt(type->is_const, type, std::move(name));
+            init.decl = new VarDeclStmt(type, std::move(name));
             if (match(TokenType::ASSIGN)) init.decl->init = parseExpr();
         } else {
             init.expr = parseExpr();
@@ -399,9 +370,6 @@ Expr* Parser::parseAssign() {
         case TokenType::MINUS_ASSIGN:    op = AssignOp::MinusAssign; break;
         case TokenType::STAR_ASSIGN:     op = AssignOp::MulAssign;   break;
         case TokenType::SLASH_ASSIGN:    op = AssignOp::DivAssign;   break;
-        case TokenType::PERCENT_ASSIGN:  op = AssignOp::ModAssign;   break;
-        case TokenType::AMP_ASSIGN:      op = AssignOp::AndAssign;   break;
-        case TokenType::PIPE_ASSIGN:     op = AssignOp::OrAssign;    break;
         default: return left;
     }
     consume();
@@ -494,23 +462,10 @@ Expr* Parser::parseUnary() {
 
     if (match(TokenType::MINUS))  { auto* n = new UnaryExpr(UnaryOp::Neg,    parseUnary()); n->line=ln; n->col=cl; return n; }
     if (match(TokenType::NOT))    { auto* n = new UnaryExpr(UnaryOp::Not,    parseUnary()); n->line=ln; n->col=cl; return n; }
-    if (match(TokenType::TILDE))  { auto* n = new UnaryExpr(UnaryOp::BitNot, parseUnary()); n->line=ln; n->col=cl; return n; }
     if (match(TokenType::INC))    { auto* n = new UnaryExpr(UnaryOp::PreInc, parseUnary()); n->line=ln; n->col=cl; return n; }
     if (match(TokenType::DEC))    { auto* n = new UnaryExpr(UnaryOp::PreDec, parseUnary()); n->line=ln; n->col=cl; return n; }
     if (match(TokenType::STAR))   { auto* n = new UnaryExpr(UnaryOp::Deref,  parseUnary()); n->line=ln; n->col=cl; return n; }
     if (match(TokenType::AMP))    { auto* n = new UnaryExpr(UnaryOp::AddrOf, parseUnary()); n->line=ln; n->col=cl; return n; }
-
-    if (match(TokenType::KW_STATIC_CAST)) {
-        expect(TokenType::LT);
-        TypeNode* type = parseType();
-        expect(TokenType::GT);
-        expect(TokenType::LPAREN);
-        Expr* expr = parseExpr();
-        expect(TokenType::RPAREN);
-        auto* n = new CastExpr(type, expr);
-        n->line = ln; n->col = cl;
-        return n;
-    }
 
     if (match(TokenType::KW_NEW)) {
         TypeNode* type = parseType();
@@ -521,10 +476,7 @@ Expr* Parser::parseUnary() {
             n->line = ln; n->col = cl;
             return n;
         }
-        expect(TokenType::LPAREN);
-        auto args = parseArgList();
-        expect(TokenType::RPAREN);
-        auto* n = new NewObjectExpr(type, std::move(args));
+        auto* n = new NewObjectExpr(type);
         n->line = ln; n->col = cl;
         return n;
     }
@@ -614,26 +566,7 @@ Expr* Parser::parsePrimary() {
 LambdaExpr* Parser::parseLambda() {
     int ln = cur().line, cl = cur().col;
     expect(TokenType::LBRACKET);
-    std::vector<CaptureItem> captures;
-
-    if (!check(TokenType::RBRACKET)) {
-        if (check(TokenType::AMP) && peek().type == TokenType::RBRACKET) {
-            consume();
-            captures.push_back({true, ""});
-        } else if (check(TokenType::ASSIGN) && peek().type == TokenType::RBRACKET) {
-            consume();
-            captures.push_back({false, ""});
-        } else {
-            do {
-                CaptureItem item;
-                item.is_ref = match(TokenType::AMP);
-                item.name   = expect(TokenType::ID).lexeme;
-                captures.push_back(item);
-            } while (match(TokenType::COMMA));
-        }
-    }
-
-    expect(TokenType::RBRACKET);
+    expect(TokenType::RBRACKET);   // solo lambdas sin capturas: '[]'
     expect(TokenType::LPAREN);
     auto params = parseParamList();
     expect(TokenType::RPAREN);
@@ -642,7 +575,7 @@ LambdaExpr* Parser::parseLambda() {
     if (match(TokenType::ARROW)) ret_type = parseType();
 
     Block* body = parseBlock();
-    auto* node = new LambdaExpr(std::move(captures), std::move(params), ret_type, body);
+    auto* node = new LambdaExpr(std::move(params), ret_type, body);
     node->line = ln; node->col = cl;
     return node;
 }

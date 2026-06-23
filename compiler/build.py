@@ -20,7 +20,6 @@ SOURCES = [
     "src/main.cpp",
     "src/lexer/token.cpp",
     "src/lexer/lexer.cpp",
-    "src/parser/ast_printer.cpp",
     "src/parser/ast_json_printer.cpp",
     "src/parser/parser.cpp",
     "src/semantic/sem_type.cpp",

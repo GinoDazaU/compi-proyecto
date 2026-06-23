@@ -12,7 +12,6 @@ static const std::unordered_map<std::string, TokenType> KEYWORDS = {
     {"void",        TokenType::KW_VOID},
     {"auto",        TokenType::KW_AUTO},
     {"string",      TokenType::KW_STRING},
-    {"const",       TokenType::KW_CONST},
     {"struct",      TokenType::KW_STRUCT},
     {"template",    TokenType::KW_TEMPLATE},
     {"typename",    TokenType::KW_TYPENAME},
@@ -27,7 +26,6 @@ static const std::unordered_map<std::string, TokenType> KEYWORDS = {
     {"return",      TokenType::KW_RETURN},
     {"true",        TokenType::KW_TRUE},
     {"false",       TokenType::KW_FALSE},
-    {"static_cast", TokenType::KW_STATIC_CAST},
 };
 
 // ─── Constructor ──────────────────────────────────────────────────────────────
@@ -108,15 +106,6 @@ Token Lexer::readNumber() {
             lexeme += advance();
     }
 
-    if (current() == 'e' || current() == 'E') {
-        isFloat = true;
-        lexeme += advance();
-        if (current() == '+' || current() == '-')
-            lexeme += advance();
-        while (std::isdigit(current()))
-            lexeme += advance();
-    }
-
     return Token(isFloat ? TokenType::FLOAT_LIT : TokenType::INT_LIT, lexeme, line, startCol);
 }
 
@@ -174,7 +163,6 @@ Token Lexer::readOperator() {
             if (n == '=') { advance(); return Token(TokenType::SLASH_ASSIGN,   "/=", line, startCol); }
             return Token(TokenType::SLASH,   "/", line, startCol);
         case '%':
-            if (n == '=') { advance(); return Token(TokenType::PERCENT_ASSIGN, "%=", line, startCol); }
             return Token(TokenType::PERCENT, "%", line, startCol);
         case '=':
             if (n == '=') { advance(); return Token(TokenType::EQ,             "==", line, startCol); }
@@ -190,13 +178,10 @@ Token Lexer::readOperator() {
             return Token(TokenType::GT,      ">", line, startCol);
         case '&':
             if (n == '&') { advance(); return Token(TokenType::AND,            "&&", line, startCol); }
-            if (n == '=') { advance(); return Token(TokenType::AMP_ASSIGN,     "&=", line, startCol); }
             return Token(TokenType::AMP,     "&", line, startCol);
         case '|':
             if (n == '|') { advance(); return Token(TokenType::OR,             "||", line, startCol); }
-            if (n == '=') { advance(); return Token(TokenType::PIPE_ASSIGN,    "|=", line, startCol); }
-            return Token(TokenType::PIPE,    "|", line, startCol);
-        case '~': return Token(TokenType::TILDE,     "~",  line, startCol);
+            return Token(TokenType::ERR, "|", line, startCol);
         case '.': return Token(TokenType::DOT,       ".",  line, startCol);
         case '(': return Token(TokenType::LPAREN,    "(",  line, startCol);
         case ')': return Token(TokenType::RPAREN,    ")",  line, startCol);
@@ -206,7 +191,6 @@ Token Lexer::readOperator() {
         case ']': return Token(TokenType::RBRACKET,  "]",  line, startCol);
         case ';': return Token(TokenType::SEMICOLON, ";",  line, startCol);
         case ',': return Token(TokenType::COMMA,     ",",  line, startCol);
-        case ':': return Token(TokenType::COLON,     ":",  line, startCol);
         default:  return Token(TokenType::ERR, std::string(1, c), line, startCol);
     }
 }

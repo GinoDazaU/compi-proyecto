@@ -4,7 +4,6 @@
 #include <vector>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "parser/ast_printer.h"
 #include "parser/ast_json_printer.h"
 #include "semantic/type_checker.h"
 #include "codegen/code_generator.h"
@@ -138,8 +137,10 @@ int main(int argc, char* argv[]) {
             CodeGenerator gen(std::cout);
             gen.gencode(program);
         } else {
-            ASTPrinter printer;
+            // modo --ast: volcado del AST en JSON
+            ASTJsonPrinter printer(std::cout);
             printer.visit(program);
+            std::cout << "\n";
         }
         delete program;
     } catch (const ParseError& e) {

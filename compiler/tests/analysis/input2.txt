@@ -8,8 +8,8 @@ int main() {
     p.x = 1.0;
     p.y = 2.0;
     int arr[3] = {10, 20, 30};
-    for (int i : arr) {
-        println(i);
+    for (int i = 0; i < 3; i = i + 1) {
+        println(arr[i]);
     }
     return 0;
 }
