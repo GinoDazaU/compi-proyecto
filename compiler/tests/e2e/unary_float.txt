@@ -1,0 +1,11 @@
+int main() {
+    float f = 2.5;
+    println(!f);    // 0 (f != 0)
+    float z = 0.0;
+    println(!z);    // 1 (z == 0)
+    ++f;
+    println(f);     // 3.500000
+    --f;
+    println(f);     // 2.500000
+    return 0;
+}

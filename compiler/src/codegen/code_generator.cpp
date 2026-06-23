@@ -23,6 +23,21 @@ static long charToCode(const std::string& lex) {
     return static_cast<unsigned char>(inner[0]);
 }
 
+// ─── Helper local: instrucción set<cc> para cada operador de comparación ──────
+// floatCmp=true usa los códigos sin signo de ucomisd (setb/seta/...); =false los
+// con signo de cmpq (setl/setg/...). Eq/Neq son iguales en ambos.
+static const char* setccFor(BinaryOp op, bool floatCmp) {
+    switch (op) {
+        case BinaryOp::Lt:  return floatCmp ? "setb"  : "setl";
+        case BinaryOp::Leq: return floatCmp ? "setbe" : "setle";
+        case BinaryOp::Gt:  return floatCmp ? "seta"  : "setg";
+        case BinaryOp::Geq: return floatCmp ? "setae" : "setge";
+        case BinaryOp::Eq:  return "sete";
+        case BinaryOp::Neq: return "setne";
+        default:            return "sete";
+    }
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Construcción y entrada principal
 // ═════════════════════════════════════════════════════════════════════════════
@@ -364,6 +379,48 @@ void CodeGenerator::visit(AssignExpr* node) {
 }
 
 void CodeGenerator::visit(BinaryExpr* node) {
+    // Operadores lógicos: evaluación con cortocircuito, igual que C++ real.
+    // Se manejan aparte (antes de evaluar ambos lados) porque el lado derecho
+    // NO debe evaluarse si el izquierdo ya determina el resultado. Esto importa
+    // para idiomas con punteros como `p != nullptr && p->x`.
+    if (node->op == BinaryOp::And || node->op == BinaryOp::Or) {
+        bool isAnd = (node->op == BinaryOp::And);
+        int  n     = nextLabel();
+        std::string shortLabel = "__logic_short_" + std::to_string(n);
+        std::string endLabel   = "__logic_end_"   + std::to_string(n);
+
+        // Normaliza el valor recién evaluado (en %rax, o %xmm0 si es float) a un
+        // booleano 0/1 en %rax. Así `2 && 1` da 1 (y no 0, como con un AND bit a bit).
+        auto toBoolInRax = [&](const SemType& t) {
+            if (t.base == "float" && !t.hasPointer()) {
+                out_ << "    xorpd %xmm1, %xmm1\n";
+                out_ << "    ucomisd %xmm1, %xmm0\n";
+            } else {
+                out_ << "    cmpq $0, %rax\n";
+            }
+            out_ << "    movl $0, %eax\n";
+            out_ << "    setne %al\n";
+            out_ << "    movzbq %al, %rax\n";
+        };
+
+        node->left->accept(this);
+        toBoolInRax(cur_type_);            // %rax = (left != 0)
+        out_ << "    cmpq $0, %rax\n";
+        if (isAnd) out_ << "    je "  << shortLabel << "\n";  // &&: left falso → corto en 0
+        else       out_ << "    jne " << shortLabel << "\n";  // ||: left verdad → corto en 1
+
+        node->right->accept(this);         // solo se evalúa si no hubo cortocircuito
+        toBoolInRax(cur_type_);            // %rax = (right != 0) → resultado final
+        out_ << "    jmp " << endLabel << "\n";
+
+        out_ << shortLabel << ":\n";
+        out_ << "    movq $" << (isAnd ? 0 : 1) << ", %rax\n";
+
+        out_ << endLabel << ":\n";
+        cur_type_ = SemType{"bool"};
+        return;
+    }
+
     // Evaluamos al left primero en todos los casos
     node->left->accept(this);
     SemType leftType = cur_type_;
@@ -412,17 +469,7 @@ void CodeGenerator::visit(BinaryExpr* node) {
             case BinaryOp::Eq:  case BinaryOp::Neq: {
                 out_ << "    ucomisd %xmm1, %xmm0\n";
                 out_ << "    movl $0, %eax\n";
-                const char* cc = "sete";
-                switch (node->op) {
-                    case BinaryOp::Lt:  cc = "setb";  break;
-                    case BinaryOp::Leq: cc = "setbe"; break;
-                    case BinaryOp::Gt:  cc = "seta";  break;
-                    case BinaryOp::Geq: cc = "setae"; break;
-                    case BinaryOp::Eq:  cc = "sete";  break;
-                    case BinaryOp::Neq: cc = "setne"; break;
-                    default: break;
-                }
-                out_ << "    " << cc << " %al\n";
+                out_ << "    " << setccFor(node->op, true) << " %al\n";
                 out_ << "    movzbq %al, %rax\n";
                 cur_type_ = SemType{"bool"};
                 return;
@@ -459,37 +506,37 @@ void CodeGenerator::visit(BinaryExpr* node) {
         case BinaryOp::Eq:  case BinaryOp::Neq: {
             out_ << "    cmpq %rcx, %rax\n";
             out_ << "    movl $0, %eax\n";
-            const char* cc = "sete";
-            switch (node->op) {
-                case BinaryOp::Lt:  cc = "setl";  break;
-                case BinaryOp::Leq: cc = "setle"; break;
-                case BinaryOp::Gt:  cc = "setg";  break;
-                case BinaryOp::Geq: cc = "setge"; break;
-                case BinaryOp::Eq:  cc = "sete";  break;
-                case BinaryOp::Neq: cc = "setne"; break;
-                default: break;
-            }
-            out_ << "    " << cc << " %al\n";
+            out_ << "    " << setccFor(node->op, false) << " %al\n";
             out_ << "    movzbq %al, %rax\n";
             cur_type_ = SemType{"bool"};
             return;
         }
 
+        // && y || se resuelven arriba con cortocircuito; inalcanzables aquí.
         case BinaryOp::And:
-            out_ << "    and %cl, %al\n";
-            out_ << "    movzbq %al, %rax\n";
-            cur_type_ = SemType{"bool"};
-            return;
         case BinaryOp::Or:
-            out_ << "    or %cl, %al\n";
-            out_ << "    movzbq %al, %rax\n";
-            cur_type_ = SemType{"bool"};
-            return;
+            break;
     }
+    // TODO: promoción de tipos (p.ej. char + int debería dar int, no char).
     cur_type_ = leftType;
 }
 
 void CodeGenerator::visit(UnaryExpr* node) {
+    // ++/-- sobre una variable simple: carga, ±1 (entero o float), guarda.
+    auto emitIncDec = [&](IdExpr* id, bool inc) {
+        VarEntry* e = env_.lookup(id->name);
+        if (!e) return;
+        emitLoad(e->type, e->offset);
+        if (e->type.base == "float" && !e->type.hasPointer()) {
+            out_ << "    movsd " << floatLabel(1.0) << "(%rip), %xmm1\n";
+            out_ << (inc ? "    addsd %xmm1, %xmm0\n" : "    subsd %xmm1, %xmm0\n");
+        } else {
+            out_ << (inc ? "    addq $1, %rax\n" : "    subq $1, %rax\n");
+        }
+        emitStore(e->type, e->offset);
+        cur_type_ = e->type;
+    };
+
     switch (node->op) {
         case UnaryOp::Neg: {
             node->expr->accept(this);
@@ -504,35 +551,27 @@ void CodeGenerator::visit(UnaryExpr* node) {
         }
         case UnaryOp::Not: {
             node->expr->accept(this);
-            out_ << "    cmpq $0, %rax\n";
+            // !x = (x == 0). Para float se compara contra 0.0 con ucomisd.
+            if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+                out_ << "    xorpd %xmm1, %xmm1\n";
+                out_ << "    ucomisd %xmm1, %xmm0\n";
+            } else {
+                out_ << "    cmpq $0, %rax\n";
+            }
             out_ << "    movl $0, %eax\n";
             out_ << "    sete %al\n";
             out_ << "    movzbq %al, %rax\n";
             cur_type_ = SemType{"bool"};
             break;
         }
-        case UnaryOp::PreInc: {
-            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) {
-                VarEntry* e = env_.lookup(id->name);
-                if (!e) return;
-                emitLoad(e->type, e->offset);
-                out_ << "    addq $1, %rax\n";
-                emitStore(e->type, e->offset);
-                cur_type_ = e->type;
-            }
+        case UnaryOp::PreInc:
+            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) emitIncDec(id, true);
+            // TODO: ++/-- sobre otros lvalues (arr[i], s.x, *p)
             break;
-        }
-        case UnaryOp::PreDec: {
-            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) {
-                VarEntry* e = env_.lookup(id->name);
-                if (!e) return;
-                emitLoad(e->type, e->offset);
-                out_ << "    subq $1, %rax\n";
-                emitStore(e->type, e->offset);
-                cur_type_ = e->type;
-            }
+        case UnaryOp::PreDec:
+            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) emitIncDec(id, false);
+            // TODO: ++/-- sobre otros lvalues (arr[i], s.x, *p)
             break;
-        }
         case UnaryOp::BitNot: {
             node->expr->accept(this);
             out_ << "    notq %rax\n";

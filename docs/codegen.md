@@ -114,14 +114,27 @@ movzbq %al, %rax     ; zero-extend a 64 bits
 
 ### Lógicos (&&, ||)
 
-```asm
-; && : and bit a bit de los bytes bajos
-and %cl, %al
-movzbq %al, %rax
+`&&` y `||` se generan con cortocircuito: se evalúa el izquierdo, se normaliza a
+`0/1`, y si ya determina el resultado se salta sin evaluar el derecho. Cada
+operando se normaliza con `cmpq $0` + `setne` (o `ucomisd` contra 0 si es
+`float`).
 
-; || : or bit a bit
-or %cl, %al
+```asm
+; a && b
+<eval a> → %rax
+cmpq $0, %rax
+je   __logic_short_N      ; a falso → resultado 0, no se evalúa b
+<eval b> → %rax
+cmpq $0, %rax
+movl $0, %eax
+setne %al                 ; resultado = (b != 0)
 movzbq %al, %rax
+jmp  __logic_end_N
+__logic_short_N:
+movq $0, %rax
+__logic_end_N:
+
+; a || b : idéntico pero `jne __logic_short_N` y el corto carga $1
 ```
 
 ### Expresiones binarias float

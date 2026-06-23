@@ -1,0 +1,26 @@
+int main() {
+    // Operandos que no son 0/1: && y || deben dar 1, no un AND/OR bit a bit
+    println(2 && 1);
+    println(2 || 0);
+    println(6 && 3);
+    println(0 && 5);
+    println(0 || 0);
+
+    // Cortocircuito: el lado derecho NO debe evaluarse
+    int y = 0;
+    int a = 0;
+    a && (++y);     // a es falso -> ++y no se ejecuta
+    println(y);
+
+    int z = 0;
+    int b = 1;
+    b || (++z);     // b es verdadero -> ++z no se ejecuta
+    println(z);
+
+    // Cuando el lado derecho SI se evalua
+    int w = 0;
+    int c = 1;
+    c && (++w);     // c es verdadero -> ++w se ejecuta
+    println(w);
+    return 0;
+}
