@@ -29,7 +29,7 @@ SemType SemType::promote(const SemType& a, const SemType& b) {
     int ra = numericRank(a.base);
     int rb = numericRank(b.base);
     if (ra < 0 || rb < 0)
-        throw std::runtime_error("promote: tipos no numéricos");
+        throw std::runtime_error("promote: non-numeric types");
     return ra >= rb ? a : b;
 }
 
