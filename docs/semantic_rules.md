@@ -14,7 +14,7 @@ Notación: **error** = el checker lanza `SemanticError`. **warn** = advertencia 
 - `auto` requiere inicializador para inferir el tipo; sin inicializador es **error**.
 
 ### 1.2 Compatibilidad implícita (coerción permitida)
-Estas conversiones se aceptan sin `static_cast`:
+Estas conversiones se aceptan de forma implícita:
 
 | De       | A                   |
 |----------|---------------------|
@@ -25,10 +25,6 @@ Estas conversiones se aceptan sin `static_cast`:
 
 No se permite conversión implícita entre `string`, structs, punteros y tipos numéricos.
 
-### 1.3 `static_cast`
-- Solo es válido entre tipos numéricos: `int`, `float`, `char`, `bool`.
-- Castear structs, `void` o punteros es **error**.
-
 ---
 
 ## 2. Declaraciones Globales
@@ -36,7 +32,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 ### 2.1 Variables globales (`GlobalVarDecl`)
 - No puede redeclararse el mismo nombre en el scope global → **error**.
 - Tipo `void` no permitido → **error**.
-- `const` sin inicializador → **error**.
 - Si tiene inicializador, el tipo del inicializador debe ser compatible con el tipo declarado → **error** si no lo es.
 
 ### 2.2 Structs (`StructDecl`)
@@ -53,7 +48,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Si el retorno es `void`: cualquier `return expr` dentro es **error**.
 - Si el retorno no es `void`: debe existir al menos un `return expr` en el cuerpo → **error** si no hay ninguno.
 - El tipo del valor retornado debe ser compatible con el tipo de retorno declarado → **error** si no.
-- Parámetro con valor default: el tipo del default debe ser compatible con el tipo del parámetro → **error**.
 
 ### 2.4 Funciones template (`TemplateFuncDecl`)
 - El nombre del parámetro de tipo (ej. `T`) entra al scope de la función como tipo válido.
@@ -68,7 +62,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - No puede redeclararse el mismo nombre en el **mismo** scope (bloque actual) → **error**.  
   Shadowing de scopes exteriores **se permite** (igual que C++).
 - Tipo `void` → **error**.
-- `const` sin inicializador → **error**.
 - Si tiene inicializador, el tipo debe ser compatible → **error**.
 - **Array estático**: cada dimensión debe ser de tipo entero (`int`) → **error**.
 - Si tiene `init_list`, cada elemento debe ser compatible con el tipo base del array → **error**.
@@ -85,21 +78,15 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - La condición, si existe, debe ser `bool` o numérico → **error**.
 - El update puede ser cualquier tipo de expresión.
 
-### 3.5 `for` de rango (`ForRangeStmt`)
-- El iterable debe ser de tipo array estático, puntero, o `string` → **error** para otros tipos.
-- El tipo de la variable de iteración debe ser compatible con el tipo de elemento del iterable → **error**.
-- Si usa `auto`, se infiere el tipo del elemento.
-- La variable de iteración existe solo dentro del bloque del `for`.
-
-### 3.6 `return`
+### 3.5 `return`
 - Debe estar dentro de una función o lambda → **error** si está en el scope global.
 - Si la función retorna `void`: `return expr` es **error**; `return;` es válido.
 - Si la función retorna no-`void`: `return;` es **error**; el tipo de la expresión debe ser compatible → **error**.
 
-### 3.7 `break` / `continue`
-- Solo válidos dentro de `while`, `for` o `for`-range → **error** en cualquier otro contexto.
+### 3.6 `break` / `continue`
+- Solo válidos dentro de `while` o `for` → **error** en cualquier otro contexto.
 
-### 3.8 `delete`
+### 3.7 `delete`
 - La expresión debe ser de tipo puntero → **error** si no lo es.
 - `delete[]` debe usarse para punteros obtenidos con `new Type[n]`.
 
@@ -138,23 +125,19 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 ### 4.4 Operadores unarios (`UnaryExpr`)
 - `-` (negación): operando numérico → resultado mismo tipo.
 - `!` (not lógico): operando `bool` o numérico → resultado `bool`.
-- `~` (bitwise not): operando `int` → resultado mismo tipo.
 - `*` (deref): operando debe ser puntero (`T*`) → resultado `T` → **error** si no es puntero.
 - `&` (address-of): operando debe ser lvalue → resultado `T*`.
 - `++` / `--` prefijos: operando debe ser lvalue de tipo numérico o puntero → resultado mismo tipo.
 
 ### 4.5 Asignación (`AssignExpr`)
 - El lado izquierdo debe ser un **lvalue**: `IdExpr`, `IndexExpr`, `MemberExpr`, o `UnaryExpr` con `Deref` → **error** para literales y otros.
-- El lado izquierdo no puede ser `const` → **error**.
 - El tipo del lado derecho debe ser compatible con el izquierdo → **error**.
 - `+=`, `-=`, `*=`, `/=`: lvalue debe ser numérico → **error**.
-- `%=`: lvalue debe ser `int` → **error**.
-- `&=`, `|=`: lvalue debe ser `int` (bitwise) → **error**.
 - Resultado de la expresión: tipo del lvalue.
 
 ### 4.6 Llamadas a función (`CallExpr`)
 - El callee debe ser un identificador de función declarada, una lambda, o un built-in → **error** si no existe.
-- El número de argumentos debe coincidir con los parámetros (considerando defaults) → **error**.
+- El número de argumentos debe coincidir con el número de parámetros → **error**.
 - El tipo de cada argumento debe ser compatible con el tipo del parámetro correspondiente → **error**.
 - Pasar por referencia (`&`): se requiere lvalue como argumento → **error** con literales.
 - Resultado: tipo de retorno de la función.
@@ -181,11 +164,11 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 ### 4.11 `new`
 - `new Type[n]`: tipo no puede ser `void` → **error**; `n` debe ser entero → **error**. Resultado: `Type*`.
-- `new Type(args)`: el tipo debe ser un struct declarado → **error**. Resultado: `Type*`.
+- `new Type`: el tipo debe ser un struct declarado → **error**. Reserva un objeto con sus campos en cero. Resultado: `Type*`.
 
 ### 4.12 Lambda (`LambdaExpr`)
-- Capturas específicas (`[x]`, `[&x]`): cada variable capturada debe existir en el scope exterior → **error**.
-- Capturas `[=]` o `[&]`: válidas siempre.
+- Solo se permiten lambdas **sin capturas** (`[]`). Una lista de captura no vacía → **error**.
+- Sin capturas, el cuerpo solo puede usar sus propios parámetros, variables globales y funciones; referenciar una variable local del scope exterior → **error**.
 - Las reglas del cuerpo son iguales a las de una función normal.
 - Si hay tipo de retorno explícito (`-> Type`), se verifican los `return` igual que en una función.
 - Si no hay tipo de retorno explícito, se infiere del primer `return` encontrado.
@@ -197,7 +180,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Scopes: global → función/lambda → bloque → bloques anidados.
 - Una variable no puede usarse antes de su declaración dentro del mismo scope → **error**.
 - Funciones y structs son visibles en todo el programa (recolectados en primera pasada).
-- Variables declaradas en el `for`-init o `for`-range existen solo dentro del `for`.
+- Variables declaradas en el `for`-init existen solo dentro del `for`.
 - Los parámetros de una función existen solo dentro de su cuerpo.
 
 ---

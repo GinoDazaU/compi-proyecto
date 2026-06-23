@@ -75,7 +75,7 @@ Durante el recorrido el checker guarda contexto en structs auxiliares y banderas
 
 | Campo | Para qué |
 |---|---|
-| `vars_` (`SymbolTable<VarInfo>`) | variables visibles y su `const` |
+| `vars_` (`SymbolTable<VarInfo>`) | variables visibles |
 | `funcs_` (`map → FuncInfo`) | firmas de funciones y built-ins |
 | `structs_` (`map → StructInfo`) | miembros de cada struct |
 | `ret_type_` | tipo de retorno de la función actual (para validar `return`) |

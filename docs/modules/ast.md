@@ -41,11 +41,10 @@ public:
 
 ### 2. Representación de Tipos (`TypeNode`)
 
-C++ permite tipos muy complejos (ej. `const int*&` o `vector<int>`). Para modelar esto, `ast.h` define `TypeNode`:
+C++ permite tipos muy complejos (ej. `int*&` o `vector<int>`). Para modelar esto, `ast.h` define `TypeNode`:
 
 ```cpp
 struct TypeNode {
-    bool                is_const = false;  // ¿Tiene const?
     bool                is_auto  = false;  // ¿Usa inferencia de tipo auto?
     std::string         base;              // Tipo base: "int", "float", "MiStruct"
     TypeNode*           template_arg = nullptr; // Para tipos genéricos como vector<T>
@@ -53,7 +52,7 @@ struct TypeNode {
 };
 ```
 * `PtrMod` es un enum con dos opciones: `Pointer` (`*`) o `Reference` (`&`).
-* Si el tipo es `const int*&`, el vector `mods` guardará `[PtrMod::Pointer, PtrMod::Reference]`.
+* Si el tipo es `int*&`, el vector `mods` guardará `[PtrMod::Pointer, PtrMod::Reference]`.
 
 ---
 
@@ -99,11 +98,9 @@ public:
 };
 ```
 
-#### B. Bucles `For` clásicos y de Rango (`ForStmt` / `ForRangeStmt`)
-El AST soporta tanto el bucle clásico:
+#### B. Bucles `For` clásicos (`ForStmt`)
+El AST soporta el bucle clásico:
 * `for (int i = 0; i < 10; i++)` -> mapeado por `ForStmt`
-Como el bucle de rango moderno de C++:
-* `for (const auto x : mi_lista)` -> mapeado por `ForRangeStmt`
 
 ---
 
@@ -115,7 +112,7 @@ Por ejemplo, el destructor de `FuncDecl` (declaración de función):
 ```cpp
 ~FuncDecl() override {
     delete return_type;
-    for (auto& p : params) { delete p.type; delete p.default_val; }
+    for (auto& p : params) { delete p.type; }
     delete body;
 }
 ```

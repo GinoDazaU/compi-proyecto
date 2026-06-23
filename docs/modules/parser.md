@@ -44,15 +44,9 @@ Para consumir tokens y avanzar de manera segura, el parser define varios método
 Debido a que C++ es un lenguaje con ambigüedades sintácticas notables, el parser requiere a veces mirar múltiples tokens hacia adelante para decidir qué regla gramatical aplicar:
 
 #### A. Detección de Tipos (`isTypeStart`)
-Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `const`, `auto`, `int`, o un identificador de estructura seguido de un puntero `*`, referencia `&` o parámetros de template `<...>`):
+Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `auto`, `int`, o un identificador de estructura seguido de un puntero `*`, referencia `&` o parámetros de template `<...>`):
 ```cpp
 bool Parser::isTypeStart();
-```
-
-#### B. Detección de Range-based For (`isRangeFor`)
-Al parsear un bucle `for`, el parser necesita distinguir si se trata de un `for` clásico (`for(int i = 0; i < 10; ++i)`) o un `for` de rango (`for(const auto& x : lista)`). El parser busca secuencialmente la presencia de un dos puntos (`:`) antes de encontrarse con un punto y coma (`;`):
-```cpp
-bool Parser::isRangeFor();
 ```
 
 ---
@@ -72,7 +66,7 @@ parseExpr()
                      └── parseRelat() (<, >, <=, >=)
                           └── parseAdd() (+, -)
                                └── parseMul() (*, /, %)
-                                    └── parseUnary() (-, !, ~, *, &, ++, --, static_cast, new)
+                                    └── parseUnary() (-, !, *, &, ++, --, new)
                                          └── parsePostfix() ([], (), ., ->, ++/-- postfix)
                                               └── parsePrimary() (Mayor precedencia: literales, id, parentizados, lambdas)
 ```
@@ -105,10 +99,10 @@ Expr* Parser::parseAssign() {
 
 ---
 
-### 5. Lambdas y Clausuras (`parseLambda`)
+### 5. Lambdas (`parseLambda`)
 
-El subconjunto de C++ implementado incluye soporte para funciones anónimas (lambdas). El parser procesa su estructura completa:
-* **Lista de capturas** (`[ & ]`, `[ = ]` o variables específicas `[x, &y]`).
+El subconjunto de C++ implementado incluye soporte para funciones anónimas (lambdas) **sin capturas**. El parser procesa su estructura:
+* **Corchetes vacíos** `[]` (sin lista de capturas).
 * **Lista de parámetros** `(int a, float b)`.
 * **Tipo de retorno opcional** `-> float`.
 * **Cuerpo** entre llaves `{ ... }`.
@@ -116,15 +110,13 @@ El subconjunto de C++ implementado incluye soporte para funciones anónimas (lam
 ```cpp
 LambdaExpr* Parser::parseLambda() {
     expect(TokenType::LBRACKET);
-    std::vector<CaptureItem> captures;
-    // ... Lectura de capturas ...
-    expect(TokenType::RBRACKET);
+    expect(TokenType::RBRACKET);          // sin capturas: '[]'
     expect(TokenType::LPAREN);
     auto params = parseParamList();
     expect(TokenType::RPAREN);
-    // ...
+    // ... tipo de retorno opcional '-> Type' ...
     Block* body = parseBlock();
-    return new LambdaExpr(std::move(captures), std::move(params), ret_type, body);
+    return new LambdaExpr(std::move(params), ret_type, body);
 }
 ```
 

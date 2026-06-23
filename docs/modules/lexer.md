@@ -76,11 +76,10 @@ Token Lexer::readIdentifierOrKeyword() {
 `keywordType` busca en el mapa estático `KEYWORDS`. Si lo encuentra, devuelve su `TokenType` específico (ej. `KW_IF`). Si no, devuelve `TokenType::ID`.
 
 #### B. Números (`readNumber`)
-Soporta números enteros (`42`) y decimales/punto flotante (`3.14`), así como notación científica (`1e-5`).
+Soporta números enteros (`42`) y decimales/punto flotante (`3.14`).
 1. Acumula todos los dígitos iniciales.
 2. Si encuentra un punto `.` seguido de otro dígito, sabe que es un flotante (`isFloat = true`) y acumula la parte decimal.
-3. Si encuentra una `e` o `E`, procesa el exponente (incluyendo un opcional `+` o `-`).
-4. Retorna `FLOAT_LIT` o `INT_LIT` según el flag `isFloat`.
+3. Retorna `FLOAT_LIT` o `INT_LIT` según el flag `isFloat`.
 
 #### C. Literales de Caracter (`readCharLiteral`)
 Procesa cosas como `'a'` o secuencias de escape como `'\n'`.

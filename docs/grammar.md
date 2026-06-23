@@ -20,9 +20,9 @@ TopDecl     ::= StructDecl
 ## Tipos
 
 ```
-Type        ::= [const] BaseType PtrMod*
-              | [const] id PtrMod*
-              | [const] id < Type > PtrMod*    -- template instanciado
+Type        ::= BaseType PtrMod*
+              | id PtrMod*
+              | id < Type > PtrMod*    -- template instanciado
               | auto
 
 BaseType    ::= int | float | bool | char | void | string
@@ -35,7 +35,7 @@ PtrMod      ::= * | &
 ## Declaraciones globales
 
 ```
-GlobalVarDecl ::= [const] Type id [= Expr] ;
+GlobalVarDecl ::= Type id [= Expr] ;
 
 StructDecl    ::= struct id { MemberDecl* } ;
 MemberDecl    ::= Type id ;
@@ -45,7 +45,7 @@ TemplateFuncDecl ::= template < typename id > FuncDecl
 FuncDecl      ::= Type id ( ParamList ) Block
 
 ParamList     ::= ε | Param (, Param)*
-Param         ::= [const] Type [&] id [= Expr]
+Param         ::= Type [&] id
 ```
 
 ---
@@ -66,8 +66,8 @@ Stmt        ::= Block
               | ContinueStmt
               | DeleteStmt
 
-VarDeclStmt ::= [const] Type id [= Expr] ;
-              | [const] Type id [ Expr ] ([ Expr ])* [= { InitList }] ;     -- array estático
+VarDeclStmt ::= Type id [= Expr] ;
+              | Type id [ Expr ] ([ Expr ])* [= { InitList }] ;     -- array estático
 
 ExprStmt    ::= Expr ;
 
@@ -76,9 +76,8 @@ IfStmt      ::= if ( Expr ) Block [else (Block | IfStmt)]
 WhileStmt   ::= while ( Expr ) Block
 
 ForStmt     ::= for ( ForInit ; Expr ; Expr ) Block         -- for clásico
-              | for ( [const] Type id : Expr ) Block        -- range-based for
 
-ForInit     ::= [const] Type id [= Expr]
+ForInit     ::= Type id [= Expr]
               | Expr
               | ε
 
@@ -96,7 +95,7 @@ DeleteStmt  ::= delete [[ ]] Expr ;
 Expr    ::= Assign
 
 Assign  ::= LogicOr [AssignOp Assign]
-AssignOp ::= = | += | -= | *= | /= | %= | &= | |=
+AssignOp ::= = | += | -= | *= | /=
 
 LogicOr  ::= LogicAnd (|| LogicAnd)*
 LogicAnd ::= Equality (&& Equality)*
@@ -105,10 +104,9 @@ Relat    ::= Add ((< | > | <= | >=) Add)*
 Add      ::= Mul ((+ | -) Mul)*
 Mul      ::= Unary ((* | / | %) Unary)*
 
-Unary   ::= (- | ! | ~ | * | & | ++ | --) Unary
-          | static_cast < Type > ( Expr )
+Unary   ::= (- | ! | * | & | ++ | --) Unary
           | new Type [ Expr ]               -- array dinámico
-          | new Type ( ArgList )            -- objeto dinámico
+          | new Type                        -- objeto dinámico (campos en cero)
           | Postfix
 
 Postfix ::= Primary (PostfixOp)*
@@ -136,15 +134,10 @@ ArgList  ::= ε | Expr (, Expr)*
 
 ## Lambdas
 
+Solo se soportan lambdas **sin capturas** (corchetes vacíos `[]`).
+
 ```
-Lambda       ::= [ CaptureList ] ( ParamList ) [-> Type] Block
-
-CaptureList  ::= ε
-               | &                        -- captura todo por referencia
-               | =                        -- captura todo por valor
-               | CaptureItem (, CaptureItem)*
-
-CaptureItem  ::= [&] id
+Lambda       ::= [ ] ( ParamList ) [-> Type] Block
 ```
 
 ---

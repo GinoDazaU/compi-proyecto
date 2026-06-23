@@ -76,10 +76,10 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 ### Básico
 - Tipos: `int`, `float`, `bool`, `char`
 - Funciones incorporadas de salida: `print`, `println`
-- Variables con scope, `const`
+- Variables con scope
 - Funciones con parámetros y valor de retorno
 - Control: `if/else`, `while`, `for`, `break`, `continue`, `return`
-- Operadores aritméticos, lógicos, relacionales, de asignación (`+=`, `-=`, etc.)
+- Operadores aritméticos, lógicos, relacionales, de asignación (`=`, `+=`, `-=`, `*=`, `/=`)
 
 ### Intermedio
 - `struct` con atributos y paso por referencia (`&`)
@@ -91,7 +91,7 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 ### Avanzado
 - Templates simples (`template<typename T>`)
 - `auto` (inferencia de tipos)
-- Inferencia, conversión y promoción automática de tipos (`static_cast`, conversiones implícitas `int`→`float`, etc.)
+- Inferencia, conversión y promoción automática de tipos (conversiones implícitas `int`→`float`, etc.)
 - Lambdas básicas
 - Arrays multidimensionales
 
