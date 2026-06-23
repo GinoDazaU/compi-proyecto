@@ -1,0 +1,8 @@
+int main() {
+    println(1);
+    for (int i = 5; i < 3; i = i + 1) {
+        println(999);
+    }
+    println(2);
+    return 0;
+}

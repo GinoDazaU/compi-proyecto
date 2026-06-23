@@ -323,7 +323,33 @@ void CodeGenerator::visit(WhileStmt* node) {
 
     loop_labels_.pop();
 }
-void CodeGenerator::visit(ForStmt* /*node*/)      { /* TODO */ }
+void CodeGenerator::visit(ForStmt* node) {
+    int n = nextLabel();
+    std::string condLabel = "__for_"    + std::to_string(n);
+    std::string updLabel  = "__forupd_" + std::to_string(n);
+    std::string endLabel  = "__endfor_" + std::to_string(n);
+
+    env_.enterScope();  // la variable del init vive solo dentro del for
+
+    if (node->init.decl)      node->init.decl->accept(this);
+    else if (node->init.expr) node->init.expr->accept(this);
+
+    out_ << condLabel << ":\n";
+    if (node->condition)  // sin condición → loop infinito (sale por break/return)
+        emitCondJumpIfFalse(node->condition, endLabel);
+
+    // continue salta al update (no se lo salta); break al final
+    loop_labels_.push({updLabel, endLabel});
+    node->body->accept(this);
+    loop_labels_.pop();
+
+    out_ << updLabel << ":\n";
+    if (node->update) node->update->accept(this);
+    out_ << "    jmp " << condLabel << "\n";
+    out_ << endLabel << ":\n";
+
+    env_.exitScope();
+}
 void CodeGenerator::visit(ForRangeStmt* /*node*/) { /* TODO */ }
 
 void CodeGenerator::visit(BreakStmt* /*node*/) {
