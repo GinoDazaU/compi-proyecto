@@ -29,18 +29,13 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 ## 2. Declaraciones Globales
 
-### 2.1 Variables globales (`GlobalVarDecl`)
-- No puede redeclararse el mismo nombre en el scope global → **error**.
-- Tipo `void` no permitido → **error**.
-- Si tiene inicializador, el tipo del inicializador debe ser compatible con el tipo declarado → **error** si no lo es.
-
-### 2.2 Structs (`StructDecl`)
+### 2.1 Structs (`StructDecl`)
 - El nombre del struct no puede repetirse globalmente → **error**.
 - Ningún miembro puede tener tipo `void` o `auto` → **error**.
 - Dos miembros con el mismo nombre → **error**.
 - El tipo de un miembro puede ser otro struct solo si ese struct ya fue declarado (primera pasada).
 
-### 2.3 Funciones (`FuncDecl`)
+### 2.2 Funciones (`FuncDecl`)
 - El nombre de función no puede repetirse en el scope global → **error** (no hay sobrecarga).
 - El tipo de retorno debe ser un tipo válido.
 - Los nombres de los parámetros deben ser únicos dentro de la lista → **error**.
@@ -49,7 +44,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Si el retorno no es `void`: debe existir al menos un `return expr` en el cuerpo → **error** si no hay ninguno.
 - El tipo del valor retornado debe ser compatible con el tipo de retorno declarado → **error** si no.
 
-### 2.4 Funciones template (`TemplateFuncDecl`)
+### 2.3 Funciones template (`TemplateFuncDecl`)
 - El nombre del parámetro de tipo (ej. `T`) entra al scope de la función como tipo válido.
 - Se aplican las mismas reglas que `FuncDecl`.
 - Usar `T` como tipo en cualquier expresión o declaración dentro es válido.
@@ -105,7 +100,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 
 ### 4.2 Identificador (`IdExpr`)
 - Debe estar declarado en algún scope visible → **error** si no existe.
-- El tipo es el declarado en su `VarDeclStmt` / `Param` / `GlobalVarDecl`.
+- El tipo es el declarado en su `VarDeclStmt` / `Param`.
 
 ### 4.3 Operadores binarios (`BinaryExpr`)
 
@@ -169,7 +164,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 ### 4.12 Lambda (`LambdaExpr`)
 - El tipo de la lambda es su firma (`params -> retorno`); puede guardarse en `auto` y llamarse (ver 4.6).
 - Solo se permiten lambdas **sin capturas** (`[]`). Una lista de captura no vacía → **error**.
-- Sin capturas, el cuerpo solo puede usar sus propios parámetros, variables globales y funciones; referenciar una variable local del scope exterior → **error**.
+- Sin capturas, el cuerpo solo puede usar sus propios parámetros y funciones; referenciar una variable local del scope exterior → **error**.
 - Las reglas del cuerpo son iguales a las de una función normal.
 - Si hay tipo de retorno explícito (`-> Type`), se verifican los `return` igual que en una función.
 - Si no hay tipo de retorno explícito, se infiere del primer `return` encontrado.
@@ -191,7 +186,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 Antes del chequeo completo, se recorren todas las declaraciones de nivel superior para registrar:
 - Todos los structs (nombre + miembros).
 - Todas las funciones (nombre + firma completa).
-- Todas las variables globales (nombre + tipo).
 
 Esto permite que funciones se llamen entre sí sin importar el orden de declaración.
 

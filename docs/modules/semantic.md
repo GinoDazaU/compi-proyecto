@@ -56,7 +56,7 @@ Recorre solo las declaraciones de nivel superior y registra sus **firmas**, sin 
 
 Se hace en dos sub-pasadas para resolver referencias cruzadas:
 1. Registrar los **nombres** de todos los structs (vacíos).
-2. Llenar miembros de structs, firmas de funciones (`FuncInfo`) y variables globales.
+2. Llenar miembros de structs y firmas de funciones (`FuncInfo`).
 
 ### Segunda pasada (los `visit`)
 

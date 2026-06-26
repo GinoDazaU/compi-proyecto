@@ -1,6 +1,5 @@
 // Error semántico: void como tipo de variable
-void x;
-
 int main() {
+    void x;
     return 0;
 }

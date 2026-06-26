@@ -13,7 +13,6 @@ Para poder organizar el código, todos los nodos del árbol se dividen en tres g
 1. **TopDecl (Declaraciones Globales)**: Representa cualquier elemento que se declara al nivel más alto del archivo (fuera de las funciones), como:
    * Funciones (`FuncDecl`)
    * Estructuras (`StructDecl`)
-   * Variables globales (`GlobalVarDecl`)
    * Plantillas (`TemplateFuncDecl`)
 
 2. **Stmt (Sentencias/Instrucciones)**: Representa acciones que ejecutan lógica pero no producen un valor de retorno directo en sí mismas:
@@ -33,7 +32,7 @@ El nodo raíz de todo el archivo de código es la clase **Program**, que simplem
 ```cpp
 class Program {
 public:
-    std::vector<TopDecl*> decls; // Lista de funciones, structs, variables globales...
+    std::vector<TopDecl*> decls; // Lista de funciones, structs, plantillas...
 };
 ```
 

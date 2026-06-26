@@ -90,7 +90,7 @@ void TypeChecker::firstPass(Program* program) {
         if (auto* s = dynamic_cast<StructDecl*>(decl))
             structs_[s->name] = {};
 
-    // Sub-pasada 2: llenar miembros de structs, funciones y variables globales
+    // Sub-pasada 2: llenar miembros de structs y firmas de funciones
     for (auto* decl : program->decls) {
         if (auto* s = dynamic_cast<StructDecl*>(decl)) {
             if (structs_.count(s->name) && !structs_[s->name].members.empty())
@@ -135,13 +135,6 @@ void TypeChecker::firstPass(Program* program) {
                 info.params.push_back({pt, p.is_ref});
             }
             funcs_[f->name] = info;
-
-        } else if (auto* g = dynamic_cast<GlobalVarDecl*>(decl)) {
-            SemType gt = resolveType(g->type, g->line, g->col);
-            if (gt.isVoid())
-                semError("variable '" + g->name + "' cannot be void", g->line, g->col);
-            if (!vars_.declare(g->name, {gt}))
-                semError("global variable '" + g->name + "' already declared", g->line, g->col);
         }
     }
 }
@@ -159,15 +152,6 @@ void TypeChecker::visit(Program* node) {
 }
 
 // ─── Declaraciones globales ───────────────────────────────────────────────────
-
-void TypeChecker::visit(GlobalVarDecl* node) {
-    SemType t = resolveType(node->type, node->line, node->col);
-    if (node->init) {
-        SemType it = visitExpr(node->init);
-        if (!t.accepts(it) && !isTemplateType(t))
-            semError("incompatible type in initializer of '" + node->name + "'", node->line, node->col);
-    }
-}
 
 void TypeChecker::visit(StructDecl* node) {
     // Validado en primera pasada

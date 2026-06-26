@@ -521,24 +521,6 @@ void ASTJsonPrinter::visit(DeleteStmt* node) {
 
 // ─── Global Declarations ──────────────────────────────────────────────────────
 
-void ASTJsonPrinter::visit(GlobalVarDecl* node) {
-    indent(); out << "{\n";
-    depth++;
-    indent(); out << "\"type\": \"GlobalVarDecl\",\n";
-    indent(); out << "\"varType\": "; printString(typeStr(node->type)); out << ",\n";
-    indent(); out << "\"name\": "; printString(node->name);
-    if (node->init) {
-        out << ",\n";
-        indent(); out << "\"init\":\n";
-        node->init->accept(this);
-        out << "\n";
-    } else {
-        out << "\n";
-    }
-    depth--;
-    indent(); out << "}";
-}
-
 void ASTJsonPrinter::visit(StructDecl* node) {
     indent(); out << "{\n";
     depth++;

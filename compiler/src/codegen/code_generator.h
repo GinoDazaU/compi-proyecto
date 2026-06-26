@@ -123,7 +123,6 @@ public:
 
     // ─── Declaraciones globales ───────────────────────────────────────────
     void visit(Program* node)          override;
-    void visit(GlobalVarDecl* node)    override;
     void visit(StructDecl* node)       override;
     void visit(FuncDecl* node)         override;
     void visit(TemplateFuncDecl* node) override;

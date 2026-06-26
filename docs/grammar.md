@@ -12,7 +12,6 @@ Program     ::= TopDecl*
 TopDecl     ::= StructDecl
               | TemplateFuncDecl
               | FuncDecl
-              | GlobalVarDecl
 ```
 
 ---
@@ -35,8 +34,6 @@ PtrMod      ::= * | &
 ## Declaraciones globales
 
 ```
-GlobalVarDecl ::= Type id [= Expr] ;
-
 StructDecl    ::= struct id { MemberDecl* } ;
 MemberDecl    ::= Type id ;
 

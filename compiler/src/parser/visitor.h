@@ -34,7 +34,6 @@ class ContinueStmt;
 class DeleteStmt;
 
 // Declaraciones Globales
-class GlobalVarDecl;
 class StructDecl;
 class FuncDecl;
 class TemplateFuncDecl;
@@ -76,7 +75,6 @@ public:
     virtual void visit(DeleteStmt* node) = 0;
 
     // Declaraciones Globales
-    virtual void visit(GlobalVarDecl* node) = 0;
     virtual void visit(StructDecl* node) = 0;
     virtual void visit(FuncDecl* node) = 0;
     virtual void visit(TemplateFuncDecl* node) = 0;

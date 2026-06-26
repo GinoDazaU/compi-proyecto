@@ -40,7 +40,6 @@ private:
     StructDecl*        parseStructDecl();
     TemplateFuncDecl*  parseTemplateFuncDecl();
     FuncDecl*          parseFuncDecl(TypeNode* ret, std::string name);
-    GlobalVarDecl*     parseGlobalVarDecl(TypeNode* type, std::string name);
     std::vector<Param> parseParamList();
     Param              parseParam();
 

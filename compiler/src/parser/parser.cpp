@@ -112,9 +112,10 @@ TopDecl* Parser::parseTopDecl() {
     TypeNode* type = parseType();
     std::string name = expect(TokenType::ID).lexeme;
 
-    TopDecl* decl;
-    if (check(TokenType::LPAREN)) decl = parseFuncDecl(type, std::move(name));
-    else                          decl = parseGlobalVarDecl(type, std::move(name));
+    if (!check(TokenType::LPAREN))
+        error("Only functions and structs are allowed at global scope");
+
+    TopDecl* decl = parseFuncDecl(type, std::move(name));
     decl->line = ln; decl->col = cl;
     return decl;
 }
@@ -162,13 +163,6 @@ FuncDecl* Parser::parseFuncDecl(TypeNode* ret, std::string name) {
     expect(TokenType::RPAREN);
     Block* body = parseBlock();
     return new FuncDecl(ret, std::move(name), std::move(params), body);
-}
-
-GlobalVarDecl* Parser::parseGlobalVarDecl(TypeNode* type, std::string name) {
-    Expr* init = nullptr;
-    if (match(TokenType::ASSIGN)) init = parseExpr();
-    expect(TokenType::SEMICOLON);
-    return new GlobalVarDecl(type, std::move(name), init);
 }
 
 std::vector<Param> Parser::parseParamList() {

@@ -34,7 +34,6 @@ public:
     void visit(BreakStmt* node)        override;
     void visit(ContinueStmt* node)     override;
     void visit(DeleteStmt* node)       override;
-    void visit(GlobalVarDecl* node)    override;
     void visit(StructDecl* node)       override;
     void visit(FuncDecl* node)         override;
     void visit(TemplateFuncDecl* node) override;

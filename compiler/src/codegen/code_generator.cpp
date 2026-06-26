@@ -75,7 +75,7 @@ void CodeGenerator::firstPass(Program* program) {
             func_rets_[f->name]   = SemType::fromTypeNode(f->return_type);
         }
         // TODO: StructDecl → buildStructInfo(s);
-        // TODO: TemplateFuncDecl, GlobalVarDecl
+        // TODO: TemplateFuncDecl
     }
 }
 
@@ -256,7 +256,6 @@ void CodeGenerator::visit(FuncDecl* node) {
     env_.exitScope();
 }
 
-void CodeGenerator::visit(GlobalVarDecl* /*node*/)    { /* TODO */ }
 void CodeGenerator::visit(StructDecl* /*node*/)       { /* TODO */ }
 void CodeGenerator::visit(TemplateFuncDecl* /*node*/) { /* TODO */ }
 

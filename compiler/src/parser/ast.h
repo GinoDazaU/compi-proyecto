@@ -357,18 +357,6 @@ public:
 // DECLARACIONES GLOBALES
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Type id [= Expr] ;
-class GlobalVarDecl : public TopDecl {
-public:
-    TypeNode*   type;
-    std::string name;
-    Expr*       init = nullptr;
-    GlobalVarDecl(TypeNode* t, std::string n, Expr* e = nullptr)
-        : type(t), name(std::move(n)), init(e) {}
-    ~GlobalVarDecl() override { delete type; delete init; }
-    void accept(Visitor* v) override { v->visit(this); }
-};
-
 // struct id { MemberDecl* } ;
 struct MemberDecl {
     TypeNode*   type;
