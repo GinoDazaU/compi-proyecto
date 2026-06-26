@@ -62,6 +62,6 @@ std::string SemType::toString() const {
     }
     std::string s = base;
     for (auto m : mods)
-        s += (m == PtrMod::Pointer ? "*" : "&");
+        s += "*";
     return s;
 }

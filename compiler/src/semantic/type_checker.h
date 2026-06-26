@@ -24,7 +24,6 @@ struct VarInfo {
 // ─── Info de parámetro ────────────────────────────────────────────────────────
 struct ParamInfo {
     SemType type;
-    bool    is_ref = false;
 };
 
 // ─── Info de función ─────────────────────────────────────────────────────────

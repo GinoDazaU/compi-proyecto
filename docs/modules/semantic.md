@@ -13,7 +13,7 @@ Mientras el AST usa `TypeNode` (la forma *sintáctica* del tipo, tal como se esc
 ```cpp
 struct SemType {
     std::string         base;   // "int", "float", "MiStruct", ...
-    std::vector<PtrMod> mods;   // modificadores en orden: *, &
+    std::vector<PtrMod> mods;   // modificadores en orden: *
 };
 ```
 

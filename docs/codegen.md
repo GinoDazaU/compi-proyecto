@@ -377,7 +377,7 @@ call printf@PLT
 - Cada struct tiene un `StructInfo` con `offsets` (mapa nombre→offset) y `size`.
 - Los miembros se almacenan en stack de forma contigua (offsets negativos desde la base del struct).
 - Acceso `s.x` → `base_offset + offset_de_x` desde `%rbp`.
-- Paso por referencia (`&`): se pasa la dirección (`%rbp + offset`) en el registro de argumento.
+- Paso por puntero (`Struct*`): se pasa la dirección (`%rbp + offset`) en el registro de argumento.
 
 ---
 

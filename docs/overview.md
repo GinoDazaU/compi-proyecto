@@ -60,7 +60,7 @@ Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 - Stack frame estándar: `pushq %rbp / movq %rsp, %rbp`
 - Variables locales en offsets negativos desde `%rbp`
 - Paso de argumentos: `%rdi, %rsi, %rdx, %rcx, %r8, %r9`, resto en stack
-- Structs: se pasan por referencia (dirección en registro)
+- Structs: se pasan por puntero (dirección en registro)
 - Soporte de printf mediante funciones incorporadas print/println para output
 
 ### 5. Optimizador (`optimizer/`)
@@ -82,7 +82,7 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 - Operadores aritméticos, lógicos, relacionales, de asignación (`=`)
 
 ### Intermedio
-- `struct` con atributos y paso por referencia (`&`)
+- `struct` con atributos (paso por puntero)
 - Arrays estáticos
 - Strings (`std::string` básico o strings de C)
 - Punteros y aritmética de punteros

@@ -133,7 +133,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - El callee debe ser una función declarada, un built-in, o un valor de tipo función (variable con una lambda, o lambda inline) → **error** si no existe o no es invocable.
 - El número de argumentos debe coincidir con el número de parámetros → **error**.
 - El tipo de cada argumento debe ser compatible con el tipo del parámetro correspondiente → **error**.
-- Pasar por referencia (`&`): se requiere lvalue como argumento → **error** con literales.
 - Resultado: tipo de retorno de la función.
 
 ### 4.7 Built-ins `print` / `println`

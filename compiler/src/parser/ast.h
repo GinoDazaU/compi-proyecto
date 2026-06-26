@@ -13,15 +13,15 @@ class FuncDecl;
 class VarDeclStmt;
 
 // ─── Tipos ────────────────────────────────────────────────────────────────
-// PtrMod: * o &  (trailing modifiers de un tipo)
-enum class PtrMod { Pointer, Reference };
+// PtrMod: * (trailing modifiers de un tipo)
+enum class PtrMod { Pointer };
 
 // Representa cualquier tipo del lenguaje, incluyendo const, punteros y templates
 struct TypeNode {
     bool                is_auto       = false;
     std::string         base;           // "int", "float", "void", id definido por usuario
     TypeNode*           template_arg   = nullptr;  // para id<Type>
-    std::vector<PtrMod> mods;           // modificadores en orden: *, &
+    std::vector<PtrMod> mods;           // modificadores en orden: *
 
     ~TypeNode() { delete template_arg; }
 };
@@ -76,7 +76,6 @@ public:
 // ─── Param (compartido por FuncDecl y LambdaExpr) ─────────────────────────
 struct Param {
     TypeNode*   type;
-    bool        is_ref;          // el & explícito del parámetro
     std::string name;
 };
 

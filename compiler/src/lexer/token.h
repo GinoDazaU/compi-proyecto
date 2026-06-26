@@ -67,7 +67,7 @@ enum class TokenType {
     OR,   // ||
     NOT,  // !
 
-    // Operador de dirección / referencia
+    // Operador de dirección (address-of)
     AMP,    // &
 
     // Incremento y decremento

@@ -27,9 +27,8 @@ struct SemType {
     bool isIntegral()  const { return !hasPointer() && base=="int"; }
     bool isBool()      const { return base == "bool" && mods.empty(); }
     bool hasPointer()  const { return !mods.empty() && mods.back() == PtrMod::Pointer; }
-    bool hasRef()      const { return !mods.empty() && mods.back() == PtrMod::Reference; }
 
-    // Tipo al que apunta/referencia (quita el último mod)
+    // Tipo al que apunta (quita el último mod)
     SemType deref() const {
         SemType t = *this;
         if (!t.mods.empty()) t.mods.pop_back();

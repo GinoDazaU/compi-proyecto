@@ -85,10 +85,8 @@ TypeNode* Parser::parseType() {
         }
     }
 
-    while (check(TokenType::STAR) || check(TokenType::AMP)) {
-        if (match(TokenType::STAR)) t->mods.push_back(PtrMod::Pointer);
-        else { consume(); t->mods.push_back(PtrMod::Reference); }
-    }
+    while (match(TokenType::STAR))
+        t->mods.push_back(PtrMod::Pointer);
 
     return t;
 }
@@ -176,14 +174,7 @@ std::vector<Param> Parser::parseParamList() {
 
 Param Parser::parseParam() {
     Param p;
-    p.is_ref = false;
     p.type = parseType();
-
-    if (!p.type->mods.empty() && p.type->mods.back() == PtrMod::Reference) {
-        p.is_ref = true;
-        p.type->mods.pop_back();
-    }
-
     p.name = expect(TokenType::ID).lexeme;
     return p;
 }

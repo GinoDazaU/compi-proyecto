@@ -27,7 +27,7 @@ std::string ASTJsonPrinter::typeStr(TypeNode* t) {
     s += t->base;
     if (t->template_arg) s += "<" + typeStr(t->template_arg) + ">";
     for (auto mod : t->mods)
-        s += (mod == PtrMod::Pointer ? "*" : "&");
+        s += "*";
     return s;
 }
 
@@ -279,7 +279,6 @@ void ASTJsonPrinter::visit(LambdaExpr* node) {
         indent(); out << "{\n";
         depth++;
         indent(); out << "\"type\": "; printString(typeStr(node->params[i].type)); out << ",\n";
-        indent(); out << "\"is_ref\": " << (node->params[i].is_ref ? "true" : "false") << ",\n";
         indent(); out << "\"name\": "; printString(node->params[i].name); out << "\n";
         depth--;
         indent(); out << "}";
@@ -547,7 +546,6 @@ void ASTJsonPrinter::visit(FuncDecl* node) {
         indent(); out << "{\n";
         depth++;
         indent(); out << "\"type\": "; printString(typeStr(node->params[i].type)); out << ",\n";
-        indent(); out << "\"is_ref\": " << (node->params[i].is_ref ? "true" : "false") << ",\n";
         indent(); out << "\"name\": "; printString(node->params[i].name); out << "\n";
         depth--;
         indent(); out << "}";

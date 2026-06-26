@@ -44,7 +44,7 @@ Para consumir tokens y avanzar de manera segura, el parser define varios método
 Debido a que C++ es un lenguaje con ambigüedades sintácticas notables, el parser requiere a veces mirar múltiples tokens hacia adelante para decidir qué regla gramatical aplicar:
 
 #### A. Detección de Tipos (`isTypeStart`)
-Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `auto`, `int`, o un identificador de estructura seguido de un puntero `*`, referencia `&` o parámetros de template `<...>`):
+Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `auto`, `int`, o un identificador de estructura seguido de un puntero `*` o parámetros de template `<...>`):
 ```cpp
 bool Parser::isTypeStart();
 ```

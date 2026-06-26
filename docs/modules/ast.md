@@ -47,11 +47,11 @@ struct TypeNode {
     bool                is_auto  = false;  // ¿Usa inferencia de tipo auto?
     std::string         base;              // Tipo base: "int", "float", "MiStruct"
     TypeNode*           template_arg = nullptr; // Para tipos genéricos como vector<T>
-    std::vector<PtrMod> mods;              // Modificadores (* o &)
+    std::vector<PtrMod> mods;              // Modificadores (*)
 };
 ```
-* `PtrMod` es un enum con dos opciones: `Pointer` (`*`) o `Reference` (`&`).
-* Si el tipo es `int*&`, el vector `mods` guardará `[PtrMod::Pointer, PtrMod::Reference]`.
+* `PtrMod` es un enum con una opción: `Pointer` (`*`).
+* Si el tipo es `int**`, el vector `mods` guardará `[PtrMod::Pointer, PtrMod::Pointer]`.
 
 ---
 

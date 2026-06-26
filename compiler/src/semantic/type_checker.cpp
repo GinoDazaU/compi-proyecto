@@ -117,7 +117,7 @@ void TypeChecker::firstPass(Program* program) {
                 SemType pt = resolveType(p.type, f->line, f->col);
                 if (pt.isVoid())
                     semError("parameter '" + p.name + "' cannot be void", f->line, f->col);
-                info.params.push_back({pt, p.is_ref});
+                info.params.push_back({pt});
             }
             funcs_[f->name] = info;
 
@@ -132,7 +132,7 @@ void TypeChecker::firstPass(Program* program) {
                 : SemType{"void"};
             for (auto& p : f->params) {
                 SemType pt{p.type ? p.type->base : "void"};
-                info.params.push_back({pt, p.is_ref});
+                info.params.push_back({pt});
             }
             funcs_[f->name] = info;
         }

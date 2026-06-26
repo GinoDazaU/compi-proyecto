@@ -26,7 +26,7 @@ Type        ::= BaseType PtrMod*
 
 BaseType    ::= int | float | bool | char | void | string
 
-PtrMod      ::= * | &
+PtrMod      ::= *
 ```
 
 ---
@@ -42,7 +42,7 @@ TemplateFuncDecl ::= template < typename id > FuncDecl
 FuncDecl      ::= Type id ( ParamList ) Block
 
 ParamList     ::= ε | Param (, Param)*
-Param         ::= Type [&] id
+Param         ::= Type id
 ```
 
 ---
