@@ -295,9 +295,11 @@ Stmt* Parser::parseForStmt() {
     ForInit init;
     if (!check(TokenType::SEMICOLON)) {
         if (isTypeStart()) {
+            int dln = cur().line, dcl = cur().col;
             TypeNode* type = parseType();
             std::string name = expect(TokenType::ID).lexeme;
             init.decl = new VarDeclStmt(type, std::move(name));
+            init.decl->line = dln; init.decl->col = dcl;
             if (match(TokenType::ASSIGN)) init.decl->init = parseExpr();
         } else {
             init.expr = parseExpr();

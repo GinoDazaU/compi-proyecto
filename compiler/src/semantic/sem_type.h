@@ -25,6 +25,7 @@ struct SemType {
     bool isFunc()      const { return base == "fn"; }
     bool isNumeric()   const { return !hasPointer() && (base=="int"||base=="float"); }
     bool isIntegral()  const { return !hasPointer() && base=="int"; }
+    bool isFloat()     const { return !hasPointer() && base=="float"; }
     bool isBool()      const { return base == "bool" && mods.empty(); }
     bool hasPointer()  const { return !mods.empty() && mods.back() == PtrMod::Pointer; }
 

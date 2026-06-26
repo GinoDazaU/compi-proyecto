@@ -38,6 +38,12 @@ static const char* setccFor(BinaryOp op, bool floatCmp) {
     }
 }
 
+// ─── Registros de argumento de la convención System V AMD64 ──────────────────
+// Bancos separados, con orden fijo por ABI: hasta 6 enteros/punteros y 8 floats.
+static const char* const INT_ARG_REGS[]   = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+static const char* const FLOAT_ARG_REGS[] = {"%xmm0","%xmm1","%xmm2","%xmm3",
+                                             "%xmm4","%xmm5","%xmm6","%xmm7"};
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Construcción y entrada principal
 // ═════════════════════════════════════════════════════════════════════════════
@@ -139,7 +145,7 @@ std::string CodeGenerator::strLabel(const std::string& lexeme) {
 // Carga la variable en offset(%rbp) al registro de su tipo.
 //   float → %xmm0 (movsd) ; bool/char → %al + zero-extend a %rax ; resto → %rax
 void CodeGenerator::emitLoad(const SemType& t, int offset) {
-    if (t.base == "float" && !t.hasPointer()) {
+    if (t.isFloat()) {
         out_ << "    movsd " << offset << "(%rbp), %xmm0\n";
     } else if ((t.base == "bool" || t.base == "char") && !t.hasPointer()) {
         out_ << "    movb " << offset << "(%rbp), %al\n";
@@ -151,7 +157,7 @@ void CodeGenerator::emitLoad(const SemType& t, int offset) {
 
 // Guarda el resultado actual (en %rax o %xmm0) en offset(%rbp) según el tipo.
 void CodeGenerator::emitStore(const SemType& t, int offset) {
-    if (t.base == "float" && !t.hasPointer()) {
+    if (t.isFloat()) {
         out_ << "    movsd %xmm0, " << offset << "(%rbp)\n";
     } else if ((t.base == "bool" || t.base == "char") && !t.hasPointer()) {
         out_ << "    movb %al, " << offset << "(%rbp)\n";
@@ -160,7 +166,7 @@ void CodeGenerator::emitStore(const SemType& t, int offset) {
     }
 }
 void CodeGenerator::emitPush(const SemType& t) {
-    if (t.base == "float" && !t.hasPointer()) {
+    if (t.isFloat()) {
         out_ << "    subq $8, %rsp\n";
         out_ << "    movsd %xmm0, (%rsp)\n";
     } else {
@@ -169,7 +175,7 @@ void CodeGenerator::emitPush(const SemType& t) {
 }
 
 void CodeGenerator::emitPop(const SemType& t, const std::string& reg) {
-    if (t.base == "float" && !t.hasPointer()) {
+    if (t.isFloat()) {
         out_ << "    movsd (%rsp), " << reg << "\n";
         out_ << "    addq $8, %rsp\n";
     } else {
@@ -179,7 +185,7 @@ void CodeGenerator::emitPop(const SemType& t, const std::string& reg) {
 
 void CodeGenerator::emitCondJumpIfFalse(Expr* cond, const std::string& label) {
     cond->accept(this);  // valor → %rax (o %xmm0 si float)
-    if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+    if (cur_type_.isFloat()) {
         out_ << "    xorpd %xmm1, %xmm1\n";
         out_ << "    ucomisd %xmm1, %xmm0\n";  // %xmm0 == 0 → falso
     } else {
@@ -229,20 +235,17 @@ void CodeGenerator::visit(FuncDecl* node) {
 
     // Guardar parámetros: enteros/ptr desde %rdi…, floats desde %xmm0…
     // (System V usa bancos de registros separados, con índice propio cada uno).
-    static const char* intRegs[]   = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-    static const char* floatRegs[] = {"%xmm0","%xmm1","%xmm2","%xmm3",
-                                      "%xmm4","%xmm5","%xmm6","%xmm7"};
     int nInt = 0, nFloat = 0;
     for (auto& p : node->params) {
         SemType pt = SemType::fromTypeNode(p.type);
         int off = offset_;
         env_.declare(p.name, VarEntry{pt, off});
         offset_ -= 8;
-        if (pt.base == "float" && !pt.hasPointer()) {
-            if (nFloat < 8) out_ << "    movsd " << floatRegs[nFloat] << ", " << off << "(%rbp)\n";
+        if (pt.isFloat()) {
+            if (nFloat < 8) out_ << "    movsd " << FLOAT_ARG_REGS[nFloat] << ", " << off << "(%rbp)\n";
             ++nFloat;
         } else {
-            if (nInt < 6) out_ << "    movq " << intRegs[nInt] << ", " << off << "(%rbp)\n";
+            if (nInt < 6) out_ << "    movq " << INT_ARG_REGS[nInt] << ", " << off << "(%rbp)\n";
             ++nInt;
         }
     }
@@ -410,7 +413,7 @@ void CodeGenerator::visit(CallExpr* node) {
             for (auto arg : node->args) {
                 arg->accept(this);  // valor → %rax (o %xmm0 si float); tipo → cur_type_
 
-                if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+                if (cur_type_.isFloat()) {
                     // El valor ya está en %xmm0; %al = nº de regs XMM usados.
                     out_ << "    leaq __fmt_float(%rip), %rdi\n";
                     out_ << "    movl $1, %eax\n";
@@ -439,9 +442,6 @@ void CodeGenerator::visit(CallExpr* node) {
     // %rdi…/%r9, float en %xmm0…%xmm7). Resultado en %rax (o %xmm0 si float).
     if (auto* id = dynamic_cast<IdExpr*>(node->callee)) {
         if (frame_sizes_.count(id->name)) {
-            static const char* intRegs[]   = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-            static const char* floatRegs[] = {"%xmm0","%xmm1","%xmm2","%xmm3",
-                                              "%xmm4","%xmm5","%xmm6","%xmm7"};
             size_t n = node->args.size();
 
             // 1. Evaluar y apilar cada arg; recordar su banco y su índice de registro.
@@ -450,7 +450,7 @@ void CodeGenerator::visit(CallExpr* node) {
             int nInt = 0, nFloat = 0;
             for (size_t i = 0; i < n; ++i) {
                 node->args[i]->accept(this);   // valor → %rax o %xmm0; tipo → cur_type_
-                bool f = (cur_type_.base == "float" && !cur_type_.hasPointer());
+                bool f = (cur_type_.isFloat());
                 isFloat[i] = f;
                 regIdx[i]  = f ? nFloat++ : nInt++;
                 emitPush(cur_type_);
@@ -459,9 +459,9 @@ void CodeGenerator::visit(CallExpr* node) {
             // 2. Sacar de la pila en orden inverso (la cima es el último arg).
             for (size_t k = n; k-- > 0; ) {
                 if (isFloat[k]) {
-                    if (regIdx[k] < 8) emitPop(SemType{"float"}, floatRegs[regIdx[k]]);
+                    if (regIdx[k] < 8) emitPop(SemType{"float"}, FLOAT_ARG_REGS[regIdx[k]]);
                 } else {
-                    if (regIdx[k] < 6) out_ << "    popq " << intRegs[regIdx[k]] << "\n";
+                    if (regIdx[k] < 6) out_ << "    popq " << INT_ARG_REGS[regIdx[k]] << "\n";
                 }
             }
 
@@ -509,7 +509,7 @@ void CodeGenerator::visit(BinaryExpr* node) {
         // Normaliza el valor recién evaluado (en %rax, o %xmm0 si es float) a un
         // booleano 0/1 en %rax. Así `2 && 1` da 1 (y no 0, como con un AND bit a bit).
         auto toBoolInRax = [&](const SemType& t) {
-            if (t.base == "float" && !t.hasPointer()) {
+            if (t.isFloat()) {
                 out_ << "    xorpd %xmm1, %xmm1\n";
                 out_ << "    ucomisd %xmm1, %xmm0\n";
             } else {
@@ -552,12 +552,8 @@ void CodeGenerator::visit(BinaryExpr* node) {
     // Como los operandos conservan su tipo original, hacemos la conversión
     // a float (cvtsi2sdq) aquí en el codegen si es necesario.
 
-    auto isFloat = [](const SemType& t) {
-        return t.base == "float" && !t.hasPointer();
-    };
-
-    bool leftIsFloat  = isFloat(leftType);
-    bool rightIsFloat = isFloat(rightType);
+    bool leftIsFloat  = leftType.isFloat();
+    bool rightIsFloat = rightType.isFloat();
     bool useFloatPath = leftIsFloat || rightIsFloat;
 
     if (useFloatPath) {
@@ -644,7 +640,7 @@ void CodeGenerator::visit(UnaryExpr* node) {
         VarEntry* e = env_.lookup(id->name);
         if (!e) return;
         emitLoad(e->type, e->offset);
-        if (e->type.base == "float" && !e->type.hasPointer()) {
+        if (e->type.isFloat()) {
             out_ << "    movsd " << floatLabel(1.0) << "(%rip), %xmm1\n";
             out_ << (inc ? "    addsd %xmm1, %xmm0\n" : "    subsd %xmm1, %xmm0\n");
         } else {
@@ -657,7 +653,7 @@ void CodeGenerator::visit(UnaryExpr* node) {
     switch (node->op) {
         case UnaryOp::Neg: {
             node->expr->accept(this);
-            if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+            if (cur_type_.isFloat()) {
                 out_ << "    movsd %xmm0, %xmm1\n";
                 out_ << "    xorpd %xmm0, %xmm0\n";
                 out_ << "    subsd %xmm1, %xmm0\n";
@@ -669,7 +665,7 @@ void CodeGenerator::visit(UnaryExpr* node) {
         case UnaryOp::Not: {
             node->expr->accept(this);
             // !x = (x == 0). Para float se compara contra 0.0 con ucomisd.
-            if (cur_type_.base == "float" && !cur_type_.hasPointer()) {
+            if (cur_type_.isFloat()) {
                 out_ << "    xorpd %xmm1, %xmm1\n";
                 out_ << "    ucomisd %xmm1, %xmm0\n";
             } else {
