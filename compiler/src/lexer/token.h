@@ -51,12 +51,8 @@ enum class TokenType {
     SLASH,      // /
     PERCENT,    // %
 
-    // Operadores de asignación
+    // Operador de asignación
     ASSIGN,         // =
-    PLUS_ASSIGN,    // +=
-    MINUS_ASSIGN,   // -=
-    STAR_ASSIGN,    // *=
-    SLASH_ASSIGN,   // /=
 
     // Operadores de comparación
     EQ,   // ==

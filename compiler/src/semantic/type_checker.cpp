@@ -419,17 +419,8 @@ void TypeChecker::visit(AssignExpr* node) {
 
     if (isTemplateType(lt) || isTemplateType(rt)) { expr_type_ = lt; return; }
 
-    switch (node->op) {
-        case AssignOp::Assign:
-            if (!lt.accepts(rt))
-                semError("incompatible type in assignment", node->line, node->col);
-            break;
-        case AssignOp::PlusAssign: case AssignOp::MinusAssign:
-        case AssignOp::MulAssign:  case AssignOp::DivAssign:
-            if (!isArithmetic(lt))
-                semError("compound arithmetic assignment requires a numeric lvalue", node->line, node->col);
-            break;
-    }
+    if (!lt.accepts(rt))
+        semError("incompatible type in assignment", node->line, node->col);
     expr_type_ = lt;
 }
 

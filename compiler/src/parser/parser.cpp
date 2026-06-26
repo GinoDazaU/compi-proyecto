@@ -357,18 +357,10 @@ Expr* Parser::parseExpr() { return parseAssign(); }
 Expr* Parser::parseAssign() {
     Expr* left = parseLogicOr();
 
-    AssignOp op;
-    switch (cur().type) {
-        case TokenType::ASSIGN:          op = AssignOp::Assign;      break;
-        case TokenType::PLUS_ASSIGN:     op = AssignOp::PlusAssign;  break;
-        case TokenType::MINUS_ASSIGN:    op = AssignOp::MinusAssign; break;
-        case TokenType::STAR_ASSIGN:     op = AssignOp::MulAssign;   break;
-        case TokenType::SLASH_ASSIGN:    op = AssignOp::DivAssign;   break;
-        default: return left;
-    }
+    if (!check(TokenType::ASSIGN)) return left;
     consume();
     Expr* right = parseAssign();
-    auto* node = new AssignExpr(left, op, right);
+    auto* node = new AssignExpr(left, right);
     node->line = left->line; node->col = left->col;
     return node;
 }

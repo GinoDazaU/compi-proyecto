@@ -40,10 +40,6 @@ const char* Token::typeName() const {
         case TokenType::PERCENT:        return "PERCENT";
 
         case TokenType::ASSIGN:         return "ASSIGN";
-        case TokenType::PLUS_ASSIGN:    return "PLUS_ASSIGN";
-        case TokenType::MINUS_ASSIGN:   return "MINUS_ASSIGN";
-        case TokenType::STAR_ASSIGN:    return "STAR_ASSIGN";
-        case TokenType::SLASH_ASSIGN:   return "SLASH_ASSIGN";
 
         case TokenType::EQ:             return "EQ";
         case TokenType::NEQ:            return "NEQ";

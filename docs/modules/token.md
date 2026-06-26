@@ -23,7 +23,7 @@ Es un listado ordenado de todas las categorías posibles de tokens que el compil
   * Tipos básicos (`KW_INT`, `KW_FLOAT`, `KW_BOOL`, etc.).
   * Estructuras y templates (`KW_STRUCT`, `KW_TEMPLATE`, `KW_TYPENAME`).
   * Flujo de control (`KW_IF`, `KW_ELSE`, `KW_WHILE`, `KW_FOR`, `KW_RETURN`, etc.).
-* **Operadores**: Aritméticos (`PLUS`, `MINUS`, `STAR`...), Asignación (`ASSIGN`, `PLUS_ASSIGN`...), Comparación (`EQ`, `NEQ`...), Lógicos (`AND`, `OR`...) y Bit a bit.
+* **Operadores**: Aritméticos (`PLUS`, `MINUS`, `STAR`...), Asignación (`ASSIGN`), Comparación (`EQ`, `NEQ`...), Lógicos (`AND`, `OR`...) y Bit a bit.
 * **Delimitadores**: Paréntesis (`LPAREN`, `RPAREN`), llaves (`LBRACE`, `RBRACE`), corchetes, comas y punto y coma.
 * **Especiales**: 
   * `END`: Marca el fin del archivo (EOF - End Of File). Es clave para que el Parser sepa cuándo parar.

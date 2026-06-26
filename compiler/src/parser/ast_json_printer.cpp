@@ -50,17 +50,6 @@ const char* ASTJsonPrinter::binaryOpStr(BinaryOp op) {
     return "?";
 }
 
-const char* ASTJsonPrinter::assignOpStr(AssignOp op) {
-    switch (op) {
-        case AssignOp::Assign:      return "=";
-        case AssignOp::PlusAssign:  return "+=";
-        case AssignOp::MinusAssign: return "-=";
-        case AssignOp::MulAssign:   return "*=";
-        case AssignOp::DivAssign:   return "/=";
-    }
-    return "?";
-}
-
 const char* ASTJsonPrinter::unaryOpStr(UnaryOp op) {
     switch (op) {
         case UnaryOp::Neg:    return "-";
@@ -184,7 +173,7 @@ void ASTJsonPrinter::visit(AssignExpr* node) {
     indent(); out << "{\n";
     depth++;
     indent(); out << "\"type\": \"AssignExpr\",\n";
-    indent(); out << "\"op\": "; printString(assignOpStr(node->op)); out << ",\n";
+    indent(); out << "\"op\": "; printString("="); out << ",\n";
     indent(); out << "\"left\":\n";
     node->left->accept(this);
     out << ",\n";

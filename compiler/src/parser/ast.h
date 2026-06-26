@@ -33,11 +33,6 @@ enum class BinaryOp {
     And, Or
 };
 
-enum class AssignOp {
-    Assign,
-    PlusAssign, MinusAssign, MulAssign, DivAssign
-};
-
 enum class UnaryOp {
     Neg,    // -
     Not,    // !
@@ -155,13 +150,12 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// Asignación: =, +=, -=, *=, /=
+// Asignación: =
 class AssignExpr : public Expr {
 public:
-    Expr*    left;
-    AssignOp op;
-    Expr*    right;
-    AssignExpr(Expr* l, AssignOp o, Expr* r) : left(l), op(o), right(r) {}
+    Expr* left;
+    Expr* right;
+    AssignExpr(Expr* l, Expr* r) : left(l), right(r) {}
     ~AssignExpr() override { delete left; delete right; }
     void accept(Visitor* v) override { v->visit(this); }
 };

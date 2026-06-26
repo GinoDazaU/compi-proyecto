@@ -98,13 +98,11 @@ Este es un gran `switch-case` que implementa una pequeña máquina de estados pa
 ```cpp
 case '+':
     if (n == '+') { advance(); return Token(TokenType::INC, "++", line, startCol); }
-    if (n == '=') { advance(); return Token(TokenType::PLUS_ASSIGN, "+=", line, startCol); }
     return Token(TokenType::PLUS, "+", line, startCol);
 ```
 * Si el siguiente caracter es `+`, avanza y retorna `INC` (`++`).
-* Si es `=`, avanza y retorna `PLUS_ASSIGN` (`+=`).
 * Si es cualquier otra cosa, no avanza más y retorna el simple `PLUS` (`+`).
-* Hace lo mismo para operadores de comparación (`==`, `!=`, `<=`, `>=`), asignación compuesta y accesos a miembros (`->`).
+* Hace lo mismo para operadores de comparación (`==`, `!=`, `<=`, `>=`) y accesos a miembros (`->`).
 
 ---
 

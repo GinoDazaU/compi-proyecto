@@ -46,6 +46,5 @@ private:
     void printString(const std::string& s);
     std::string typeStr(TypeNode* t);
     static const char* binaryOpStr(BinaryOp op);
-    static const char* assignOpStr(AssignOp op);
     static const char* unaryOpStr(UnaryOp op);
 };

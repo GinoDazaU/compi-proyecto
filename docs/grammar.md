@@ -91,8 +91,7 @@ DeleteStmt  ::= delete [[ ]] Expr ;
 ```
 Expr    ::= Assign
 
-Assign  ::= LogicOr [AssignOp Assign]
-AssignOp ::= = | += | -= | *= | /=
+Assign  ::= LogicOr [= Assign]
 
 LogicOr  ::= LogicAnd (|| LogicAnd)*
 LogicAnd ::= Equality (&& Equality)*

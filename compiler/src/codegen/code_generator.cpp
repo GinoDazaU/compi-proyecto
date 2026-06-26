@@ -482,19 +482,17 @@ void CodeGenerator::visit(IdExpr* node) {
     cur_type_ = e->type;
 }
 
-// Por ahora solo '=' a variable simple (IdExpr).
+// Por ahora solo asignación a variable simple (IdExpr).
 void CodeGenerator::visit(AssignExpr* node) {
-    if (node->op == AssignOp::Assign) {
-        if (auto* id = dynamic_cast<IdExpr*>(node->left)) {
-            VarEntry* e = env_.lookup(id->name);
-            node->right->accept(this);  // valor → %rax/%xmm0
-            SemType t = e ? e->type : cur_type_;
-            if (e) emitStore(t, e->offset);
-            cur_type_ = t;  // el resultado de la asignación es el valor asignado
-            return;
-        }
+    if (auto* id = dynamic_cast<IdExpr*>(node->left)) {
+        VarEntry* e = env_.lookup(id->name);
+        node->right->accept(this);  // valor → %rax/%xmm0
+        SemType t = e ? e->type : cur_type_;
+        if (e) emitStore(t, e->offset);
+        cur_type_ = t;  // el resultado de la asignación es el valor asignado
+        return;
     }
-    // TODO: ops compuestos (+=, -=, ...), lvalues IndexExpr/MemberExpr/Deref
+    // TODO: lvalues IndexExpr/MemberExpr/Deref
 }
 
 void CodeGenerator::visit(BinaryExpr* node) {

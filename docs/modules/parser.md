@@ -59,7 +59,7 @@ El flujo de llamadas recursivas para resolver la precedencia es el siguiente:
 
 ```
 parseExpr()
- └── parseAssign()           (Menor precedencia: =, +=, -=, etc.)
+ └── parseAssign()           (Menor precedencia: =)
       └── parseLogicOr()     (||)
            └── parseLogicAnd() (&&)
                 └── parseEquality() (==, !=)

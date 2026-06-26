@@ -127,7 +127,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 ### 4.5 Asignación (`AssignExpr`)
 - El lado izquierdo debe ser un **lvalue**: `IdExpr`, `IndexExpr`, `MemberExpr`, o `UnaryExpr` con `Deref` → **error** para literales y otros.
 - El tipo del lado derecho debe ser compatible con el izquierdo → **error**.
-- `+=`, `-=`, `*=`, `/=`: lvalue debe ser numérico → **error**.
 - Resultado de la expresión: tipo del lvalue.
 
 ### 4.6 Llamadas a función (`CallExpr`)

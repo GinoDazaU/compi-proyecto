@@ -79,7 +79,7 @@ Optimizaciones básicas sobre el AST o sobre el código intermedio:
 - Variables con scope
 - Funciones con parámetros y valor de retorno
 - Control: `if/else`, `while`, `for`, `break`, `continue`, `return`
-- Operadores aritméticos, lógicos, relacionales, de asignación (`=`, `+=`, `-=`, `*=`, `/=`)
+- Operadores aritméticos, lógicos, relacionales, de asignación (`=`)
 
 ### Intermedio
 - `struct` con atributos y paso por referencia (`&`)

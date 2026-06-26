@@ -149,18 +149,14 @@ Token Lexer::readOperator() {
     switch (c) {
         case '+':
             if (n == '+') { advance(); return Token(TokenType::INC,            "++", line, startCol); }
-            if (n == '=') { advance(); return Token(TokenType::PLUS_ASSIGN,    "+=", line, startCol); }
             return Token(TokenType::PLUS,    "+", line, startCol);
         case '-':
             if (n == '-') { advance(); return Token(TokenType::DEC,            "--", line, startCol); }
-            if (n == '=') { advance(); return Token(TokenType::MINUS_ASSIGN,   "-=", line, startCol); }
             if (n == '>') { advance(); return Token(TokenType::ARROW,          "->", line, startCol); }
             return Token(TokenType::MINUS,   "-", line, startCol);
         case '*':
-            if (n == '=') { advance(); return Token(TokenType::STAR_ASSIGN,    "*=", line, startCol); }
             return Token(TokenType::STAR,    "*", line, startCol);
         case '/':
-            if (n == '=') { advance(); return Token(TokenType::SLASH_ASSIGN,   "/=", line, startCol); }
             return Token(TokenType::SLASH,   "/", line, startCol);
         case '%':
             return Token(TokenType::PERCENT, "%", line, startCol);
