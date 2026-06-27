@@ -224,7 +224,15 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
         // TODO: arrays multidimensionales (stride por filas) y string[i] (stride 1).
         return;
     }
-    // TODO: MemberExpr (s.x / p->x) y deref (*p)
+    if (auto* u = dynamic_cast<UnaryExpr*>(e)) {
+        if (u->op == UnaryOp::Deref) {
+            // *p como lvalue: el valor del puntero ES la dirección destino.
+            u->expr->accept(this);     // puntero → %rax
+            cur_type_ = cur_type_.deref();
+            return;
+        }
+    }
+    // TODO: MemberExpr (s.x / p->x)
 }
 
 void CodeGenerator::emitPush(const SemType& t) {
@@ -597,19 +605,15 @@ void CodeGenerator::visit(AssignExpr* node) {
         return;
     }
 
-    // lvalue por dirección (arr[i]; luego s.x, *p): calcular dirección, evaluar
+    // lvalue por dirección (arr[i], *p; luego s.x): calcular dirección, evaluar
     // el RHS, y guardar de forma indirecta.
-    if (dynamic_cast<IndexExpr*>(node->left)) {
-        emitLvalueAddr(node->left);  // dirección → %rax
-        SemType t = cur_type_;
-        out_ << "    pushq %rax\n";   // guardar dirección durante el RHS
-        node->right->accept(this);    // valor → %rax/%xmm0
-        out_ << "    popq %rcx\n";     // dirección → %rcx
-        emitStoreIndirect(t, "%rcx");
-        cur_type_ = t;
-        return;
-    }
-    // TODO: lvalues MemberExpr / Deref
+    emitLvalueAddr(node->left);  // dirección → %rax
+    SemType t = cur_type_;
+    out_ << "    pushq %rax\n";   // guardar dirección durante el RHS
+    node->right->accept(this);    // valor → %rax/%xmm0
+    out_ << "    popq %rcx\n";     // dirección → %rcx
+    emitStoreIndirect(t, "%rcx");
+    cur_type_ = t;
 }
 
 void CodeGenerator::visit(BinaryExpr* node) {
@@ -795,9 +799,18 @@ void CodeGenerator::visit(UnaryExpr* node) {
         case UnaryOp::PreDec:
             emitIncDec(node->expr, /*inc=*/false, /*postfix=*/false);
             break;
-        case UnaryOp::Deref:
+        case UnaryOp::Deref: {
+            // *p como rvalue: cargar el valor apuntado.
+            node->expr->accept(this);     // puntero → %rax
+            SemType t = cur_type_.deref();
+            emitLoadIndirect(t);          // valor en (%rax) → registro del tipo
+            cur_type_ = t;
+            break;
+        }
         case UnaryOp::AddrOf:
-            // TODO: punteros
+            // &lvalue: la dirección del lvalue es el resultado; el tipo es T*.
+            emitLvalueAddr(node->expr);   // dirección → %rax; cur_type_ = T
+            cur_type_.mods.push_back(PtrMod::Pointer);
             break;
     }
 }

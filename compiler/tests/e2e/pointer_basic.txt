@@ -1,0 +1,10 @@
+int main() {
+    int x = 5;
+    int* p = &x;
+    *p = 10;
+    println(x);
+    println(*p);
+    int y = *p + 3;
+    println(y);
+    return 0;
+}
