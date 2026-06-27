@@ -276,6 +276,16 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
     }
 }
 
+// Promoción implícita al asignar a un destino float: si el valor recién
+// evaluado es entero (int/bool/char en %rax) y el destino es float, lo convierte
+// a %xmm0 con cvtsi2sdq y actualiza cur_type_. No-op en cualquier otro caso.
+void CodeGenerator::emitPromote(const SemType& target) {
+    if (target.isFloat() && !cur_type_.isFloat() && !cur_type_.hasPointer()) {
+        out_ << "    cvtsi2sdq %rax, %xmm0\n";
+        cur_type_ = SemType{"float"};
+    }
+}
+
 void CodeGenerator::emitPush(const SemType& t) {
     if (t.isFloat()) {
         out_ << "    subq $8, %rsp\n";
@@ -420,6 +430,7 @@ void CodeGenerator::visit(VarDeclStmt* node) {
         // init_list: arr[i] = init_list[i]
         for (size_t i = 0; i < node->init_list.size(); ++i) {
             node->init_list[i]->accept(this);               // valor → %rax/%xmm0
+            emitPromote(elem);                              // int→float si aplica
             emitStore(elem, base + static_cast<int>(i) * 8);
         }
         return;
@@ -446,6 +457,7 @@ void CodeGenerator::visit(VarDeclStmt* node) {
         // 'auto' toma el tipo del inicializador (lo resolvió el semántico).
         SemType t = node->type->is_auto ? cur_type_
                                         : SemType::fromTypeNode(node->type);
+        emitPromote(t);  // int→float si el destino es float (no-op con auto)
         env_.declare(node->name, VarEntry{t, off});
         emitStore(t, off);
     } else {
@@ -659,7 +671,7 @@ void CodeGenerator::visit(AssignExpr* node) {
         VarEntry* e = env_.lookup(id->name);
         node->right->accept(this);  // valor → %rax/%xmm0
         SemType t = e ? e->type : cur_type_;
-        if (e) emitStore(t, e->offset);
+        if (e) { emitPromote(t); emitStore(t, e->offset); }  // int→float si aplica
         cur_type_ = t;  // el resultado de la asignación es el valor asignado
         return;
     }
@@ -670,6 +682,7 @@ void CodeGenerator::visit(AssignExpr* node) {
     SemType t = cur_type_;
     out_ << "    pushq %rax\n";   // guardar dirección durante el RHS
     node->right->accept(this);    // valor → %rax/%xmm0
+    emitPromote(t);               // int→float si el destino es float
     out_ << "    popq %rcx\n";     // dirección → %rcx
     emitStoreIndirect(t, "%rcx");
     cur_type_ = t;

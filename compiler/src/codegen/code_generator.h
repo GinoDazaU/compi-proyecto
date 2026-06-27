@@ -100,6 +100,10 @@ private:
     // ANTERIOR como resultado (x++); postfix=false deja el nuevo (++x).
     void emitIncDec(Expr* lvalue, bool inc, bool postfix);
 
+    // Convierte el valor recién evaluado a float (cvtsi2sdq) si el destino es
+    // float y el valor es entero. Implementa la promoción implícita en asignaciones.
+    void emitPromote(const SemType& target);
+
     // push/pop genérico para expresiones binarias
     void emitPush(const SemType& t);
     void emitPop (const SemType& t, const std::string& reg); // reg: %rax o %xmm0
