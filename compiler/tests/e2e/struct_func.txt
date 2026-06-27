@@ -1,0 +1,25 @@
+struct Rect {
+    int w;
+    int h;
+};
+
+int area(Rect* r) {
+    return r->w * r->h;
+}
+
+void scale(Rect* r, int k) {
+    r->w = r->w * k;
+    r->h = r->h * k;
+}
+
+int main() {
+    Rect r;
+    r.w = 3;
+    r.h = 5;
+    println(area(&r));
+    scale(&r, 2);
+    println(r.w);
+    println(r.h);
+    println(area(&r));
+    return 0;
+}

@@ -75,12 +75,17 @@ void CodeGenerator::gencode(Program* program) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 void CodeGenerator::firstPass(Program* program) {
+    // 1ª sub-pasada: layouts de struct (los frames los necesitan para dimensionar
+    // variables struct, así que deben existir antes de frameSize).
+    for (auto d : program->decls)
+        if (auto* s = dynamic_cast<StructDecl*>(d)) buildStructInfo(s);
+
+    // 2ª sub-pasada: tamaño de frame y tipo de retorno de cada función.
     for (auto d : program->decls) {
         if (auto* f = dynamic_cast<FuncDecl*>(d)) {
             frame_sizes_[f->name] = frameSize(f);
             func_rets_[f->name]   = SemType::fromTypeNode(f->return_type);
         }
-        // TODO: StructDecl → buildStructInfo(s);
         // TODO: TemplateFuncDecl
     }
 }
@@ -92,7 +97,7 @@ int CodeGenerator::frameSize(FuncDecl* f) {
     std::function<void(Stmt*)> countStmt = [&](Stmt* s) {
         if (!s) return;
         if (auto* vd = dynamic_cast<VarDeclStmt*>(s)) {
-            slots += arrayElemCount(vd);          // array reserva n slots; escalar 1
+            slots += declSlots(vd);               // array→n, struct→size/8, escalar→1
         } else if (auto* b = dynamic_cast<Block*>(s)) {
             for (auto inner : b->stmts) countStmt(inner);
         } else if (auto* i = dynamic_cast<IfStmt*>(s)) {
@@ -101,7 +106,7 @@ int CodeGenerator::frameSize(FuncDecl* f) {
         } else if (auto* w = dynamic_cast<WhileStmt*>(s)) {
             countStmt(w->body);
         } else if (auto* fr = dynamic_cast<ForStmt*>(s)) {
-            if (fr->init.decl) slots += arrayElemCount(fr->init.decl);
+            if (fr->init.decl) slots += declSlots(fr->init.decl);
             countStmt(fr->body);
         }
     };
@@ -122,8 +127,28 @@ int CodeGenerator::arrayElemCount(VarDeclStmt* node) {
     return static_cast<int>(total);
 }
 
-void CodeGenerator::buildStructInfo(StructDecl* /*s*/) {
-    // TODO: calcular offsets y tamaño de cada struct
+// Slots de 8 bytes que reserva una declaración: array→nº elementos,
+// struct (no puntero)→size/8, escalar→1.
+int CodeGenerator::declSlots(VarDeclStmt* node) {
+    if (!node->dimensions.empty()) return arrayElemCount(node);
+    SemType t = SemType::fromTypeNode(node->type);
+    if (!t.hasPointer() && structs_.count(t.base))
+        return structs_[t.base].size / 8;
+    return 1;
+}
+
+// Layout de un struct: cada miembro ocupa un slot de 8 bytes (igual que las
+// variables locales), en orden de declaración. offsets[m] desde la base.
+void CodeGenerator::buildStructInfo(StructDecl* s) {
+    CodegenStructInfo info;
+    int off = 0;
+    for (auto& m : s->members) {
+        info.offsets[m.name] = off;
+        info.types[m.name]   = SemType::fromTypeNode(m.type);
+        off += 8;
+    }
+    info.size = off;
+    structs_[s->name] = info;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -232,7 +257,23 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
             return;
         }
     }
-    // TODO: MemberExpr (s.x / p->x)
+    if (auto* mem = dynamic_cast<MemberExpr*>(e)) {
+        // s.x  → dirección del struct + offset del miembro
+        // p->x → valor del puntero (= dirección del struct) + offset del miembro
+        SemType st;
+        if (mem->is_arrow) {
+            mem->base->accept(this);       // puntero (dirección del struct) → %rax
+            st = cur_type_.deref();
+        } else {
+            emitLvalueAddr(mem->base);     // dirección del struct → %rax
+            st = cur_type_;
+        }
+        const CodegenStructInfo& info = structs_.at(st.base);
+        int moff = info.offsets.at(mem->member);
+        if (moff) out_ << "    addq $" << moff << ", %rax\n";
+        cur_type_ = info.types.at(mem->member);
+        return;
+    }
 }
 
 void CodeGenerator::emitPush(const SemType& t) {
@@ -340,7 +381,8 @@ void CodeGenerator::visit(FuncDecl* node) {
     env_.exitScope();
 }
 
-void CodeGenerator::visit(StructDecl* /*node*/)       { /* TODO */ }
+// El layout (offsets, size) se calcula en firstPass; aquí no se emite código.
+void CodeGenerator::visit(StructDecl* /*node*/)       {}
 void CodeGenerator::visit(TemplateFuncDecl* /*node*/) { /* TODO */ }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -381,6 +423,18 @@ void CodeGenerator::visit(VarDeclStmt* node) {
             emitStore(elem, base + static_cast<int>(i) * 8);
         }
         return;
+    }
+
+    // ── Variable struct: reserva size bytes; la var decae a su dirección base ──
+    {
+        SemType t = SemType::fromTypeNode(node->type);
+        if (!t.hasPointer() && structs_.count(t.base)) {
+            int size = structs_[t.base].size;
+            int base = offset_ - (size - 8);  // slot más bajo = miembro en offset 0
+            offset_ -= size;
+            env_.declare(node->name, VarEntry{t, base, /*is_array=*/true});
+            return;  // sin inicializador (la gramática no tiene literales de struct)
+        }
     }
 
     // ── Variable escalar ──────────────────────────────────────────────────────
@@ -827,7 +881,13 @@ void CodeGenerator::visit(IndexExpr* node) {
     cur_type_ = et;
 }
 
-void CodeGenerator::visit(MemberExpr* /*node*/)    { /* TODO */ }
+// s.x / p->x como rvalue: dirección del miembro → %rax, luego carga su valor.
+void CodeGenerator::visit(MemberExpr* node) {
+    emitLvalueAddr(node);     // dirección del miembro → %rax; cur_type_ = tipo miembro
+    SemType t = cur_type_;
+    emitLoadIndirect(t);
+    cur_type_ = t;
+}
 // base++ / base-- : igual que prefijo pero el resultado es el valor anterior.
 void CodeGenerator::visit(PostfixExpr* node) {
     emitIncDec(node->base, /*inc=*/node->is_inc, /*postfix=*/true);

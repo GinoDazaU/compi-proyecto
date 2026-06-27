@@ -69,6 +69,7 @@ private:
     void firstPass(Program* program);
     int  frameSize(FuncDecl* f);                 // calcula y redondea a múltiplo de 16
     int  arrayElemCount(VarDeclStmt* node);      // nº de elementos (1 si no es array)
+    int  declSlots(VarDeclStmt* node);           // slots de 8 bytes que reserva
     void buildStructInfo(StructDecl* s);
 
     // ─── Helpers de emisión ───────────────────────────────────────────────
