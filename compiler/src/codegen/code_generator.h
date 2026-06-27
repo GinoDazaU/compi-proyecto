@@ -70,6 +70,9 @@ private:
     int         nextLabel();
     std::string newStrLabel();
 
+    // Construye un label interno único: "__<prefix>_<n>".
+    std::string label(const std::string& prefix, int n);
+
     // Registran (o reutilizan) una constante en .rodata y devuelven su label.
     std::string floatLabel(double v);
     std::string strLabel(const std::string& lexeme);
@@ -82,8 +85,19 @@ private:
     void emitPush(const SemType& t);
     void emitPop (const SemType& t, const std::string& reg); // reg: %rax o %xmm0
 
+    // Compara el valor recién evaluado (en %rax, o %xmm0 si float) contra 0,
+    // dejando las flags listas para un salto condicional. Unifica la divergencia
+    // float (xorpd+ucomisd) vs int (cmpq $0).
+    void emitCompareZero(const SemType& t);
+    // Normaliza ese valor a un booleano 0/1 en %rax (valor != 0).
+    void emitToBool(const SemType& t);
+
     // Evalúa una condición y salta a 'label' si es falsa (==0). Usado por if/while/for.
     void emitCondJumpIfFalse(Expr* cond, const std::string& label);
+
+    // Sub-emisores de CallExpr (built-in print/println vs función de usuario).
+    void emitBuiltinPrint(CallExpr* node, bool newline);
+    void emitUserCall(CallExpr* node, const std::string& name);
 
     // sección .data al inicio
     void emitDataSection();

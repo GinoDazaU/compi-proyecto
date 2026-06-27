@@ -29,6 +29,9 @@ struct SemType {
     bool isBool()      const { return base == "bool" && mods.empty(); }
     bool hasPointer()  const { return !mods.empty() && mods.back() == PtrMod::Pointer; }
 
+    // Tipos que se cargan/guardan en 1 byte (%al + movzbq), no punteros.
+    bool isByteSized() const { return (base=="bool"||base=="char") && !hasPointer(); }
+
     // Tipo al que apunta (quita el último mod)
     SemType deref() const {
         SemType t = *this;

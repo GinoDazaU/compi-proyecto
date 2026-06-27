@@ -126,6 +126,10 @@ std::string CodeGenerator::newStrLabel() {
     return "__str_" + std::to_string(str_counter_++);
 }
 
+std::string CodeGenerator::label(const std::string& prefix, int n) {
+    return "__" + prefix + "_" + std::to_string(n);
+}
+
 std::string CodeGenerator::floatLabel(double v) {
     for (auto& [lbl, val] : float_literals_)
         if (val == v) return lbl;
@@ -147,7 +151,7 @@ std::string CodeGenerator::strLabel(const std::string& lexeme) {
 void CodeGenerator::emitLoad(const SemType& t, int offset) {
     if (t.isFloat()) {
         out_ << "    movsd " << offset << "(%rbp), %xmm0\n";
-    } else if ((t.base == "bool" || t.base == "char") && !t.hasPointer()) {
+    } else if (t.isByteSized()) {
         out_ << "    movb " << offset << "(%rbp), %al\n";
         out_ << "    movzbq %al, %rax\n";
     } else {
@@ -159,7 +163,7 @@ void CodeGenerator::emitLoad(const SemType& t, int offset) {
 void CodeGenerator::emitStore(const SemType& t, int offset) {
     if (t.isFloat()) {
         out_ << "    movsd %xmm0, " << offset << "(%rbp)\n";
-    } else if ((t.base == "bool" || t.base == "char") && !t.hasPointer()) {
+    } else if (t.isByteSized()) {
         out_ << "    movb %al, " << offset << "(%rbp)\n";
     } else {
         out_ << "    movq %rax, " << offset << "(%rbp)\n";
@@ -183,14 +187,25 @@ void CodeGenerator::emitPop(const SemType& t, const std::string& reg) {
     }
 }
 
-void CodeGenerator::emitCondJumpIfFalse(Expr* cond, const std::string& label) {
-    cond->accept(this);  // valor → %rax (o %xmm0 si float)
-    if (cur_type_.isFloat()) {
+void CodeGenerator::emitCompareZero(const SemType& t) {
+    if (t.isFloat()) {
         out_ << "    xorpd %xmm1, %xmm1\n";
-        out_ << "    ucomisd %xmm1, %xmm0\n";  // %xmm0 == 0 → falso
+        out_ << "    ucomisd %xmm1, %xmm0\n";  // %xmm0 == 0 → ZF
     } else {
         out_ << "    cmpq $0, %rax\n";
     }
+}
+
+void CodeGenerator::emitToBool(const SemType& t) {
+    emitCompareZero(t);
+    out_ << "    movl $0, %eax\n";
+    out_ << "    setne %al\n";        // %rax = (valor != 0)
+    out_ << "    movzbq %al, %rax\n";
+}
+
+void CodeGenerator::emitCondJumpIfFalse(Expr* cond, const std::string& label) {
+    cond->accept(this);  // valor → %rax (o %xmm0 si float)
+    emitCompareZero(cur_type_);
     out_ << "    je " << label << "\n";
 }
 
@@ -300,10 +315,10 @@ void CodeGenerator::visit(VarDeclStmt* node) {
 }
 void CodeGenerator::visit(IfStmt* node) {
     int n = nextLabel();
-    std::string endLabel = "__endif_" + std::to_string(n);
+    std::string endLabel = label("endif", n);
 
     if (node->else_branch) {
-        std::string elseLabel = "__else_" + std::to_string(n);
+        std::string elseLabel = label("else", n);
         emitCondJumpIfFalse(node->condition, elseLabel);
         node->then_branch->accept(this);
         out_ << "    jmp " << endLabel << "\n";
@@ -317,8 +332,8 @@ void CodeGenerator::visit(IfStmt* node) {
 }
 void CodeGenerator::visit(WhileStmt* node) {
     int n = nextLabel();
-    std::string startLabel = "__while_"    + std::to_string(n);
-    std::string endLabel   = "__endwhile_" + std::to_string(n);
+    std::string startLabel = label("while",    n);
+    std::string endLabel   = label("endwhile", n);
 
     // {target de continue, target de break}
     loop_labels_.push({startLabel, endLabel});
@@ -333,9 +348,9 @@ void CodeGenerator::visit(WhileStmt* node) {
 }
 void CodeGenerator::visit(ForStmt* node) {
     int n = nextLabel();
-    std::string condLabel = "__for_"    + std::to_string(n);
-    std::string updLabel  = "__forupd_" + std::to_string(n);
-    std::string endLabel  = "__endfor_" + std::to_string(n);
+    std::string condLabel = label("for",    n);
+    std::string updLabel  = label("forupd", n);
+    std::string endLabel  = label("endfor", n);
 
     env_.enterScope();  // la variable del init vive solo dentro del for
 
@@ -403,76 +418,82 @@ void CodeGenerator::visit(StringLitExpr* node) {
     cur_type_ = SemType{"string"};
 }
 
-// ── print / println (built-ins) ──────────────────────────────────────────────
-// Emite una llamada a printf por argumento, eligiendo formato y registro según
-// el tipo real de cada argumento (cur_type_).
+// Despacha según el callee: built-in print/println, función de usuario, o
+// (pendiente) una lambda guardada en una variable.
 void CodeGenerator::visit(CallExpr* node) {
     if (auto* id = dynamic_cast<IdExpr*>(node->callee)) {
         if (id->name == "print" || id->name == "println") {
-            bool newline = (id->name == "println");
-            for (auto arg : node->args) {
-                arg->accept(this);  // valor → %rax (o %xmm0 si float); tipo → cur_type_
-
-                if (cur_type_.isFloat()) {
-                    // El valor ya está en %xmm0; %al = nº de regs XMM usados.
-                    out_ << "    leaq __fmt_float(%rip), %rdi\n";
-                    out_ << "    movl $1, %eax\n";
-                } else {
-                    out_ << "    movq %rax, %rsi\n";
-                    const char* fmt = "__fmt_int";
-                    if      (cur_type_.base == "char")   fmt = "__fmt_char";
-                    else if (cur_type_.base == "string") fmt = "__fmt_str";
-                    out_ << "    leaq " << fmt << "(%rip), %rdi\n";
-                    out_ << "    movl $0, %eax\n";
-                }
-                out_ << "    call printf@PLT\n";
-            }
-            if (newline) {
-                out_ << "    leaq __fmt_nl(%rip), %rdi\n";
-                out_ << "    movl $0, %eax\n";
-                out_ << "    call printf@PLT\n";
-            }
+            emitBuiltinPrint(node, id->name == "println");
             return;
         }
-    }
-
-    // ── Llamada a función de usuario ──────────────────────────────────────────
-    // Convención System V (codegen.md §8): evaluar args en orden y apilarlos,
-    // luego sacarlos en orden inverso a los registros de su banco (int en
-    // %rdi…/%r9, float en %xmm0…%xmm7). Resultado en %rax (o %xmm0 si float).
-    if (auto* id = dynamic_cast<IdExpr*>(node->callee)) {
         if (frame_sizes_.count(id->name)) {
-            size_t n = node->args.size();
-
-            // 1. Evaluar y apilar cada arg; recordar su banco y su índice de registro.
-            std::vector<bool> isFloat(n);
-            std::vector<int>  regIdx(n);
-            int nInt = 0, nFloat = 0;
-            for (size_t i = 0; i < n; ++i) {
-                node->args[i]->accept(this);   // valor → %rax o %xmm0; tipo → cur_type_
-                bool f = (cur_type_.isFloat());
-                isFloat[i] = f;
-                regIdx[i]  = f ? nFloat++ : nInt++;
-                emitPush(cur_type_);
-            }
-
-            // 2. Sacar de la pila en orden inverso (la cima es el último arg).
-            for (size_t k = n; k-- > 0; ) {
-                if (isFloat[k]) {
-                    if (regIdx[k] < 8) emitPop(SemType{"float"}, FLOAT_ARG_REGS[regIdx[k]]);
-                } else {
-                    if (regIdx[k] < 6) out_ << "    popq " << INT_ARG_REGS[regIdx[k]] << "\n";
-                }
-            }
-
-            out_ << "    call " << id->name << "\n";
-
-            auto it = func_rets_.find(id->name);
-            cur_type_ = (it != func_rets_.end()) ? it->second : SemType{"int"};
+            emitUserCall(node, id->name);
             return;
         }
     }
     // TODO: llamada a lambda (valor de tipo función) — junto al codegen de lambdas
+}
+
+// ── print / println (built-ins) ──────────────────────────────────────────────
+// Emite una llamada a printf por argumento, eligiendo formato y registro según
+// el tipo real de cada argumento (cur_type_).
+void CodeGenerator::emitBuiltinPrint(CallExpr* node, bool newline) {
+    for (auto arg : node->args) {
+        arg->accept(this);  // valor → %rax (o %xmm0 si float); tipo → cur_type_
+
+        if (cur_type_.isFloat()) {
+            // El valor ya está en %xmm0; %al = nº de regs XMM usados.
+            out_ << "    leaq __fmt_float(%rip), %rdi\n";
+            out_ << "    movl $1, %eax\n";
+        } else {
+            out_ << "    movq %rax, %rsi\n";
+            const char* fmt = "__fmt_int";
+            if      (cur_type_.base == "char")   fmt = "__fmt_char";
+            else if (cur_type_.base == "string") fmt = "__fmt_str";
+            out_ << "    leaq " << fmt << "(%rip), %rdi\n";
+            out_ << "    movl $0, %eax\n";
+        }
+        out_ << "    call printf@PLT\n";
+    }
+    if (newline) {
+        out_ << "    leaq __fmt_nl(%rip), %rdi\n";
+        out_ << "    movl $0, %eax\n";
+        out_ << "    call printf@PLT\n";
+    }
+}
+
+// ── Llamada a función de usuario ──────────────────────────────────────────────
+// Convención System V (codegen.md §8): evaluar args en orden y apilarlos, luego
+// sacarlos en orden inverso a los registros de su banco (int en %rdi…/%r9, float
+// en %xmm0…%xmm7). Resultado en %rax (o %xmm0 si float).
+void CodeGenerator::emitUserCall(CallExpr* node, const std::string& name) {
+    size_t n = node->args.size();
+
+    // 1. Evaluar y apilar cada arg; recordar su banco y su índice de registro.
+    std::vector<bool> isFloat(n);
+    std::vector<int>  regIdx(n);
+    int nInt = 0, nFloat = 0;
+    for (size_t i = 0; i < n; ++i) {
+        node->args[i]->accept(this);   // valor → %rax o %xmm0; tipo → cur_type_
+        bool f = (cur_type_.isFloat());
+        isFloat[i] = f;
+        regIdx[i]  = f ? nFloat++ : nInt++;
+        emitPush(cur_type_);
+    }
+
+    // 2. Sacar de la pila en orden inverso (la cima es el último arg).
+    for (size_t k = n; k-- > 0; ) {
+        if (isFloat[k]) {
+            if (regIdx[k] < 8) emitPop(SemType{"float"}, FLOAT_ARG_REGS[regIdx[k]]);
+        } else {
+            if (regIdx[k] < 6) out_ << "    popq " << INT_ARG_REGS[regIdx[k]] << "\n";
+        }
+    }
+
+    out_ << "    call " << name << "\n";
+
+    auto it = func_rets_.find(name);
+    cur_type_ = (it != func_rets_.end()) ? it->second : SemType{"int"};
 }
 
 void CodeGenerator::visit(IdExpr* node) {
@@ -503,31 +524,19 @@ void CodeGenerator::visit(BinaryExpr* node) {
     if (node->op == BinaryOp::And || node->op == BinaryOp::Or) {
         bool isAnd = (node->op == BinaryOp::And);
         int  n     = nextLabel();
-        std::string shortLabel = "__logic_short_" + std::to_string(n);
-        std::string endLabel   = "__logic_end_"   + std::to_string(n);
+        std::string shortLabel = label("logic_short", n);
+        std::string endLabel   = label("logic_end",   n);
 
-        // Normaliza el valor recién evaluado (en %rax, o %xmm0 si es float) a un
-        // booleano 0/1 en %rax. Así `2 && 1` da 1 (y no 0, como con un AND bit a bit).
-        auto toBoolInRax = [&](const SemType& t) {
-            if (t.isFloat()) {
-                out_ << "    xorpd %xmm1, %xmm1\n";
-                out_ << "    ucomisd %xmm1, %xmm0\n";
-            } else {
-                out_ << "    cmpq $0, %rax\n";
-            }
-            out_ << "    movl $0, %eax\n";
-            out_ << "    setne %al\n";
-            out_ << "    movzbq %al, %rax\n";
-        };
-
+        // Cada lado se normaliza a 0/1 en %rax (emitToBool). Así `2 && 1` da 1
+        // (y no 0, como daría un AND bit a bit).
         node->left->accept(this);
-        toBoolInRax(cur_type_);            // %rax = (left != 0)
+        emitToBool(cur_type_);             // %rax = (left != 0)
         out_ << "    cmpq $0, %rax\n";
         if (isAnd) out_ << "    je "  << shortLabel << "\n";  // &&: left falso → corto en 0
         else       out_ << "    jne " << shortLabel << "\n";  // ||: left verdad → corto en 1
 
         node->right->accept(this);         // solo se evalúa si no hubo cortocircuito
-        toBoolInRax(cur_type_);            // %rax = (right != 0) → resultado final
+        emitToBool(cur_type_);             // %rax = (right != 0) → resultado final
         out_ << "    jmp " << endLabel << "\n";
 
         out_ << shortLabel << ":\n";
@@ -665,12 +674,7 @@ void CodeGenerator::visit(UnaryExpr* node) {
         case UnaryOp::Not: {
             node->expr->accept(this);
             // !x = (x == 0). Para float se compara contra 0.0 con ucomisd.
-            if (cur_type_.isFloat()) {
-                out_ << "    xorpd %xmm1, %xmm1\n";
-                out_ << "    ucomisd %xmm1, %xmm0\n";
-            } else {
-                out_ << "    cmpq $0, %rax\n";
-            }
+            emitCompareZero(cur_type_);
             out_ << "    movl $0, %eax\n";
             out_ << "    sete %al\n";
             out_ << "    movzbq %al, %rax\n";
