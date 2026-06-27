@@ -20,7 +20,11 @@ struct CodegenStructInfo {
 // ─── Entrada del environment: tipo + offset desde %rbp ───────────────────────
 struct VarEntry {
     SemType type;
-    int     offset = 0;
+    int     offset   = 0;
+    // true si la variable es un array estático reservado inline en el frame.
+    // En ese caso 'offset' apunta a arr[0] y la variable decae a puntero: su
+    // "valor" es esa dirección (leaq), no el contenido del slot.
+    bool    is_array = false;
 };
 
 // ─── CodeGenerator ───────────────────────────────────────────────────────────
@@ -64,6 +68,7 @@ private:
     // ─── Primera pasada: frame sizes y struct layouts ─────────────────────
     void firstPass(Program* program);
     int  frameSize(FuncDecl* f);                 // calcula y redondea a múltiplo de 16
+    int  arrayElemCount(VarDeclStmt* node);      // nº de elementos (1 si no es array)
     void buildStructInfo(StructDecl* s);
 
     // ─── Helpers de emisión ───────────────────────────────────────────────
@@ -80,6 +85,15 @@ private:
     // load/store según tipo (int→%rax, float→%xmm0, bool/char→%al+movzbq)
     void emitLoad (const SemType& t, int offset);
     void emitStore(const SemType& t, int offset);
+
+    // Igual que emitLoad/emitStore pero con la dirección en un registro (indirecto).
+    // Load lee de (%rax) al registro del tipo; store escribe a (addrReg).
+    void emitLoadIndirect (const SemType& t);
+    void emitStoreIndirect(const SemType& t, const std::string& addrReg);
+
+    // Deja en %rax la DIRECCIÓN de un lvalue (IdExpr, IndexExpr; luego s.x, *p).
+    // cur_type_ queda con el tipo del valor en esa dirección.
+    void emitLvalueAddr(Expr* e);
 
     // push/pop genérico para expresiones binarias
     void emitPush(const SemType& t);

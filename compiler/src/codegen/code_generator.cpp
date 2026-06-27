@@ -91,8 +91,8 @@ int CodeGenerator::frameSize(FuncDecl* f) {
 
     std::function<void(Stmt*)> countStmt = [&](Stmt* s) {
         if (!s) return;
-        if (dynamic_cast<VarDeclStmt*>(s)) {
-            slots += 1;
+        if (auto* vd = dynamic_cast<VarDeclStmt*>(s)) {
+            slots += arrayElemCount(vd);          // array reserva n slots; escalar 1
         } else if (auto* b = dynamic_cast<Block*>(s)) {
             for (auto inner : b->stmts) countStmt(inner);
         } else if (auto* i = dynamic_cast<IfStmt*>(s)) {
@@ -101,7 +101,7 @@ int CodeGenerator::frameSize(FuncDecl* f) {
         } else if (auto* w = dynamic_cast<WhileStmt*>(s)) {
             countStmt(w->body);
         } else if (auto* fr = dynamic_cast<ForStmt*>(s)) {
-            if (fr->init.decl) slots += 1;
+            if (fr->init.decl) slots += arrayElemCount(fr->init.decl);
             countStmt(fr->body);
         }
     };
@@ -110,6 +110,16 @@ int CodeGenerator::frameSize(FuncDecl* f) {
     int bytes = slots * 8;
     if (bytes % 16 != 0) bytes += 16 - (bytes % 16);
     return bytes;
+}
+
+// Nº de elementos de una declaración: producto de sus dimensiones (1 si escalar).
+// Las dimensiones de un array estático son constantes; se espera IntLitExpr.
+int CodeGenerator::arrayElemCount(VarDeclStmt* node) {
+    if (node->dimensions.empty()) return 1;
+    long long total = 1;
+    for (auto* dim : node->dimensions)
+        if (auto* lit = dynamic_cast<IntLitExpr*>(dim)) total *= lit->value;
+    return static_cast<int>(total);
 }
 
 void CodeGenerator::buildStructInfo(StructDecl* /*s*/) {
@@ -169,6 +179,54 @@ void CodeGenerator::emitStore(const SemType& t, int offset) {
         out_ << "    movq %rax, " << offset << "(%rbp)\n";
     }
 }
+// Carga el valor en (%rax) al registro de su tipo (sobrescribe %rax si es int).
+void CodeGenerator::emitLoadIndirect(const SemType& t) {
+    if (t.isFloat()) {
+        out_ << "    movsd (%rax), %xmm0\n";
+    } else if (t.isByteSized()) {
+        out_ << "    movb (%rax), %al\n";
+        out_ << "    movzbq %al, %rax\n";
+    } else {
+        out_ << "    movq (%rax), %rax\n";
+    }
+}
+
+// Guarda el valor actual (%rax o %xmm0) en la dirección que hay en addrReg.
+void CodeGenerator::emitStoreIndirect(const SemType& t, const std::string& addrReg) {
+    if (t.isFloat()) {
+        out_ << "    movsd %xmm0, (" << addrReg << ")\n";
+    } else if (t.isByteSized()) {
+        out_ << "    movb %al, (" << addrReg << ")\n";
+    } else {
+        out_ << "    movq %rax, (" << addrReg << ")\n";
+    }
+}
+
+// Deja en %rax la dirección de un lvalue. cur_type_ ← tipo del valor allí.
+void CodeGenerator::emitLvalueAddr(Expr* e) {
+    if (auto* id = dynamic_cast<IdExpr*>(e)) {
+        if (VarEntry* en = env_.lookup(id->name)) {
+            out_ << "    leaq " << en->offset << "(%rbp), %rax\n";
+            cur_type_ = en->type;
+        }
+        return;
+    }
+    if (auto* ix = dynamic_cast<IndexExpr*>(e)) {
+        ix->base->accept(this);          // puntero base → %rax (array decae con leaq)
+        SemType bt = cur_type_;
+        out_ << "    pushq %rax\n";
+        ix->index->accept(this);         // índice → %rax
+        out_ << "    movq %rax, %rcx\n";
+        out_ << "    popq %rax\n";
+        out_ << "    imulq $8, %rcx\n";   // stride 8 (todo elemento ocupa un slot)
+        out_ << "    addq %rcx, %rax\n";  // dirección del elemento
+        cur_type_ = bt.deref();
+        // TODO: arrays multidimensionales (stride por filas) y string[i] (stride 1).
+        return;
+    }
+    // TODO: MemberExpr (s.x / p->x) y deref (*p)
+}
+
 void CodeGenerator::emitPush(const SemType& t) {
     if (t.isFloat()) {
         out_ << "    subq $8, %rsp\n";
@@ -297,6 +355,27 @@ void CodeGenerator::visit(ReturnStmt* node) {
 }
 
 void CodeGenerator::visit(VarDeclStmt* node) {
+    // ── Array estático: reserva n slots inline; la var decae a puntero ────────
+    if (!node->dimensions.empty()) {
+        int count = arrayElemCount(node);
+        int base  = offset_ - (count - 1) * 8;  // slot más bajo = arr[0]
+        offset_  -= count * 8;
+
+        SemType elem = SemType::fromTypeNode(node->type);   // tipo del elemento
+        SemType ptr  = elem;
+        for (size_t i = 0; i < node->dimensions.size(); ++i)
+            ptr.mods.push_back(PtrMod::Pointer);            // decae a T* (T** si 2D)
+        env_.declare(node->name, VarEntry{ptr, base, /*is_array=*/true});
+
+        // init_list: arr[i] = init_list[i]
+        for (size_t i = 0; i < node->init_list.size(); ++i) {
+            node->init_list[i]->accept(this);               // valor → %rax/%xmm0
+            emitStore(elem, base + static_cast<int>(i) * 8);
+        }
+        return;
+    }
+
+    // ── Variable escalar ──────────────────────────────────────────────────────
     int off = offset_;
     offset_ -= 8;
 
@@ -311,7 +390,6 @@ void CodeGenerator::visit(VarDeclStmt* node) {
         SemType t = SemType::fromTypeNode(node->type);
         env_.declare(node->name, VarEntry{t, off});
     }
-    // TODO: arrays (node->dimensions / node->init_list)
 }
 void CodeGenerator::visit(IfStmt* node) {
     int n = nextLabel();
@@ -499,12 +577,17 @@ void CodeGenerator::emitUserCall(CallExpr* node, const std::string& name) {
 void CodeGenerator::visit(IdExpr* node) {
     VarEntry* e = env_.lookup(node->name);
     if (!e) return;  // el semántico ya garantizó que existe
-    emitLoad(e->type, e->offset);
+    if (e->is_array) {
+        // Un array decae a puntero: su valor es la dirección de arr[0].
+        out_ << "    leaq " << e->offset << "(%rbp), %rax\n";
+    } else {
+        emitLoad(e->type, e->offset);
+    }
     cur_type_ = e->type;
 }
 
-// Por ahora solo asignación a variable simple (IdExpr).
 void CodeGenerator::visit(AssignExpr* node) {
+    // Variable simple: store directo por offset.
     if (auto* id = dynamic_cast<IdExpr*>(node->left)) {
         VarEntry* e = env_.lookup(id->name);
         node->right->accept(this);  // valor → %rax/%xmm0
@@ -513,7 +596,20 @@ void CodeGenerator::visit(AssignExpr* node) {
         cur_type_ = t;  // el resultado de la asignación es el valor asignado
         return;
     }
-    // TODO: lvalues IndexExpr/MemberExpr/Deref
+
+    // lvalue por dirección (arr[i]; luego s.x, *p): calcular dirección, evaluar
+    // el RHS, y guardar de forma indirecta.
+    if (dynamic_cast<IndexExpr*>(node->left)) {
+        emitLvalueAddr(node->left);  // dirección → %rax
+        SemType t = cur_type_;
+        out_ << "    pushq %rax\n";   // guardar dirección durante el RHS
+        node->right->accept(this);    // valor → %rax/%xmm0
+        out_ << "    popq %rcx\n";     // dirección → %rcx
+        emitStoreIndirect(t, "%rcx");
+        cur_type_ = t;
+        return;
+    }
+    // TODO: lvalues MemberExpr / Deref
 }
 
 void CodeGenerator::visit(BinaryExpr* node) {
@@ -699,7 +795,15 @@ void CodeGenerator::visit(UnaryExpr* node) {
 // ── Resto de expresiones (pendientes) ────────────────────────────────────────
 void CodeGenerator::visit(NewArrayExpr* /*node*/)  { /* TODO */ }
 void CodeGenerator::visit(NewObjectExpr* /*node*/) { /* TODO */ }
-void CodeGenerator::visit(IndexExpr* /*node*/)     { /* TODO */ }
+
+// arr[i] como rvalue: dirección del elemento → %rax, luego carga su valor.
+void CodeGenerator::visit(IndexExpr* node) {
+    emitLvalueAddr(node);     // dirección del elemento → %rax; cur_type_ = tipo elem
+    SemType et = cur_type_;
+    emitLoadIndirect(et);
+    cur_type_ = et;
+}
+
 void CodeGenerator::visit(MemberExpr* /*node*/)    { /* TODO */ }
 void CodeGenerator::visit(PostfixExpr* /*node*/)   { /* TODO */ }
 void CodeGenerator::visit(LambdaExpr* /*node*/)    { /* TODO */ }
