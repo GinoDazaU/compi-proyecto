@@ -1,0 +1,18 @@
+struct Node {
+    int val;
+    Node* next;
+};
+
+int main() {
+    Node* a = new Node;
+    a->val = 10;
+    Node* b = new Node;
+    b->val = 20;
+    a->next = b;
+    println(a->val);
+    println(a->next->val);
+    println(b->val);
+    delete a;
+    delete b;
+    return 0;
+}

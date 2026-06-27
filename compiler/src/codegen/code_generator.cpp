@@ -522,7 +522,12 @@ void CodeGenerator::visit(ContinueStmt* /*node*/) {
     if (loop_labels_.empty()) return;
     out_ << "    jmp " << loop_labels_.top().first << "\n";
 }
-void CodeGenerator::visit(DeleteStmt* /*node*/)   { /* TODO */ }
+// delete p / delete[] p: free(p). El '[]' no cambia nada (un solo bloque).
+void CodeGenerator::visit(DeleteStmt* node) {
+    node->expr->accept(this);         // puntero → %rax
+    out_ << "    movq %rax, %rdi\n";
+    out_ << "    call free@PLT\n";
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Expresiones
@@ -869,9 +874,27 @@ void CodeGenerator::visit(UnaryExpr* node) {
     }
 }
 
-// ── Resto de expresiones (pendientes) ────────────────────────────────────────
-void CodeGenerator::visit(NewArrayExpr* /*node*/)  { /* TODO */ }
-void CodeGenerator::visit(NewObjectExpr* /*node*/) { /* TODO */ }
+// new T[n]: malloc(n*8) (cada elemento ocupa un slot de 8 bytes). Devuelve T*.
+void CodeGenerator::visit(NewArrayExpr* node) {
+    node->size->accept(this);         // n → %rax
+    out_ << "    imulq $8, %rax\n";
+    out_ << "    movq %rax, %rdi\n";
+    out_ << "    call malloc@PLT\n";  // puntero → %rax
+    SemType t = SemType::fromTypeNode(node->type);
+    t.mods.push_back(PtrMod::Pointer);
+    cur_type_ = t;
+}
+
+// new T (struct): calloc(1, size) para dejar los campos en cero. Devuelve T*.
+void CodeGenerator::visit(NewObjectExpr* node) {
+    SemType t = SemType::fromTypeNode(node->type);
+    int size = structs_.count(t.base) ? structs_[t.base].size : 8;
+    out_ << "    movq $1, %rdi\n";
+    out_ << "    movq $" << size << ", %rsi\n";
+    out_ << "    call calloc@PLT\n"; // memoria en cero; puntero → %rax
+    t.mods.push_back(PtrMod::Pointer);
+    cur_type_ = t;
+}
 
 // arr[i] como rvalue: dirección del elemento → %rax, luego carga su valor.
 void CodeGenerator::visit(IndexExpr* node) {
