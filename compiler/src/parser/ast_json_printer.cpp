@@ -26,8 +26,7 @@ std::string ASTJsonPrinter::typeStr(TypeNode* t) {
     std::string s;
     s += t->base;
     if (t->template_arg) s += "<" + typeStr(t->template_arg) + ">";
-    for (auto mod : t->mods)
-        s += "*";
+    s.append(t->mods.size(), '*');
     return s;
 }
 

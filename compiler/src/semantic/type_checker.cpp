@@ -153,7 +153,7 @@ void TypeChecker::visit(Program* node) {
 
 // ─── Declaraciones globales ───────────────────────────────────────────────────
 
-void TypeChecker::visit(StructDecl* node) {
+void TypeChecker::visit(StructDecl*) {
     // Validado en primera pasada
 }
 
@@ -316,11 +316,11 @@ void TypeChecker::visit(DeleteStmt* node) {
 
 // ─── Expresiones ─────────────────────────────────────────────────────────────
 
-void TypeChecker::visit(IntLitExpr* node)    { expr_type_ = SemType{"int"};    }
-void TypeChecker::visit(FloatLitExpr* node)  { expr_type_ = SemType{"float"};  }
-void TypeChecker::visit(BoolLitExpr* node)   { expr_type_ = SemType{"bool"};   }
-void TypeChecker::visit(CharLitExpr* node)   { expr_type_ = SemType{"char"};   }
-void TypeChecker::visit(StringLitExpr* node) { expr_type_ = SemType{"string"}; }
+void TypeChecker::visit(IntLitExpr*)    { expr_type_ = SemType{"int"};    }
+void TypeChecker::visit(FloatLitExpr*)  { expr_type_ = SemType{"float"};  }
+void TypeChecker::visit(BoolLitExpr*)   { expr_type_ = SemType{"bool"};   }
+void TypeChecker::visit(CharLitExpr*)   { expr_type_ = SemType{"char"};   }
+void TypeChecker::visit(StringLitExpr*) { expr_type_ = SemType{"string"}; }
 
 void TypeChecker::visit(IdExpr* node) {
     VarInfo* v = vars_.lookup(node->name);

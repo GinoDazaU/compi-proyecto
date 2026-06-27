@@ -61,7 +61,6 @@ std::string SemType::toString() const {
         return s;
     }
     std::string s = base;
-    for (auto m : mods)
-        s += "*";
+    s.append(mods.size(), '*');
     return s;
 }
