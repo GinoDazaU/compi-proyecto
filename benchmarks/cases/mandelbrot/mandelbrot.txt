@@ -1,0 +1,28 @@
+int main() {
+    int W = 600;
+    int H = 600;
+    int maxIter = 256;
+    int total = 0;
+
+    int py = 0;
+    for (py = 0; py < H; py++) {
+        int px = 0;
+        for (px = 0; px < W; px++) {
+            float x0 = px * 1.0 / W * 3.5 - 2.5;
+            float y0 = py * 1.0 / H * 2.0 - 1.0;
+            float x = 0.0;
+            float y = 0.0;
+            int iter = 0;
+            while (iter < maxIter && x * x + y * y < 4.0) {
+                float xt = x * x - y * y + x0;
+                y = 2.0 * x * y + y0;
+                x = xt;
+                iter++;
+            }
+            total = total + iter;
+        }
+    }
+
+    println(total);
+    return 0;
+}
