@@ -43,17 +43,20 @@ def rust(flags, label):
     return {"lang": "rust", "tool": "rustc", "flags": label, "ext": "rs", "tools": ["rustc"],
             "steps": lambda src, out: [(["rustc"] + flags + ["-o", out, src], None)]}
 
-MINE = {"lang": "propio", "tool": "mio", "flags": "-O0", "ext": "txt", "tools": ["g++"],
-        "extra": lambda: os.path.isfile(COMPILER),
-        # paso 1: compilador propio txt→.s ; paso 2: g++ ensambla y enlaza
-        "steps": lambda src, out: [([COMPILER, "--asm", src], out + ".s"),
-                                   (["g++", "-o", out, out + ".s"], None)]}
+def mine(flags, opt):
+    # paso 1: compilador propio txt→.s (con --opt si corresponde); paso 2: g++ enlaza
+    asm = [COMPILER, "--asm"] + (["--opt"] if opt else [])
+    return {"lang": "propio", "tool": "mio", "flags": flags, "ext": "txt", "tools": ["g++"],
+            "extra": lambda: os.path.isfile(COMPILER),
+            "steps": lambda src, out: [(asm + [src], out + ".s"),
+                                       (["g++", "-o", out, out + ".s"], None)]}
 
 GO = {"lang": "go", "tool": "go", "flags": "build", "ext": "go", "tools": ["go"],
       "steps": lambda src, out: [(["go", "build", "-o", out, src], None)]}
 
 CONFIGS = [
-    MINE,
+    mine("-O0",  False),
+    mine("-opt", True),
     cpp("g++",      "-O0"),
     cpp("g++",      "-O2"),
     cpp("clang++",  "-O0"),
