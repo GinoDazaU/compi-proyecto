@@ -7,6 +7,7 @@
 #include "parser/ast_json_printer.h"
 #include "semantic/type_checker.h"
 #include "codegen/code_generator.h"
+#include "optimizer/optimizer.h"
 
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -20,7 +21,7 @@ static std::string readFile(const std::string& path) {
 }
 
 static void printUsage() {
-    std::cerr << "Uso: compiler [--tokens|--ast|--json|--asm] <archivo>\n";
+    std::cerr << "Uso: compiler [--tokens|--ast|--json|--asm] [--opt] <archivo>\n";
 }
 
 static std::string escapeJson(const std::string& s) {
@@ -57,22 +58,23 @@ static std::string serializeTokens(const std::vector<Token>& tokens) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2 || argc > 3) { printUsage(); return 1; }
-
     std::string mode = "ast";
     std::string filepath;
+    bool opt = false;
 
-    if (argc == 3) {
-        std::string flag = argv[1];
-        if (flag == "--tokens") mode = "tokens";
-        else if (flag == "--ast") mode = "ast";
-        else if (flag == "--json") mode = "json";
-        else if (flag == "--asm") mode = "asm";
+    // Flags en cualquier orden; el primer argumento sin '-' es el archivo.
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if      (arg == "--tokens") mode = "tokens";
+        else if (arg == "--ast")    mode = "ast";
+        else if (arg == "--json")   mode = "json";
+        else if (arg == "--asm")    mode = "asm";
+        else if (arg == "--opt")    opt = true;
+        else if (!arg.empty() && arg[0] == '-') { printUsage(); return 1; }
+        else if (filepath.empty())  filepath = arg;
         else { printUsage(); return 1; }
-        filepath = argv[2];
-    } else {
-        filepath = argv[1];
     }
+    if (filepath.empty()) { printUsage(); return 1; }
 
     std::string source = readFile(filepath);
 
@@ -121,6 +123,9 @@ int main(int argc, char* argv[]) {
         // Fase 3: Semántico
         TypeChecker checker;
         checker.check(program);
+
+        // Fase 3.5: Optimización opcional sobre el AST (--opt)
+        if (opt) optimizer::optimize(program);
 
         if (mode == "json") {
             std::stringstream ss;

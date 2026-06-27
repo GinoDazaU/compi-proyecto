@@ -25,6 +25,10 @@ SOURCES = [
     "src/semantic/sem_type.cpp",
     "src/semantic/type_checker.cpp",
     "src/codegen/code_generator.cpp",
+    "src/optimizer/optimizer.cpp",
+    "src/optimizer/ast_walker.cpp",
+    "src/optimizer/constant_folder.cpp",
+    "src/optimizer/dead_code_eliminator.cpp",
 ]
 
 FLAGS = ["-std=c++17", "-Wall", "-Wextra", "-I", "src"]
