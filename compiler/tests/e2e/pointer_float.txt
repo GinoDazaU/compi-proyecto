@@ -1,0 +1,9 @@
+int main() {
+    float f = 1.5;
+    float* p = &f;
+    *p = 3.25;
+    println(f);
+    float g = *p + 0.75;
+    println(g);
+    return 0;
+}

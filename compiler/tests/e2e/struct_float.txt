@@ -1,0 +1,14 @@
+struct Vec {
+    float x;
+    float y;
+};
+
+int main() {
+    Vec v;
+    v.x = 1.5;
+    v.y = 2.5;
+    println(v.x + v.y);
+    v.x = v.x * 2.0;
+    println(v.x);
+    return 0;
+}

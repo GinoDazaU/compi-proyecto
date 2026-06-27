@@ -1,0 +1,19 @@
+struct Mix {
+    int   i;
+    char  c;
+    bool  b;
+    float f;
+};
+
+int main() {
+    Mix m;
+    m.i = 42;
+    m.c = 'Q';
+    m.b = true;
+    m.f = 1.25;
+    println(m.i);
+    println(m.c);
+    println(m.b);
+    println(m.f);
+    return 0;
+}

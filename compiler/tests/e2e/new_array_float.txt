@@ -1,0 +1,14 @@
+int main() {
+    int n = 4;
+    float* a = new float[n];
+    for (int i = 0; i < n; i++) {
+        a[i] = i * 1.5;
+    }
+    float s = 0.0;
+    for (int i = 0; i < n; i++) {
+        s = s + a[i];
+    }
+    println(s);
+    delete[] a;
+    return 0;
+}

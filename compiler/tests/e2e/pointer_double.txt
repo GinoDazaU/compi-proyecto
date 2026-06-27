@@ -1,0 +1,14 @@
+int main() {
+    int x = 5;
+    int* p = &x;
+    int** pp = &p;
+    **pp = 9;
+    println(x);
+    println(**pp);
+    int y = 7;
+    *pp = &y;
+    **pp = 11;
+    println(y);
+    println(x);
+    return 0;
+}

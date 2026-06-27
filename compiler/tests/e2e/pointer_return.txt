@@ -1,0 +1,14 @@
+int* bigger(int* a, int* b) {
+    if (*a > *b) { return a; }
+    return b;
+}
+
+int main() {
+    int x = 3;
+    int y = 8;
+    int* m = bigger(&x, &y);
+    *m = 100;
+    println(x);
+    println(y);
+    return 0;
+}

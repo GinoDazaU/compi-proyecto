@@ -1,0 +1,12 @@
+int main() {
+    int a = 1;
+    int b = 2;
+    int* p = &a;
+    println(*p);
+    p = &b;
+    println(*p);
+    *p = 20;
+    println(b);
+    println(a);
+    return 0;
+}
