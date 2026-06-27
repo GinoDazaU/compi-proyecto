@@ -49,11 +49,17 @@ todo por patrón. Si falta `.rs`/`.go`, ese lenguaje se salta para ese benchmark
 ## Uso
 
 ```bash
-python3 run.py            # corre todos los benchmarks
+python3 run.py            # corre todos los benchmarks → results/results.csv
 python3 run.py fib sort   # solo algunos
+python3 plot.py           # genera los gráficos en results/ (requiere matplotlib)
 ```
 
-## Pendiente
+> `run.py` reescribe `results.csv` completo en cada corrida. Para el CSV final
+> corre **sin filtro**; el filtro por nombre es solo para iterar rápido.
 
-- [ ] Implementar `run.py`.
-- [ ] Escribir el algoritmo de cada benchmark en sus 4 lenguajes + `expected.txt`.
+## Entorno de medición
+
+Para números confiables, correr en **Linux nativo**. En **WSL**, mover el repo al
+filesystem de Linux (p.ej. `~/compi-proyecto`) y no dejarlo en `/mnt/c/...`: el
+montaje de Windows es lento y añade mucho ruido, sobre todo a los tiempos de
+compilación.
