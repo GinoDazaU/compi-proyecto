@@ -1,5 +1,9 @@
 benchmark,lenguaje,compilador,flags,tiempo_compilacion_ms,tamano_binario_bytes,tiempo_ejecucion_ms
-fib,propio,mio,-O0,159.02,16200,1342.22
-fib,c++,g++,-O0,232.56,15992,1772.53
-fib,c++,g++,-O2,268.49,16000,173.72
-fib,go,go,build,359.99,1893730,744.26
+fib,propio,mio,-O0,103.82,16200,1295.4
+fib,c++,g++,-O0,180.15,15992,1085.9
+fib,c++,g++,-O2,212.72,16000,260.48
+fib,go,go,build,224.17,1893730,701.01
+sort,propio,mio,-O0,231.83,16552,425.16
+sort,c++,g++,-O0,854.67,16000,109.88
+sort,c++,g++,-O2,210.42,16008,160.58
+sort,go,go,build,151.44,1894033,61.3
