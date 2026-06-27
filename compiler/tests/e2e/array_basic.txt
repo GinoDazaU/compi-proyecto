@@ -1,9 +1,9 @@
 int main() {
     int a[5];
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; i++) {
         a[i] = i * i;
     }
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; i++) {
         println(a[i]);
     }
     int b[3] = {10, 20, 30};

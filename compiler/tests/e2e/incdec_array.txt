@@ -1,0 +1,14 @@
+int main() {
+    int a[3];
+    a[0] = 10; a[1] = 20; a[2] = 30;
+    a[0]++;
+    ++a[1];
+    a[2]--;
+    println(a[0]);
+    println(a[1]);
+    println(a[2]);
+    int old = a[0]++;
+    println(old);
+    println(a[0]);
+    return 0;
+}

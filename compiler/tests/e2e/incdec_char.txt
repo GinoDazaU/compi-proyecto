@@ -1,0 +1,8 @@
+int main() {
+    char c = 'A';
+    c++;
+    println(c);
+    c++;
+    println(c);
+    return 0;
+}

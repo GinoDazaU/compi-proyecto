@@ -1,0 +1,9 @@
+int main() {
+    for (int i = 5; i > 0; i--) { println(i); }
+    int x = 3;
+    while (x > 0) {
+        println(x);
+        x--;
+    }
+    return 0;
+}

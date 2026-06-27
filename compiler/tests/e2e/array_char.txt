@@ -1,0 +1,8 @@
+int main() {
+    char v[3];
+    v[0] = 'A';
+    v[1] = 'B';
+    v[2] = 'C';
+    for (int i = 0; i < 3; i++) { println(v[i]); }
+    return 0;
+}

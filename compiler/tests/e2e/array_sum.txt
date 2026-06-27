@@ -1,0 +1,8 @@
+int main() {
+    int a[6];
+    for (int i = 0; i < 6; i++) { a[i] = i + 1; }
+    int sum = 0;
+    for (int i = 0; i < 6; i++) { sum = sum + a[i]; }
+    println(sum);
+    return 0;
+}
