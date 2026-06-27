@@ -160,10 +160,6 @@ void CodeGenerator::buildStructInfo(StructDecl* s) {
 
 int CodeGenerator::nextLabel() { return label_counter_++; }
 
-std::string CodeGenerator::newStrLabel() {
-    return "__str_" + std::to_string(str_counter_++);
-}
-
 std::string CodeGenerator::label(const std::string& prefix, int n) {
     return "__" + prefix + "_" + std::to_string(n);
 }
@@ -179,7 +175,7 @@ std::string CodeGenerator::floatLabel(double v) {
 std::string CodeGenerator::strLabel(const std::string& lexeme) {
     for (auto& [lbl, val] : string_literals_)
         if (val == lexeme) return lbl;
-    std::string lbl = newStrLabel();
+    std::string lbl = "__str_" + std::to_string(str_counter_++);
     string_literals_.push_back({lbl, lexeme});
     return lbl;
 }
@@ -321,6 +317,15 @@ void CodeGenerator::emitToBool(const SemType& t) {
     out_ << "    movl $0, %eax\n";
     out_ << "    setne %al\n";        // %rax = (valor != 0)
     out_ << "    movzbq %al, %rax\n";
+}
+
+// Tras una comparación ya emitida (cmpq/ucomisd), materializa el booleano 0/1
+// en %rax con el set<cc> del operador. cur_type_ ← bool.
+void CodeGenerator::emitSetccBool(BinaryOp op, bool floatCmp) {
+    out_ << "    movl $0, %eax\n";
+    out_ << "    " << setccFor(op, floatCmp) << " %al\n";
+    out_ << "    movzbq %al, %rax\n";
+    cur_type_ = SemType{"bool"};
 }
 
 void CodeGenerator::emitCondJumpIfFalse(Expr* cond, const std::string& label) {
@@ -710,11 +715,11 @@ void CodeGenerator::visit(BinaryExpr* node) {
         std::string shortLabel = label("logic_short", n);
         std::string endLabel   = label("logic_end",   n);
 
-        // Cada lado se normaliza a 0/1 en %rax (emitToBool). Así `2 && 1` da 1
-        // (y no 0, como daría un AND bit a bit).
+        // El resultado se normaliza a 0/1 (así `2 && 1` da 1, no un AND bit a
+        // bit). Para el corto solo importa si el izquierdo es 0 o no, sin
+        // normalizarlo: el valor 0/1 del izquierdo no se usa.
         node->left->accept(this);
-        emitToBool(cur_type_);             // %rax = (left != 0)
-        out_ << "    cmpq $0, %rax\n";
+        emitCompareZero(cur_type_);        // flags: ¿left == 0?
         if (isAnd) out_ << "    je "  << shortLabel << "\n";  // &&: left falso → corto en 0
         else       out_ << "    jne " << shortLabel << "\n";  // ||: left verdad → corto en 1
 
@@ -771,14 +776,10 @@ void CodeGenerator::visit(BinaryExpr* node) {
 
             case BinaryOp::Lt:  case BinaryOp::Leq:
             case BinaryOp::Gt:  case BinaryOp::Geq:
-            case BinaryOp::Eq:  case BinaryOp::Neq: {
+            case BinaryOp::Eq:  case BinaryOp::Neq:
                 out_ << "    ucomisd %xmm1, %xmm0\n";
-                out_ << "    movl $0, %eax\n";
-                out_ << "    " << setccFor(node->op, true) << " %al\n";
-                out_ << "    movzbq %al, %rax\n";
-                cur_type_ = SemType{"bool"};
+                emitSetccBool(node->op, /*floatCmp=*/true);
                 return;
-            }
 
             default: break;
         }
@@ -808,14 +809,10 @@ void CodeGenerator::visit(BinaryExpr* node) {
         // Comparaciones
         case BinaryOp::Lt:  case BinaryOp::Leq:
         case BinaryOp::Gt:  case BinaryOp::Geq:
-        case BinaryOp::Eq:  case BinaryOp::Neq: {
+        case BinaryOp::Eq:  case BinaryOp::Neq:
             out_ << "    cmpq %rcx, %rax\n";
-            out_ << "    movl $0, %eax\n";
-            out_ << "    " << setccFor(node->op, false) << " %al\n";
-            out_ << "    movzbq %al, %rax\n";
-            cur_type_ = SemType{"bool"};
+            emitSetccBool(node->op, /*floatCmp=*/false);
             return;
-        }
 
         // && y || se resuelven arriba con cortocircuito; inalcanzables aquí.
         case BinaryOp::And:

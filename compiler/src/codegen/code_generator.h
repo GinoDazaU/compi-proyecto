@@ -75,7 +75,6 @@ private:
 
     // ─── Helpers de emisión ───────────────────────────────────────────────
     int         nextLabel();
-    std::string newStrLabel();
 
     // Construye un label interno único: "__<prefix>_<n>".
     std::string label(const std::string& prefix, int n);
@@ -115,6 +114,8 @@ private:
     void emitCompareZero(const SemType& t);
     // Normaliza ese valor a un booleano 0/1 en %rax (valor != 0).
     void emitToBool(const SemType& t);
+    // Tras una comparación ya emitida, deja el booleano 0/1 del set<cc> en %rax.
+    void emitSetccBool(BinaryOp op, bool floatCmp);
 
     // Evalúa una condición y salta a 'label' si es falsa (==0). Usado por if/while/for.
     void emitCondJumpIfFalse(Expr* cond, const std::string& label);
