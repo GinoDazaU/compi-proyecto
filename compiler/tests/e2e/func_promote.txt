@@ -1,0 +1,20 @@
+float half(float x) {
+    return x / 2.0;
+}
+
+float fromInt() {
+    return 5;          // return int → float
+}
+
+float addf(float a, float b) {
+    return a + b;
+}
+
+int main() {
+    println(half(3));      // arg int 3 → float param; 3/2 = 1.5
+    println(fromInt());    // 5.000000
+    println(addf(1, 2));   // args int → float params; 3.0
+    float r = half(10);    // 5.0
+    println(r);
+    return 0;
+}

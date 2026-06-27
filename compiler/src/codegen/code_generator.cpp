@@ -85,6 +85,9 @@ void CodeGenerator::firstPass(Program* program) {
         if (auto* f = dynamic_cast<FuncDecl*>(d)) {
             frame_sizes_[f->name] = frameSize(f);
             func_rets_[f->name]   = SemType::fromTypeNode(f->return_type);
+            std::vector<SemType> ptypes;
+            for (auto& p : f->params) ptypes.push_back(SemType::fromTypeNode(p.type));
+            func_params_[f->name] = std::move(ptypes);
         }
         // TODO: TemplateFuncDecl
     }
@@ -410,7 +413,10 @@ void CodeGenerator::visit(ExprStmt* node) {
 }
 
 void CodeGenerator::visit(ReturnStmt* node) {
-    if (node->expr) node->expr->accept(this);  // resultado en %rax
+    if (node->expr) {
+        node->expr->accept(this);  // resultado en %rax/%xmm0
+        emitPromote(func_rets_[current_func_]);  // int→float si la func retorna float
+    }
     out_ << "    jmp .end_" << current_func_ << "\n";
 }
 
@@ -627,11 +633,16 @@ void CodeGenerator::emitUserCall(CallExpr* node, const std::string& name) {
     size_t n = node->args.size();
 
     // 1. Evaluar y apilar cada arg; recordar su banco y su índice de registro.
+    const std::vector<SemType>& ptypes = func_params_[name];
+
     std::vector<bool> isFloat(n);
     std::vector<int>  regIdx(n);
     int nInt = 0, nFloat = 0;
     for (size_t i = 0; i < n; ++i) {
         node->args[i]->accept(this);   // valor → %rax o %xmm0; tipo → cur_type_
+        // Promoción al tipo del parámetro (int→float): debe ocurrir antes de
+        // elegir el banco, para que un int pasado a un param float viaje por %xmm.
+        if (i < ptypes.size()) emitPromote(ptypes[i]);
         bool f = (cur_type_.isFloat());
         isFloat[i] = f;
         regIdx[i]  = f ? nFloat++ : nInt++;

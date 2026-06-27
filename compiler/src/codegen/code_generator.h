@@ -41,8 +41,9 @@ private:
     SymbolTable<VarEntry> env_;
 
     // Precalculados en firstPass
-    std::unordered_map<std::string, int>               frame_sizes_; // func → bytes
-    std::unordered_map<std::string, SemType>           func_rets_;   // func → tipo de retorno
+    std::unordered_map<std::string, int>                  frame_sizes_;  // func → bytes
+    std::unordered_map<std::string, SemType>              func_rets_;    // func → tipo de retorno
+    std::unordered_map<std::string, std::vector<SemType>> func_params_;  // func → tipos de params
     std::unordered_map<std::string, CodegenStructInfo> structs_;
 
     // Estado durante la emisión
