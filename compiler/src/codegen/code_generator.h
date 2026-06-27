@@ -95,6 +95,10 @@ private:
     // cur_type_ queda con el tipo del valor en esa dirección.
     void emitLvalueAddr(Expr* e);
 
+    // Incremento/decremento sobre cualquier lvalue. postfix=true deja el valor
+    // ANTERIOR como resultado (x++); postfix=false deja el nuevo (++x).
+    void emitIncDec(Expr* lvalue, bool inc, bool postfix);
+
     // push/pop genérico para expresiones binarias
     void emitPush(const SemType& t);
     void emitPop (const SemType& t, const std::string& reg); // reg: %rax o %xmm0

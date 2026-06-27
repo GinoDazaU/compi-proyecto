@@ -739,22 +739,34 @@ void CodeGenerator::visit(BinaryExpr* node) {
     cur_type_ = leftType;
 }
 
-void CodeGenerator::visit(UnaryExpr* node) {
-    // ++/-- sobre una variable simple: carga, ±1 (entero o float), guarda.
-    auto emitIncDec = [&](IdExpr* id, bool inc) {
-        VarEntry* e = env_.lookup(id->name);
-        if (!e) return;
-        emitLoad(e->type, e->offset);
-        if (e->type.isFloat()) {
-            out_ << "    movsd " << floatLabel(1.0) << "(%rip), %xmm1\n";
-            out_ << (inc ? "    addsd %xmm1, %xmm0\n" : "    subsd %xmm1, %xmm0\n");
-        } else {
-            out_ << (inc ? "    addq $1, %rax\n" : "    subq $1, %rax\n");
-        }
-        emitStore(e->type, e->offset);
-        cur_type_ = e->type;
-    };
+// ++/-- sobre cualquier lvalue. Calcula su dirección una sola vez, carga el
+// valor, le suma/resta 1 (entero o float) y lo guarda. El resultado en el
+// registro es el viejo (postfix) o el nuevo (prefix).
+void CodeGenerator::emitIncDec(Expr* lvalue, bool inc, bool postfix) {
+    emitLvalueAddr(lvalue);             // dirección → %rax; cur_type_ = tipo
+    SemType t = cur_type_;
+    out_ << "    movq %rax, %rcx\n";    // %rcx = dirección (se conserva)
 
+    if (t.isFloat()) {
+        out_ << "    movsd (%rcx), %xmm0\n";                       // valor actual
+        out_ << "    movsd " << floatLabel(1.0) << "(%rip), %xmm1\n";
+        out_ << "    movsd %xmm0, %xmm2\n";                        // copia del viejo
+        out_ << (inc ? "    addsd %xmm1, %xmm2\n" : "    subsd %xmm1, %xmm2\n");
+        out_ << "    movsd %xmm2, (%rcx)\n";                       // guardar nuevo
+        if (!postfix) out_ << "    movsd %xmm2, %xmm0\n";          // prefix → nuevo
+    } else {
+        bool byte = t.isByteSized();
+        if (byte) out_ << "    movb (%rcx), %al\n    movzbq %al, %rax\n";
+        else      out_ << "    movq (%rcx), %rax\n";              // valor actual (viejo)
+        out_ << (inc ? "    leaq 1(%rax), %rdx\n" : "    leaq -1(%rax), %rdx\n");
+        if (byte) out_ << "    movb %dl, (%rcx)\n";
+        else      out_ << "    movq %rdx, (%rcx)\n";              // guardar nuevo
+        if (!postfix) out_ << "    movq %rdx, %rax\n";            // prefix → nuevo
+    }
+    cur_type_ = t;
+}
+
+void CodeGenerator::visit(UnaryExpr* node) {
     switch (node->op) {
         case UnaryOp::Neg: {
             node->expr->accept(this);
@@ -778,12 +790,10 @@ void CodeGenerator::visit(UnaryExpr* node) {
             break;
         }
         case UnaryOp::PreInc:
-            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) emitIncDec(id, true);
-            // TODO: ++/-- sobre otros lvalues (arr[i], s.x, *p)
+            emitIncDec(node->expr, /*inc=*/true,  /*postfix=*/false);
             break;
         case UnaryOp::PreDec:
-            if (auto* id = dynamic_cast<IdExpr*>(node->expr)) emitIncDec(id, false);
-            // TODO: ++/-- sobre otros lvalues (arr[i], s.x, *p)
+            emitIncDec(node->expr, /*inc=*/false, /*postfix=*/false);
             break;
         case UnaryOp::Deref:
         case UnaryOp::AddrOf:
@@ -805,5 +815,8 @@ void CodeGenerator::visit(IndexExpr* node) {
 }
 
 void CodeGenerator::visit(MemberExpr* /*node*/)    { /* TODO */ }
-void CodeGenerator::visit(PostfixExpr* /*node*/)   { /* TODO */ }
+// base++ / base-- : igual que prefijo pero el resultado es el valor anterior.
+void CodeGenerator::visit(PostfixExpr* node) {
+    emitIncDec(node->base, /*inc=*/node->is_inc, /*postfix=*/true);
+}
 void CodeGenerator::visit(LambdaExpr* /*node*/)    { /* TODO */ }
