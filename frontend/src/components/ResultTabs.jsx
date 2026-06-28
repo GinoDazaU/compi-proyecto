@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Terminal, Cpu, ListTree, Table, FileCode2 } from "lucide-react";
 import Console from "./Console";
-import JsonTree from "./JsonTree";
+import AstView from "./AstView";
 import TokensTable from "./TokensTable";
 
 const TABS = [
@@ -34,17 +34,21 @@ export default function ResultTabs({ result, loading }) {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto bg-white p-3 font-mono text-sm">
-        {tab === "Console" ? (
-          <Console result={result} loading={loading} />
-        ) : !ok ? (
-          <Empty />
-        ) : tab === "Assembly" ? (
-          <pre className="leading-relaxed text-stone-800">{result.asm}</pre>
-        ) : tab === "AST" ? (
-          <JsonTree data={result.ast} defaultOpen />
+      <div className="min-h-0 flex-1 overflow-hidden bg-white">
+        {tab === "AST" && ok ? (
+          <AstView ast={result.ast} />
         ) : (
-          <TokensTable tokens={result.tokens} />
+          <div className="h-full overflow-auto p-3 font-mono text-sm">
+            {tab === "Console" ? (
+              <Console result={result} loading={loading} />
+            ) : !ok ? (
+              <Empty />
+            ) : tab === "Assembly" ? (
+              <pre className="leading-relaxed text-stone-800">{result.asm}</pre>
+            ) : (
+              <TokensTable tokens={result.tokens} />
+            )}
+          </div>
         )}
       </div>
     </>

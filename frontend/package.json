@@ -17,6 +17,7 @@
     "@uiw/react-codemirror": "^4.25.10",
     "lucide-react": "^1.22.0",
     "react": "^19.2.7",
+    "react-d3-tree": "^3.6.6",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.1"
   },

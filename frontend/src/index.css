@@ -27,3 +27,10 @@ body {
 .cm-editor {
   font-size: 0.875rem;
 }
+
+/* Enlaces del árbol del AST (react-d3-tree): líneas suaves en gris. */
+.rd3t-link {
+  stroke: #d6d3d1;
+  stroke-width: 1.5px;
+  fill: none;
+}
