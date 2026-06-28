@@ -1,6 +1,6 @@
 # Plan de Generación de Código — x86-64 AT&T
 
-Basado en `docs/refs/guia_assembly.pdf` y las convenciones del curso CS3402.
+Basado en las convenciones del curso CS3402.
 
 ---
 
@@ -375,28 +375,41 @@ call printf@PLT
 
 ## 11. Structs
 
-- Cada struct tiene un `StructInfo` con `offsets` (mapa nombre→offset) y `size`.
-- Los miembros se almacenan en stack de forma contigua (offsets negativos desde la base del struct).
-- Acceso `s.x` → `base_offset + offset_de_x` desde `%rbp`.
-- Paso por puntero (`Struct*`): se pasa la dirección (`%rbp + offset`) en el registro de argumento.
+- Cada struct tiene un `CodegenStructInfo` con `offsets` (nombre→offset), `types` (nombre→`SemType`) y `size`. Se calcula en `firstPass` (`buildStructInfo`).
+- Cada miembro ocupa un slot de 8 bytes, en orden de declaración: offsets **positivos** desde la base del struct (`0, 8, 16...`).
+- Una variable struct reserva `size` bytes inline en el frame y decae a su dirección base: su "valor" es esa dirección (`leaq`).
+- Acceso `s.x` → dirección base del struct `+ offset_de_x`. Con `p->x`, la dirección base es el valor del puntero.
+- Paso por puntero (`Struct*`): se pasa esa dirección base en el registro de argumento.
+- `new Struct` reserva el objeto con `calloc(1, size)` (campos en cero) y devuelve el puntero.
 
 ---
 
 ## 12. Arrays
 
+Todo elemento ocupa un slot de 8 bytes (igual que las variables locales).
+
 **Estático** (`int arr[5]`):
-- Reservar `n * 8` bytes en el frame (en lugar de 8).
-- `arr[i]` → `base_offset + i*8` desde `%rbp`.
-- El índice `i` se evalúa, multiplica por 8, y se usa en modo de direccionamiento indexado.
+- Reserva `n * 8` bytes inline en el frame y decae a puntero (`T*`); la variable guarda la dirección de `arr[0]`.
+- `arr[i]` → `base + i*8`: se evalúa el índice, se multiplica por 8 y se suma a la dirección base.
 
 ```asm
-; arr[i] load:
-movq -40(%rbp), %rax      ; base de arr
-<eval i> → %rcx
-imulq $8, %rcx
-subq %rcx, %rax           ; ajuste de dirección (offsets negativos)
-movq (%rax), %rax
+; arr[i] (dirección del elemento):
+<eval i> → %rax
+imulq $8, %rax
+leaq <base>(%rbp), %rcx   ; dirección de arr[0]
+addq %rcx, %rax           ; dirección de arr[i]
+movq (%rax), %rax         ; load del elemento
 ```
+
+**Multidimensional** (`int m[d0][d1]`):
+- Almacenamiento plano row-major: reserva `d0*d1*...*8` bytes y decae a un nivel de puntero por dimensión (`int**` para 2D).
+- `m[i][j]` se direcciona con un índice lineal por Horner (`(i*d1 + j)*8 + base`). Las dimensiones se guardan en `VarEntry::dims`.
+
+**String** (`s[i]`):
+- Un `string` apunta a bytes empaquetados: stride **1** (no 8) y elemento `char`.
+
+**Puntero** (`p[i]`, p.ej. de `new`):
+- Se carga el valor del puntero base y se indexa con stride 8.
 
 **Dinámico** (`new int[n]`):
 ```asm
@@ -447,9 +460,9 @@ Esto le dice al linker que el stack no es ejecutable (requerido en Linux moderno
 ```cpp
 class CodeGenerator : public Visitor {
     std::ostream&  out_;
-    SymbolTable<VarEntry> env_;  // VarEntry = { SemType type; int offset; }
+    SymbolTable<VarEntry> env_;  // VarEntry = { SemType type; int offset; bool is_array; vector<int> dims; }
     std::unordered_map<std::string, int>               frame_sizes_;
-    std::unordered_map<std::string, CodegenStructInfo> structs_;  // offsets + size
+    std::unordered_map<std::string, CodegenStructInfo> structs_;  // offsets + types + size
 
     int  offset_        = -8;    // offset de la próxima var local
     int  label_counter_ = 0;     // para labels únicos

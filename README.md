@@ -30,7 +30,7 @@ docs/       → documentación técnica
 
 - `docs/overview.md` — arquitectura y decisiones de diseño
 - `docs/grammar.md` — gramática CFG del lenguaje
-- `docs/proyecto.txt` — requerimientos y especificaciones del proyecto
+- `docs/proyecto.md` — requerimientos y especificaciones del proyecto
 
 ## Requisitos
 

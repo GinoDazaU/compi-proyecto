@@ -54,7 +54,13 @@ Tabla de símbolos con soporte de scopes anidados.
 
 El compilador debe reportar errores claros en las tres fases: léxico (token inválido), sintáctico (estructura inesperada) y semántico (tipo incorrecto, variable no declarada, etc.), con número de línea y columna.
 
-### 4. Generación de código (`codegen/`)
+### 4. Optimizador (`optimizer/`)
+Optimizaciones básicas sobre el AST, antes de la generación de código (fase opcional `--opt`):
+- Constant folding
+- Dead code elimination
+- (Posiblemente) eliminación de subexpresiones comunes
+
+### 5. Generación de código (`codegen/`)
 Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 - Convención de llamada System V AMD64 (Linux)
 - Stack frame estándar: `pushq %rbp / movq %rsp, %rbp`
@@ -62,12 +68,6 @@ Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 - Paso de argumentos: `%rdi, %rsi, %rdx, %rcx, %r8, %r9`, resto en stack
 - Structs: se pasan por puntero (dirección en registro)
 - Soporte de printf mediante funciones incorporadas print/println para output
-
-### 5. Optimizador (`optimizer/`)
-Optimizaciones básicas sobre el AST o sobre el código intermedio:
-- Constant folding
-- Dead code elimination
-- (Posiblemente) eliminación de subexpresiones comunes
 
 ---
 
