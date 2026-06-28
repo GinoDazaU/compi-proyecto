@@ -28,6 +28,8 @@ SOURCES = [
     "src/optimizer/optimizer.cpp",
     "src/optimizer/ast_walker.cpp",
     "src/optimizer/constant_folder.cpp",
+    "src/optimizer/constant_propagator.cpp",
+    "src/optimizer/algebraic_simplifier.cpp",
     "src/optimizer/dead_code_eliminator.cpp",
 ]
 
