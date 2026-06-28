@@ -46,19 +46,6 @@ def build():
     print(f"Listo: {BIN}")
 
 
-def ensure_built():
-    # Reconstruye si falta el binario o si algún fuente/header es más nuevo que él.
-    # (g++ no compara mtimes solo; sin esto se usaría un binario desactualizado.)
-    if not os.path.isfile(BIN):
-        build()
-        return
-    bin_mtime = os.path.getmtime(BIN)
-    sources = (glob.glob("src/**/*.cpp", recursive=True) +
-               glob.glob("src/**/*.h", recursive=True))
-    if any(os.path.getmtime(f) > bin_mtime for f in sources):
-        build()
-
-
 def inputs_in(folder):
     return sorted(glob.glob(os.path.join(folder, "*.txt")) +
                   glob.glob(os.path.join(folder, "*.cpp")))
@@ -70,7 +57,7 @@ def run(args):
     if not args:
         print("Uso: python build.py run <archivo>")
         sys.exit(1)
-    ensure_built()
+    build()
     subprocess.run([f"./{BIN}"] + args)
 
 
@@ -161,7 +148,7 @@ def run_section(label, paths, run_fn, out_fn):
 
 
 def test():
-    ensure_built()
+    build()
     os.makedirs(E2E_BUILD, exist_ok=True)
 
     def analysis_out(p):
@@ -193,38 +180,16 @@ def test():
         print(f"{passed}/{total}  {total - passed} fallaron")
 
 
-def e2e():
-    ensure_built()
-    os.makedirs(E2E_BUILD, exist_ok=True)
-    paths = inputs_in(TESTS_E2E)
-    if not paths:
-        print("No hay tests en tests/e2e/")
-        return
-    p, t = run_section("e2e/", paths, run_e2e_one, lambda x: None)
-    print(f"\n{'─' * 24}")
-    print(f"{p}/{t}  {'todo OK' if p == t else str(t - p) + ' fallaron'}")
-
-
-# ─── Clean ────────────────────────────────────────────────────────────────────
-
-def clean():
-    subprocess.run(["rm", "-rf", BUILD_DIR])
-    print("Limpio.")
-
-
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
-COMMANDS = {
-    "build": lambda: build(),
-    "run":   lambda: run(sys.argv[2:]),
-    "test":  lambda: test(),
-    "e2e":   lambda: e2e(),
-    "clean": lambda: clean(),
-}
+COMMANDS = {"build": build, "test": test}
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "build"
-    if cmd not in COMMANDS:
-        print(f"Comandos disponibles: {', '.join(COMMANDS)}")
+    if cmd == "run":
+        run(sys.argv[2:])
+    elif cmd in COMMANDS:
+        COMMANDS[cmd]()
+    else:
+        print("Comandos disponibles: build, run, test")
         sys.exit(1)
-    COMMANDS[cmd]()

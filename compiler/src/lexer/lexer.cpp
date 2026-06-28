@@ -114,7 +114,7 @@ Token Lexer::readCharLiteral() {
     std::string lexeme;
     lexeme += advance(); // '
     if (current() == '\0' || current() == '\n')
-        return Token(TokenType::ERR, lexeme, line, startCol);
+        throw LexError("unterminated character literal", line, startCol);
     if (current() == '\\') {
         lexeme += advance();
         if (current() != '\0') lexeme += advance();
@@ -122,7 +122,7 @@ Token Lexer::readCharLiteral() {
         lexeme += advance();
     }
     if (current() != '\'')
-        return Token(TokenType::ERR, lexeme, line, startCol);
+        throw LexError("invalid character literal", line, startCol);
     lexeme += advance();
     return Token(TokenType::CHAR_LIT, lexeme, line, startCol);
 }
@@ -131,12 +131,12 @@ Token Lexer::readStringLiteral() {
     int startCol = col;
     std::string lexeme;
     lexeme += advance(); // "
-    while (current() != '"' && current() != '\0') {
+    while (current() != '"' && current() != '\0' && current() != '\n') {
         if (current() == '\\') lexeme += advance(); // escape
         lexeme += advance();
     }
     if (current() != '"')
-        return Token(TokenType::ERR, lexeme, line, startCol);
+        throw LexError("unterminated string literal", line, startCol);
     lexeme += advance();
     return Token(TokenType::STRING_LIT, lexeme, line, startCol);
 }
@@ -177,7 +177,7 @@ Token Lexer::readOperator() {
             return Token(TokenType::AMP,     "&", line, startCol);
         case '|':
             if (n == '|') { advance(); return Token(TokenType::OR,             "||", line, startCol); }
-            return Token(TokenType::ERR, "|", line, startCol);
+            throw LexError("unexpected character '|'", line, startCol);
         case '.': return Token(TokenType::DOT,       ".",  line, startCol);
         case '(': return Token(TokenType::LPAREN,    "(",  line, startCol);
         case ')': return Token(TokenType::RPAREN,    ")",  line, startCol);
@@ -187,7 +187,7 @@ Token Lexer::readOperator() {
         case ']': return Token(TokenType::RBRACKET,  "]",  line, startCol);
         case ';': return Token(TokenType::SEMICOLON, ";",  line, startCol);
         case ',': return Token(TokenType::COMMA,     ",",  line, startCol);
-        default:  return Token(TokenType::ERR, std::string(1, c), line, startCol);
+        default:  throw LexError("unexpected character '" + std::string(1, c) + "'", line, startCol);
     }
 }
 

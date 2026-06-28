@@ -2,7 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 #include "token.h"
+
+struct LexError : std::runtime_error {
+    int line, col;
+    LexError(const std::string& msg, int line, int col)
+        : std::runtime_error(msg), line(line), col(col) {}
+};
 
 class Lexer {
 public:

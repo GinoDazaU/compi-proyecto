@@ -1,0 +1,5 @@
+// Error léxico: char literal mal formado (más de un carácter)
+int main() {
+    char c = 'ab';
+    return 0;
+}

@@ -1,0 +1,5 @@
+// Error léxico: string sin cerrar
+int main() {
+    println("hola mundo);
+    return 0;
+}

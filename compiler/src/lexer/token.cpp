@@ -70,7 +70,6 @@ const char* Token::typeName() const {
         case TokenType::COMMA:          return "COMMA";
 
         case TokenType::END:            return "END";
-        case TokenType::ERR:            return "ERR";
     }
     return "UNKNOWN";
 }

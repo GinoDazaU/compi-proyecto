@@ -1,0 +1,5 @@
+// Error léxico: '|' suelto (el lenguaje solo soporta '||')
+int main() {
+    int x = 5 | 3;
+    return x;
+}

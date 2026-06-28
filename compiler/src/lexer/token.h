@@ -89,8 +89,7 @@ enum class TokenType {
     COMMA,     // ,
 
     // Especiales
-    END,  // fin de entrada
-    ERR   // token inválido
+    END   // fin de entrada
 };
 
 struct Token {

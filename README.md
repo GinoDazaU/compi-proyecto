@@ -9,9 +9,7 @@ Desde `compiler/`:
 ```bash
 python3 build.py build                                # compila
 python3 build.py test                                 # corre todas las pruebas
-python3 build.py e2e                                  # solo las pruebas end-to-end
 python3 build.py run --asm tests/analysis/input1.txt  # genera el assembly de un archivo
-python3 build.py clean                                # limpia el build
 ```
 
 `run` reenvía sus argumentos al compilador, que acepta `--tokens`, `--ast`, `--json` y `--asm`.
