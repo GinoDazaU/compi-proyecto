@@ -1,0 +1,9 @@
+int main() {
+    char c = 'A';
+    int n = 10;
+    println(c + n);
+    println(c * 2);
+    println(c + n - 1);
+    println(100 - c);
+    return 0;
+}

@@ -238,14 +238,17 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
     if (auto* ix = dynamic_cast<IndexExpr*>(e)) {
         ix->base->accept(this);          // puntero base → %rax (array decae con leaq)
         SemType bt = cur_type_;
+        // string: char empaquetado (stride 1, elemento char). Punteros y arrays:
+        // cada elemento ocupa un slot de 8 bytes.
+        bool isStr = (bt.base == "string");
         out_ << "    pushq %rax\n";
         ix->index->accept(this);         // índice → %rax
         out_ << "    movq %rax, %rcx\n";
         out_ << "    popq %rax\n";
-        out_ << "    imulq $8, %rcx\n";   // stride 8 (todo elemento ocupa un slot)
+        if (!isStr) out_ << "    imulq $8, %rcx\n";
         out_ << "    addq %rcx, %rax\n";  // dirección del elemento
-        cur_type_ = bt.deref();
-        // TODO: arrays multidimensionales (stride por filas) y string[i] (stride 1).
+        cur_type_ = isStr ? SemType{"char"} : bt.deref();
+        // TODO: arrays multidimensionales (stride por filas).
         return;
     }
     if (auto* u = dynamic_cast<UnaryExpr*>(e)) {
@@ -819,8 +822,12 @@ void CodeGenerator::visit(BinaryExpr* node) {
         case BinaryOp::Or:
             break;
     }
-    // TODO: promoción de tipos (p.ej. char + int debería dar int, no char).
-    cur_type_ = leftType;
+    // Promoción numérica: el resultado es el tipo de mayor rango (char + int →
+    // int). La aritmética de punteros conserva el puntero; se excluye antes de
+    // promote() porque éste ignora 'mods'.
+    if (leftType.hasPointer())       cur_type_ = leftType;
+    else if (rightType.hasPointer()) cur_type_ = rightType;
+    else                             cur_type_ = SemType::promote(leftType, rightType);
 }
 
 // ++/-- sobre cualquier lvalue. Calcula su dirección una sola vez, carga el
@@ -860,6 +867,7 @@ void CodeGenerator::visit(UnaryExpr* node) {
                 out_ << "    subsd %xmm1, %xmm0\n";
             } else {
                 out_ << "    negq %rax\n";
+                cur_type_ = SemType{"int"};  // -char/-bool promueven a int
             }
             break;
         }

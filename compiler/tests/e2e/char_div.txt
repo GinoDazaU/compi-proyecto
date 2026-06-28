@@ -1,0 +1,8 @@
+int main() {
+    char c = 'd';
+    int n = 3;
+    println(c / n);
+    println(c / 10);
+    println('z' / 2);
+    return 0;
+}

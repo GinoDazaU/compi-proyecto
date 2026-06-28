@@ -1,0 +1,8 @@
+int main() {
+    char c = 'A';
+    char z = 'Z';
+    println(-c);
+    println(-z);
+    println(-c + 200);
+    return 0;
+}

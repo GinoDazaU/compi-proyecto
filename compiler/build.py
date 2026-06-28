@@ -47,7 +47,15 @@ def build():
 
 
 def ensure_built():
+    # Reconstruye si falta el binario o si algún fuente/header es más nuevo que él.
+    # (g++ no compara mtimes solo; sin esto se usaría un binario desactualizado.)
     if not os.path.isfile(BIN):
+        build()
+        return
+    bin_mtime = os.path.getmtime(BIN)
+    sources = (glob.glob("src/**/*.cpp", recursive=True) +
+               glob.glob("src/**/*.h", recursive=True))
+    if any(os.path.getmtime(f) > bin_mtime for f in sources):
         build()
 
 
