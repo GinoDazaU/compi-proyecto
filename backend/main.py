@@ -3,8 +3,7 @@
 Expone el binario del compilador a la app web:
 
   GET  /api/health   → estado del servicio.
-  POST /api/compile  → tokens, AST y assembly, sin ejecutar.
-  POST /api/run      → lo anterior + ensambla con g++ y ejecuta el binario.
+  POST /api/run      → compila, ensambla con g++ y ejecuta el binario.
 
 Al arrancar, el servidor compila el compilador (build.py) y lo deja en
 compiler/build/compiler. Si falla, igual arranca y /api/health lo reporta.
@@ -205,12 +204,6 @@ def _assemble_and_run(asm: str) -> tuple[RunResult, Metrics]:
 def health():
     """Estado del servicio y si el compilador está disponible."""
     return {"status": "ok", "compiler_ready": COMPILER_BIN.exists()}
-
-
-@app.post("/api/compile", response_model=CompileResponse)
-def compile_code(req: SourceRequest):
-    """Tokens, AST y assembly. No ejecuta nada."""
-    return _compile(req.code, req.optimize)
 
 
 @app.post("/api/run", response_model=CompileResponse)
