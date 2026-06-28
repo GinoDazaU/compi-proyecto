@@ -1,17 +1,64 @@
+"""API REST del compilador C++ → x86-64.
+
+Expone el binario del compilador a la app web:
+
+  GET  /api/health   → estado del servicio.
+  POST /api/compile  → tokens, AST y assembly, sin ejecutar.
+  POST /api/run      → lo anterior + ensambla con g++ y ejecuta el binario.
+
+Al arrancar, el servidor compila el compilador (build.py) y lo deja en
+compiler/build/compiler. Si falla, igual arranca y /api/health lo reporta.
+"""
+
 import json
+import logging
 import os
 import subprocess
 import tempfile
+import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-COMPILER_BIN = PROJECT_ROOT / "compiler" / "build" / "compiler"
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger("compiler-api")
 
-app = FastAPI(title="Compilador C++ API", version="1.0.0")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+COMPILER_DIR = PROJECT_ROOT / "compiler"
+COMPILER_BIN = COMPILER_DIR / "build" / "compiler"
+
+COMPILE_TIMEOUT = 10           # segundos por invocación del compilador o de g++
+RUN_TIMEOUT = 5                # segundos para la ejecución del binario del usuario
+BUILD_TIMEOUT = 120            # segundos para compilar el compilador al arrancar
+OUTPUT_LIMIT = 64 * 1024       # recorte de stdout/stderr del programa, en bytes
+
+
+# ─── Arranque ─────────────────────────────────────────────────────────────────
+
+def _build_compiler() -> None:
+    """Compila el compilador con build.py; deja el binario en compiler/build/."""
+    try:
+        result = subprocess.run(["python3", "build.py", "build"], cwd=COMPILER_DIR,
+                                capture_output=True, text=True, timeout=BUILD_TIMEOUT)
+    except Exception as e:
+        logger.warning("No se pudo compilar el compilador: %s", e)
+        return
+    if result.returncode == 0:
+        logger.info("Compilador listo en %s", COMPILER_BIN)
+    else:
+        logger.warning("La compilación del compilador falló:\n%s", result.stderr.strip())
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _build_compiler()
+    yield
+
+
+app = FastAPI(title="Compilador C++ API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,76 +68,162 @@ app.add_middleware(
 )
 
 
-# ─── Models ───────────────────────────────────────────────────────────────────
+# ─── Modelos ──────────────────────────────────────────────────────────────────
 
-class CompileRequest(BaseModel):
+class SourceRequest(BaseModel):
     code: str
+    optimize: bool = False
+
+
+class ErrorInfo(BaseModel):
+    type: str                  # lexical | syntax | semantic | server
+    line: int = 0
+    col: int = 0
+    message: str
+
+
+class RunResult(BaseModel):
+    stdout: str
+    stderr: str
+    exit_code: int
+    timed_out: bool
+
+
+class Metrics(BaseModel):
+    compile_ms: float | None = None         # fuente → assembly (compilador propio)
+    assemble_ms: float | None = None        # assembly → binario (g++)
+    exec_ms: float | None = None            # ejecución del binario
+    binary_size_bytes: int | None = None
 
 
 class CompileResponse(BaseModel):
     success: bool
     tokens: list | None = None
     ast: dict | None = None
-    error: dict | None = None
+    asm: str | None = None                  # codegen x86-64, solo si compiló
+    error: ErrorInfo | None = None          # presente solo si success es False
+    run: RunResult | None = None            # solo en /api/run, si llegó a ejecutar
+    metrics: Metrics | None = None          # tiempos y tamaño medidos por fase
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def _server_error(message: str) -> CompileResponse:
+    """Respuesta para fallos del lado del servidor (no del código del usuario)."""
+    return CompileResponse(success=False, error=ErrorInfo(type="server", message=message))
+
+
+def _clip(text: str) -> str:
+    """Recorta la salida de un programa para no inundar la respuesta."""
+    if len(text) > OUTPUT_LIMIT:
+        return text[:OUTPUT_LIMIT] + "\n... (salida recortada)"
+    return text
+
+
+def _timed(fn):
+    """Ejecuta fn() y devuelve (resultado, milisegundos transcurridos)."""
+    t0 = time.perf_counter()
+    result = fn()
+    return result, round((time.perf_counter() - t0) * 1000, 2)
+
+
+def _run_compiler(mode: str, src: str, optimize: bool) -> subprocess.CompletedProcess:
+    """Invoca el binario del compilador en el modo dado (--json, --asm, ...)."""
+    argv = [str(COMPILER_BIN), mode]
+    if optimize:
+        argv.append("--opt")
+    argv.append(src)
+    return subprocess.run(argv, capture_output=True, text=True, timeout=COMPILE_TIMEOUT)
+
+
+def _compile(code: str, optimize: bool) -> CompileResponse:
+    """Tokens y AST (--json) y, si compiló sin errores, el assembly (--asm)."""
+    if not COMPILER_BIN.exists():
+        return _server_error("El compilador no está disponible; la compilación al "
+                             "arrancar falló (revisa los logs del servidor).")
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".cpp", delete=False) as f:
+        f.write(code)
+        src = f.name
+
+    try:
+        # Tokens y AST; en modo --json el compilador reporta sus errores como JSON.
+        json_result = _run_compiler("--json", src, optimize)
+        if not json_result.stdout.strip():
+            return _server_error(json_result.stderr.strip() or "El compilador no produjo salida.")
+        resp = CompileResponse(**json.loads(json_result.stdout))
+
+        # Assembly, solo si el código es válido.
+        if resp.success:
+            asm_result, compile_ms = _timed(lambda: _run_compiler("--asm", src, optimize))
+            if asm_result.returncode == 0:
+                resp.asm = asm_result.stdout
+                resp.metrics = Metrics(compile_ms=compile_ms)
+        return resp
+
+    except subprocess.TimeoutExpired:
+        return _server_error("La compilación excedió el tiempo límite.")
+    except json.JSONDecodeError as e:
+        return _server_error(f"Respuesta inválida del compilador: {e}")
+    finally:
+        os.unlink(src)
+
+
+def _assemble_and_run(asm: str) -> tuple[RunResult, Metrics]:
+    """Ensambla el .s con g++ (-no-pie), ejecuta el binario y mide ambas fases."""
+    metrics = Metrics()
+    with tempfile.TemporaryDirectory() as tmp:
+        asm_path = os.path.join(tmp, "program.s")
+        exe_path = os.path.join(tmp, "program")
+        with open(asm_path, "w") as f:
+            f.write(asm)
+
+        link, metrics.assemble_ms = _timed(lambda: subprocess.run(
+            ["g++", "-no-pie", "-o", exe_path, asm_path],
+            capture_output=True, text=True, timeout=COMPILE_TIMEOUT,
+        ))
+        if link.returncode != 0:
+            return RunResult(stdout="", stderr=_clip(link.stderr),
+                             exit_code=link.returncode, timed_out=False), metrics
+
+        metrics.binary_size_bytes = os.path.getsize(exe_path)
+        try:
+            proc, metrics.exec_ms = _timed(lambda: subprocess.run(
+                [exe_path], capture_output=True, text=True, timeout=RUN_TIMEOUT))
+            return RunResult(stdout=_clip(proc.stdout), stderr=_clip(proc.stderr),
+                             exit_code=proc.returncode, timed_out=False), metrics
+        except subprocess.TimeoutExpired as e:
+            partial = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
+            return RunResult(stdout=_clip(partial),
+                             stderr=f"El programa excedió el tiempo límite de {RUN_TIMEOUT}s.",
+                             exit_code=-1, timed_out=True), metrics
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "compiler": str(COMPILER_BIN), "exists": COMPILER_BIN.exists()}
+    """Estado del servicio y si el compilador está disponible."""
+    return {"status": "ok", "compiler_ready": COMPILER_BIN.exists()}
 
 
 @app.post("/api/compile", response_model=CompileResponse)
-def compile_code(req: CompileRequest):
-    """
-    recibe codigo fuente, lo compila usando el binario C++ con --json,
-    y devuelve tokens + AST como JSON estructurado.
-    """
-    if not COMPILER_BIN.exists():
-        return CompileResponse(
-            success=False,
-            error={"type": "server", "line": 0, "col": 0,
-                   "message": f"Compilador no encontrado en {COMPILER_BIN}. Ejecuta 'python3 build.py' en compiler/."}
-        )
+def compile_code(req: SourceRequest):
+    """Tokens, AST y assembly. No ejecuta nada."""
+    return _compile(req.code, req.optimize)
 
-    # Escribir código fuente a archivo temporal
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".cpp", delete=False) as f:
-        f.write(req.code)
-        tmp_path = f.name
 
-    try:
-        result = subprocess.run(
-            [str(COMPILER_BIN), "--json", tmp_path],
-            capture_output=True, text=True, timeout=10
-        )
-
-        # El compilador en modo --json siempre retorna JSON por stdout
-        if result.stdout.strip():
-            data = json.loads(result.stdout)
-            return CompileResponse(**data)
-
-        # Si no hay stdout, hubo un error inesperado
-        return CompileResponse(
-            success=False,
-            error={"type": "server", "line": 0, "col": 0,
-                   "message": result.stderr.strip() or "Error desconocido del compilador"}
-        )
-
-    except subprocess.TimeoutExpired:
-        return CompileResponse(
-            success=False,
-            error={"type": "server", "line": 0, "col": 0,
-                   "message": "Timeout: la compilación tomó más de 10 segundos"}
-        )
-    except json.JSONDecodeError as e:
-        return CompileResponse(
-            success=False,
-            error={"type": "server", "line": 0, "col": 0,
-                   "message": f"Error parseando respuesta del compilador: {e}"}
-        )
-    finally:
-        os.unlink(tmp_path)
+@app.post("/api/run", response_model=CompileResponse)
+def run_code(req: SourceRequest):
+    """Compila y, si no hubo errores, ensambla y ejecuta. Devuelve el output."""
+    resp = _compile(req.code, req.optimize)
+    if resp.success and resp.asm:
+        resp.run, run_metrics = _assemble_and_run(resp.asm)
+        # _compile ya dejó compile_ms; añadimos ensamblado, ejecución y tamaño.
+        resp.metrics.assemble_ms = run_metrics.assemble_ms
+        resp.metrics.exec_ms = run_metrics.exec_ms
+        resp.metrics.binary_size_bytes = run_metrics.binary_size_bytes
+    return resp
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
