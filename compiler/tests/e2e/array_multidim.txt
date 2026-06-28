@@ -1,0 +1,27 @@
+int main() {
+    int m[2][3];
+    for (int i = 0; i < 2; i = i + 1) {
+        for (int j = 0; j < 3; j = j + 1) {
+            m[i][j] = i * 10 + j;
+        }
+    }
+    println(m[0][0]);
+    println(m[0][2]);
+    println(m[1][0]);
+    println(m[1][2]);
+
+    int sum = 0;
+    for (int i = 0; i < 2; i = i + 1) {
+        for (int j = 0; j < 3; j = j + 1) {
+            sum = sum + m[i][j];
+        }
+    }
+    println(sum);
+
+    int cube[2][2][2];
+    cube[1][0][1] = 7;
+    cube[0][1][1] = 9;
+    println(cube[1][0][1]);
+    println(cube[0][1][1]);
+    return 0;
+}

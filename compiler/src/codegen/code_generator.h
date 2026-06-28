@@ -25,6 +25,9 @@ struct VarEntry {
     // En ese caso 'offset' apunta a arr[0] y la variable decae a puntero: su
     // "valor" es esa dirección (leaq), no el contenido del slot.
     bool    is_array = false;
+    // Tamaños de cada dimensión (solo arrays estáticos). El almacenamiento es
+    // plano row-major, así que m[i][j] se direcciona con estos strides.
+    std::vector<int> dims;
 };
 
 // ─── CodeGenerator ───────────────────────────────────────────────────────────
@@ -58,6 +61,10 @@ private:
     // expresión lo deja aquí, y el padre lo consulta (p.ej. print elige formato
     // y registro según esto, %rax vs %xmm0).
     SemType cur_type_;
+
+    // true cuando emitLvalueAddr dejó en %rax la dirección de un (sub)array que
+    // decae a puntero: el valor ES esa dirección, no se debe hacer load.
+    bool cur_array_decay_ = false;
 
     // {label_inicio, label_fin} del loop actual (para break/continue)
     std::stack<std::pair<std::string, std::string>> loop_labels_;

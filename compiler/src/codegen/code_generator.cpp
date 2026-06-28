@@ -1,4 +1,5 @@
 #include "code_generator.h"
+#include <algorithm>
 #include <functional>
 #include <sstream>
 #include <iomanip>
@@ -228,6 +229,7 @@ void CodeGenerator::emitStoreIndirect(const SemType& t, const std::string& addrR
 
 // Deja en %rax la dirección de un lvalue. cur_type_ ← tipo del valor allí.
 void CodeGenerator::emitLvalueAddr(Expr* e) {
+    cur_array_decay_ = false;
     if (auto* id = dynamic_cast<IdExpr*>(e)) {
         if (VarEntry* en = env_.lookup(id->name)) {
             out_ << "    leaq " << en->offset << "(%rbp), %rax\n";
@@ -236,10 +238,51 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
         return;
     }
     if (auto* ix = dynamic_cast<IndexExpr*>(e)) {
-        ix->base->accept(this);          // puntero base → %rax (array decae con leaq)
+        // Arrays estáticos (posiblemente multidim): almacenamiento plano row-major,
+        // así que m[i][j] es aritmética de dirección, no una cadena de loads.
+        // Aplanamos la cadena de índices para detectar la raíz.
+        std::vector<Expr*> idxs;
+        Expr* root = ix;
+        while (auto* inner = dynamic_cast<IndexExpr*>(root)) {
+            idxs.push_back(inner->index);
+            root = inner->base;
+        }
+        std::reverse(idxs.begin(), idxs.end());
+
+        IdExpr* rootId = dynamic_cast<IdExpr*>(root);
+        VarEntry* en = rootId ? env_.lookup(rootId->name) : nullptr;
+        if (en && en->is_array && idxs.size() <= en->dims.size()) {
+            int              baseOff = en->offset;
+            SemType          baseTy  = en->type;
+            std::vector<int> dims    = en->dims;
+            size_t n = dims.size(), k = idxs.size();
+
+            // Índice lineal por Horner: acc = ((i0*d1 + i1)*d2 + i2)...
+            idxs[0]->accept(this);                       // i0 → %rax
+            for (size_t p = 1; p < k; ++p) {
+                out_ << "    imulq $" << dims[p] << ", %rax\n";
+                out_ << "    pushq %rax\n";
+                idxs[p]->accept(this);                   // ip → %rax
+                out_ << "    popq %rcx\n";
+                out_ << "    addq %rcx, %rax\n";
+            }
+            // Índice parcial (k<n): escala por el tamaño del sub-array restante.
+            int tail = 1;
+            for (size_t p = k; p < n; ++p) tail *= dims[p];
+            out_ << "    imulq $" << tail * 8 << ", %rax\n";  // índice → offset en bytes
+            out_ << "    leaq " << baseOff << "(%rbp), %rcx\n";
+            out_ << "    addq %rcx, %rax\n";              // dirección del (sub)elemento
+
+            for (size_t p = 0; p < k; ++p) baseTy = baseTy.deref();
+            cur_type_        = baseTy;
+            cur_array_decay_ = (k < n);                   // sub-array: la dirección es el valor
+            return;
+        }
+
+        // Puntero o string: un solo nivel (se carga el puntero base y se indexa).
+        // string: char empaquetado (stride 1). Punteros: slots de 8 bytes.
+        ix->base->accept(this);          // puntero base → %rax
         SemType bt = cur_type_;
-        // string: char empaquetado (stride 1, elemento char). Punteros y arrays:
-        // cada elemento ocupa un slot de 8 bytes.
         bool isStr = (bt.base == "string");
         out_ << "    pushq %rax\n";
         ix->index->accept(this);         // índice → %rax
@@ -248,7 +291,6 @@ void CodeGenerator::emitLvalueAddr(Expr* e) {
         if (!isStr) out_ << "    imulq $8, %rcx\n";
         out_ << "    addq %rcx, %rax\n";  // dirección del elemento
         cur_type_ = isStr ? SemType{"char"} : bt.deref();
-        // TODO: arrays multidimensionales (stride por filas).
         return;
     }
     if (auto* u = dynamic_cast<UnaryExpr*>(e)) {
@@ -437,9 +479,13 @@ void CodeGenerator::visit(VarDeclStmt* node) {
 
         SemType elem = SemType::fromTypeNode(node->type);   // tipo del elemento
         SemType ptr  = elem;
-        for (size_t i = 0; i < node->dimensions.size(); ++i)
+        std::vector<int> dims;
+        for (auto* d : node->dimensions) {
             ptr.mods.push_back(PtrMod::Pointer);            // decae a T* (T** si 2D)
-        env_.declare(node->name, VarEntry{ptr, base, /*is_array=*/true});
+            auto* lit = dynamic_cast<IntLitExpr*>(d);       // dimensiones constantes
+            dims.push_back(lit ? static_cast<int>(lit->value) : 0);
+        }
+        env_.declare(node->name, VarEntry{ptr, base, /*is_array=*/true, dims});
 
         // init_list: arr[i] = init_list[i]
         for (size_t i = 0; i < node->init_list.size(); ++i) {
@@ -929,6 +975,7 @@ void CodeGenerator::visit(NewObjectExpr* node) {
 void CodeGenerator::visit(IndexExpr* node) {
     emitLvalueAddr(node);     // dirección del elemento → %rax; cur_type_ = tipo elem
     SemType et = cur_type_;
+    if (cur_array_decay_) { cur_type_ = et; return; }  // sub-array: dirección = valor
     emitLoadIndirect(et);
     cur_type_ = et;
 }
