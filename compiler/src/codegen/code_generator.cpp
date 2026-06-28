@@ -384,6 +384,7 @@ void CodeGenerator::emitDataSection() {
     out_ << "__fmt_int:   .string \"%ld\"\n";
     out_ << "__fmt_float: .string \"%lf\"\n";
     out_ << "__fmt_char:  .string \"%c\"\n";
+    out_ << "__fmt_bool:  .string \"%d\"\n";
     out_ << "__fmt_str:   .string \"%s\"\n";
     out_ << "__fmt_nl:    .string \"\\n\"\n";
 }
@@ -666,6 +667,7 @@ void CodeGenerator::emitBuiltinPrint(CallExpr* node, bool newline) {
             out_ << "    movq %rax, %rsi\n";
             const char* fmt = "__fmt_int";
             if      (cur_type_.base == "char")   fmt = "__fmt_char";
+            else if (cur_type_.base == "bool")   fmt = "__fmt_bool";
             else if (cur_type_.base == "string") fmt = "__fmt_str";
             out_ << "    leaq " << fmt << "(%rip), %rdi\n";
             out_ << "    movl $0, %eax\n";
