@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { FileCode2 } from "lucide-react";
 import Toolbar from "./components/Toolbar";
 import Editor from "./components/Editor";
+import ExampleMenu from "./components/ExampleMenu";
 import ResultTabs from "./components/ResultTabs";
 import MetricsBar from "./components/MetricsBar";
 import { runCode } from "./api";
@@ -47,10 +48,13 @@ export default function App() {
 
       <div className="flex min-h-0 flex-1">
         <section className="flex min-w-0 flex-1 flex-col border-r border-stone-200">
-          <PanelHeader>
-            <FileCode2 className="h-3 w-3" />
-            Editor
-          </PanelHeader>
+          <div className="flex items-center justify-between border-b border-stone-200 bg-stone-50 px-3 py-1.5">
+            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+              <FileCode2 className="h-3 w-3" />
+              Editor
+            </span>
+            <ExampleMenu onSelect={setCode} />
+          </div>
           <div className="min-h-0 flex-1 overflow-auto bg-white">
             <Editor value={code} onChange={setCode} onRun={run} />
           </div>
@@ -62,14 +66,6 @@ export default function App() {
       </div>
 
       <MetricsBar result={result} />
-    </div>
-  );
-}
-
-function PanelHeader({ children }) {
-  return (
-    <div className="flex items-center gap-1.5 border-b border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-stone-500">
-      {children}
     </div>
   );
 }
