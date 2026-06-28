@@ -114,7 +114,7 @@ def run_e2e_one(src, _out=None):
         return False
 
     # 1. Generar assembly
-    r = subprocess.run([f"./{BIN}", "--asm", src], capture_output=True, text=True)
+    r = subprocess.run([f"./{BIN}", "--opt", "--asm", src], capture_output=True, text=True)
     if r.returncode != 0:
         print(f"  [ERR] {name}  (el compilador falló)")
         return False

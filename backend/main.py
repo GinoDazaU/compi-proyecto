@@ -29,10 +29,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 COMPILER_DIR = PROJECT_ROOT / "compiler"
 COMPILER_BIN = COMPILER_DIR / "build" / "compiler"
 
-COMPILE_TIMEOUT = 10           # segundos por invocación del compilador o de g++
-RUN_TIMEOUT = 5                # segundos para la ejecución del binario del usuario
-BUILD_TIMEOUT = 120            # segundos para compilar el compilador al arrancar
-OUTPUT_LIMIT = 64 * 1024       # recorte de stdout/stderr del programa, en bytes
+COMPILE_TIMEOUT = 10           # seconds per compiler or g++ invocation
+RUN_TIMEOUT = 15               # seconds for user binary execution
+BUILD_TIMEOUT = 120            # seconds to build compiler on startup
+OUTPUT_LIMIT = 64 * 1024       # stdout/stderr limit, in bytes
 
 
 # ─── Arranque ─────────────────────────────────────────────────────────────────
@@ -113,9 +113,9 @@ def _server_error(message: str) -> CompileResponse:
 
 
 def _clip(text: str) -> str:
-    """Recorta la salida de un programa para no inundar la respuesta."""
+    """Clips the program output to avoid flooding the response."""
     if len(text) > OUTPUT_LIMIT:
-        return text[:OUTPUT_LIMIT] + "\n... (salida recortada)"
+        return text[:OUTPUT_LIMIT] + "\n... (output truncated)"
     return text
 
 
@@ -136,23 +136,22 @@ def _run_compiler(mode: str, src: str, optimize: bool) -> subprocess.CompletedPr
 
 
 def _compile(code: str, optimize: bool) -> CompileResponse:
-    """Tokens y AST (--json) y, si compiló sin errores, el assembly (--asm)."""
+    """Returns tokens and AST (--json) and, if compilation succeeds, the assembly (--asm)."""
     if not COMPILER_BIN.exists():
-        return _server_error("El compilador no está disponible; la compilación al "
-                             "arrancar falló (revisa los logs del servidor).")
+        return _server_error("Compiler is not available; startup build failed (check server logs).")
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".cpp", delete=False) as f:
         f.write(code)
         src = f.name
 
     try:
-        # Tokens y AST; en modo --json el compilador reporta sus errores como JSON.
+        # Tokens and AST; in --json mode the compiler reports its errors as JSON.
         json_result = _run_compiler("--json", src, optimize)
         if not json_result.stdout.strip():
-            return _server_error(json_result.stderr.strip() or "El compilador no produjo salida.")
+            return _server_error(json_result.stderr.strip() or "Compiler produced no output.")
         resp = CompileResponse(**json.loads(json_result.stdout))
 
-        # Assembly, solo si el código es válido.
+        # Assembly, only if the code is valid.
         if resp.success:
             asm_result, compile_ms = _timed(lambda: _run_compiler("--asm", src, optimize))
             if asm_result.returncode == 0:
@@ -161,9 +160,9 @@ def _compile(code: str, optimize: bool) -> CompileResponse:
         return resp
 
     except subprocess.TimeoutExpired:
-        return _server_error("La compilación excedió el tiempo límite.")
+        return _server_error("Compilation exceeded the time limit.")
     except json.JSONDecodeError as e:
-        return _server_error(f"Respuesta inválida del compilador: {e}")
+        return _server_error(f"Invalid response from compiler: {e}")
     finally:
         os.unlink(src)
 
@@ -194,7 +193,7 @@ def _assemble_and_run(asm: str) -> tuple[RunResult, Metrics]:
         except subprocess.TimeoutExpired as e:
             partial = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
             return RunResult(stdout=_clip(partial),
-                             stderr=f"El programa excedió el tiempo límite de {RUN_TIMEOUT}s.",
+                             stderr=f"Program exceeded the time limit of {RUN_TIMEOUT}s.",
                              exit_code=-1, timed_out=True), metrics
 
 
@@ -208,11 +207,11 @@ def health():
 
 @app.post("/api/run", response_model=CompileResponse)
 def run_code(req: SourceRequest):
-    """Compila y, si no hubo errores, ensambla y ejecuta. Devuelve el output."""
+    """Compiles and, if there are no errors, assembles and runs. Returns the output."""
     resp = _compile(req.code, req.optimize)
     if resp.success and resp.asm:
         resp.run, run_metrics = _assemble_and_run(resp.asm)
-        # _compile ya dejó compile_ms; añadimos ensamblado, ejecución y tamaño.
+        # _compile already set compile_ms; we add assemble, execution and size.
         resp.metrics.assemble_ms = run_metrics.assemble_ms
         resp.metrics.exec_ms = run_metrics.exec_ms
         resp.metrics.binary_size_bytes = run_metrics.binary_size_bytes

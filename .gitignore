@@ -48,3 +48,6 @@ backend/venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Benchmarks
+benchmarks/results/
