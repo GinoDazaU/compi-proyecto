@@ -40,6 +40,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - El tipo de retorno debe ser un tipo válido.
 - Los nombres de los parámetros deben ser únicos dentro de la lista → **error**.
 - Parámetro con tipo `void` → **error**.
+- Máximo 6 parámetros enteros/puntero y 8 float (paso solo por registros) → **error**.
 - Si el retorno es `void`: cualquier `return expr` dentro es **error**.
 - Si el retorno no es `void`: debe existir al menos un `return expr` en el cuerpo → **error** si no hay ninguno.
 - El tipo del valor retornado debe ser compatible con el tipo de retorno declarado → **error** si no.

@@ -256,9 +256,10 @@ call funcname
 ; resultado en %rax (int) o %xmm0 (float)
 ```
 
-> Por ahora soportamos hasta 6 args int y 8 float; los que excedan no se pasan
-> por stack todavía. El tipo de retorno de cada función se precalcula en
-> `firstPass` (`func_rets_`) para dejar `cur_type_` correcto tras la llamada.
+> Solo se pasan args por registros: hasta 6 int y 8 float. El semántico rechaza
+> funciones que excedan ese límite (ver `semantic_rules.md §2.2`). El tipo de
+> retorno de cada función se precalcula en `firstPass` (`func_rets_`) para dejar
+> `cur_type_` correcto tras la llamada.
 
 ---
 

@@ -163,13 +163,17 @@ void TypeChecker::visit(FuncDecl* node) {
     in_loop_      = false;
 
     vars_.enterScope();
+    int int_params = 0, float_params = 0;  // bancos de la convención de llamada
     for (auto& p : node->params) {
         SemType pt = resolveType(p.type, node->line, node->col);
         if (pt.isVoid())
             semError("parameter '" + p.name + "' cannot be void", node->line, node->col);
         if (!vars_.declare(p.name, {pt}))
             semError("duplicate parameter '" + p.name + "'", node->line, node->col);
+        (pt.isFloat() ? float_params : int_params)++;
     }
+    if (int_params > 6 || float_params > 8)
+        semError("function '" + node->name + "' has too many parameters (max 6 integer, 8 float)", node->line, node->col);
 
     if (!ret_type_.isVoid() && !isTemplateType(ret_type_)) {
         if (!bodyHasReturn(node->body))

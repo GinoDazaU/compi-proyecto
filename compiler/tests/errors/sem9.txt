@@ -1,0 +1,8 @@
+// Error semántico: función con más parámetros que los soportados por la convención de llamada (máx 6 enteros)
+int many(int a, int b, int c, int d, int e, int f, int g) {
+    return a;
+}
+
+int main() {
+    return 0;
+}
