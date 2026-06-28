@@ -22,7 +22,7 @@ código fuente (.txt)
       ▼  Semántico (TypeChecker) verifica tipos y scopes; el AST queda validado
  AST validado
       │
-      ▼  Optimizador (opcional)  reescribe el AST (--opt)        [aún no implementado]
+      ▼  Optimizador (opcional)  reescribe el AST (--opt)
  AST optimizado
       │
       ▼  CodeGenerator           AST → ensamblador x86-64
@@ -57,10 +57,11 @@ errores de *significado*: variables no declaradas, tipos incompatibles, argument
 de más. El semántico recorre el árbol verificando tipos y alcances. No transforma el
 AST; lo aprueba (o lo rechaza con un error).
 
-**Optimizador** — *(Pendiente, esqueleto.)* Correría **sobre el AST, antes del
-codegen** (solo con el flag `--opt`), aplicando mejoras como *constant folding* y
-*dead code elimination*. Recibiría el AST validado y devolvería otro AST
-equivalente pero más eficiente. Su documento queda como TODO.
+**Optimizador** — Corre **sobre el AST, antes del codegen** (solo con el flag
+`--opt`), aplicando mejoras como *constant folding*, *constant propagation*,
+simplificación algebraica y *dead code elimination*. Recibe el AST validado y
+devuelve otro AST equivalente pero más eficiente. No es una sola clase, sino una
+cadena de pases pequeños encadenados.
 
 **CodeGenerator** — La última fase: traduce el AST a ensamblador x86-64, que `g++`
 ensambla y enlaza. Es la fase que más sabe de la máquina (registros, stack, la
