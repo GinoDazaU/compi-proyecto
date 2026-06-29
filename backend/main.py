@@ -20,6 +20,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -217,6 +218,12 @@ def run_code(req: SourceRequest):
         resp.metrics.binary_size_bytes = run_metrics.binary_size_bytes
     return resp
 
+
+# ─── Frontend estático ────────────────────────────────────────────────────────
+
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="static")
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
 
