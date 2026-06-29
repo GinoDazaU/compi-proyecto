@@ -8,16 +8,13 @@ import MetricsBar from "./components/MetricsBar";
 import { runCode } from "./api";
 
 const DEFAULT_CODE = `int main() {
-    int a = 0;
-    int b = 1;
-    for (int i = 0; i < 10; i = i + 1) {
-        print(a);
-        print(' ');
-        int next = a + b;
-        a = b;
-        b = next;
+    println("Hello, World!");
+    int sum = 0;
+    for (int i = 1; i <= 10; i = i + 1) {
+        sum = sum + i;
     }
-    println(' ');
+    print("Sum 1..10 = ");
+    println(sum);
     return 0;
 }
 `;

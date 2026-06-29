@@ -4,7 +4,7 @@ export default function Toolbar({ onRun, loading, optimize, setOptimize }) {
   return (
     <header className="grid grid-cols-3 items-center border-b border-stone-200 bg-white px-4 py-2 shadow-sm">
       {/* Izquierda: título */}
-      <h1 className="text-sm font-semibold text-stone-800">
+      <h1 className="text-base font-semibold text-stone-800">
         C++ Compiler <span className="text-stone-400">→</span> x86-64
       </h1>
 

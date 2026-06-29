@@ -73,7 +73,7 @@ void Lexer::skipBlockComment() {
         }
         advance();
     }
-    // comentario de bloque sin cerrar — el error lo reportará el parser
+    throw LexError("unterminated block comment", line, col);
 }
 
 // ─── Lectores de tokens ───────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ Token Lexer::nextToken() {
     }
 
     if (current() == '\0')
-        return Token(TokenType::END, "", line, col);
+        return Token(TokenType::END, "EOF", line, col);
 
     if (std::isalpha(current()) || current() == '_') return readIdentifierOrKeyword();
     if (std::isdigit(current()))                     return readNumber();
