@@ -83,14 +83,31 @@ rama que se toma**:
 if (auto* iff = dynamic_cast<IfStmt*>(s)) {
     bool t;
     if (litTruth(iff->condition, t)) {
+        Stmt* surviving = nullptr;
         if (t) {
-            kept.push_back(iff->then_branch);   // rescata la rama 'then'
-            iff->then_branch = nullptr;         // ...y la desengancha
+            surviving = iff->then_branch;
+            iff->then_branch = nullptr;
         } else if (iff->else_branch) {
-            kept.push_back(iff->else_branch);
+            surviving = iff->else_branch;
             iff->else_branch = nullptr;
         }
         delete iff;   // libera la condición y la rama NO tomada
+
+        if (surviving) {
+            if (auto* blk = dynamic_cast<Block*>(surviving)) {
+                // Aplana el bloque sobreviviente para evitar Block anidados
+                for (Stmt* inner : blk->stmts) {
+                    if (terminated) { delete inner; continue; }
+                    kept.push_back(inner);
+                    if (isTerminator(inner)) terminated = true;
+                }
+                blk->stmts.clear();
+                delete blk;
+            } else {
+                kept.push_back(surviving);   // else-if: el sobreviviente es un IfStmt
+                if (isTerminator(surviving)) terminated = true;
+            }
+        }
         continue;
     }
 }
@@ -102,8 +119,10 @@ falso, lo demás verdadero). El patrón es el mismo `detach` del
 se pone a `nullptr` en el `IfStmt` **antes** de borrarlo, para que el destructor del
 `if` no la arrastre — solo libere la condición y la rama descartada.
 
-`if (true) { a } else { b }` queda como `{ a }` insertado directo en el bloque
-padre. Si la condición no es literal, el `if` se conserva tal cual.
+Cuando la rama sobreviviente es un `Block`, sus sentencias se **aplanan** en el
+bloque padre: `if (true) { a } else { b }` deja `a` suelto, no `{ a }`. Si la
+rama es un `else if` (el sobreviviente es un `IfStmt`), se inserta tal cual. Si la
+condición no es literal, el `if` se conserva sin cambios.
 
 ---
 

@@ -63,5 +63,5 @@ Si la compilación falla, `success` es `false` y `error.type` es uno de
 
 - Si la compilación del compilador al arrancar falla, el backend igual levanta y
   `/api/health` reporta `compiler_ready: false`.
-- Timeouts: 10s para compilar, 5s para ejecutar el programa. El output se recorta
+- Timeouts: 10s para compilar, 15s para ejecutar el programa. El output se recorta
   a 64 KB.

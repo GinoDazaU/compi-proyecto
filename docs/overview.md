@@ -15,7 +15,7 @@ compi-proyecto/
 │   │   ├── parser/      # Parser recursivo descendente + AST
 │   │   ├── semantic/    # Type checker y manejo de scope
 │   │   ├── codegen/     # Emisión de assembly x86-64
-│   │   └── optimizer/   # Optimizaciones sobre el código generado
+│   │   └── optimizer/   # Optimizaciones sobre el AST
 │   ├── tests/
 │   │   ├── analysis/    # programas válidos (deben pasar el frontend)
 │   │   ├── errors/      # programas que deben ser rechazados
@@ -55,10 +55,11 @@ Tabla de símbolos con soporte de scopes anidados.
 El compilador debe reportar errores claros en las tres fases: léxico (token inválido), sintáctico (estructura inesperada) y semántico (tipo incorrecto, variable no declarada, etc.), con número de línea y columna.
 
 ### 4. Optimizador (`optimizer/`)
-Optimizaciones básicas sobre el AST, antes de la generación de código (fase opcional `--opt`):
+Optimizaciones sobre el AST, antes de la generación de código (fase opcional `--opt`):
 - Constant folding
+- Constant propagation
+- Algebraic simplification
 - Dead code elimination
-- (Posiblemente) eliminación de subexpresiones comunes
 
 ### 5. Generación de código (`codegen/`)
 Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
@@ -99,12 +100,12 @@ Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 
 ## Frontend web (bonus)
 
-App React/Vite conectada a un servidor Python (FastAPI o Flask) que:
+App React/Vite conectada a un servidor Python (FastAPI) que:
 1. Expone el compilador como API REST
 2. Muestra un editor de código con syntax highlighting
 3. Visualiza el AST generado
 4. Muestra el assembly x86-64 generado
-5. Ejecuta o simula el programa compilado y muestra el output
+5. Ejecuta el programa compilado y muestra el output
 
 ---
 

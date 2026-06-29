@@ -7,7 +7,7 @@ export default function Console({ result, loading }) {
     const e = result.error;
     return (
       <div className="text-red-600">
-        <span className="font-semibold">error {e.type}</span>
+        <span className="font-semibold">{e.type} error</span>
         {e.line > 0 && <span className="text-red-400"> at {e.line}:{e.col}</span>}
         {": "}
         {e.message}

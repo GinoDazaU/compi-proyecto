@@ -186,16 +186,33 @@ def _assemble_and_run(asm: str) -> tuple[RunResult, Metrics]:
                              exit_code=link.returncode, timed_out=False), metrics
 
         metrics.binary_size_bytes = os.path.getsize(exe_path)
-        try:
-            proc, metrics.exec_ms = _timed(lambda: subprocess.run(
-                [exe_path], capture_output=True, text=True, timeout=RUN_TIMEOUT))
-            return RunResult(stdout=_clip(proc.stdout), stderr=_clip(proc.stderr),
-                             exit_code=proc.returncode, timed_out=False), metrics
-        except subprocess.TimeoutExpired as e:
-            partial = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
-            return RunResult(stdout=_clip(partial),
-                             stderr=f"Program exceeded the time limit of {RUN_TIMEOUT}s.",
-                             exit_code=-1, timed_out=True), metrics
+        stdout_path = os.path.join(tmp, "stdout")
+        stderr_path = os.path.join(tmp, "stderr")
+        t0 = time.perf_counter()
+        timed_out = False
+        with open(stdout_path, "wb") as out_f, open(stderr_path, "wb") as err_f:
+            proc = subprocess.Popen([exe_path], stdout=out_f, stderr=err_f)
+            try:
+                proc.wait(timeout=RUN_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+                timed_out = True
+        metrics.exec_ms = round((time.perf_counter() - t0) * 1000, 2)
+        with open(stdout_path, "rb") as f:
+            stdout = f.read(OUTPUT_LIMIT).decode(errors="replace")
+        with open(stderr_path, "rb") as f:
+            stderr = f.read(OUTPUT_LIMIT).decode(errors="replace")
+        if timed_out:
+            return RunResult(
+                stdout=stdout,
+                stderr=f"Program exceeded the time limit of {RUN_TIMEOUT}s.",
+                exit_code=-1, timed_out=True,
+            ), metrics
+        return RunResult(
+            stdout=stdout, stderr=stderr,
+            exit_code=proc.returncode, timed_out=False,
+        ), metrics
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────

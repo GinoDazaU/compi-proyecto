@@ -29,14 +29,34 @@ void DeadCodeEliminator::visit(Block* node) {
         if (auto* iff = dynamic_cast<IfStmt*>(s)) {
             bool t;
             if (litTruth(iff->condition, t)) {
+                Stmt* surviving = nullptr;
                 if (t) {
-                    kept.push_back(iff->then_branch);
+                    surviving = iff->then_branch;
                     iff->then_branch = nullptr;
                 } else if (iff->else_branch) {
-                    kept.push_back(iff->else_branch);
+                    surviving = iff->else_branch;
                     iff->else_branch = nullptr;
                 }
                 delete iff;  // libera la condición y la rama no tomada
+
+                if (surviving) {
+                    // Si la rama sobreviviente es un Block, aplanamos sus
+                    // statements directamente en el bloque padre para evitar
+                    // nodos Block anidados innecesarios en el AST.
+                    if (auto* blk = dynamic_cast<Block*>(surviving)) {
+                        for (Stmt* inner : blk->stmts) {
+                            if (terminated) { delete inner; continue; }
+                            kept.push_back(inner);
+                            if (isTerminator(inner)) terminated = true;
+                        }
+                        blk->stmts.clear();
+                        delete blk;
+                    } else {
+                        // else-if: el sobreviviente es otro IfStmt
+                        kept.push_back(surviving);
+                        if (isTerminator(surviving)) terminated = true;
+                    }
+                }
                 continue;
             }
         }

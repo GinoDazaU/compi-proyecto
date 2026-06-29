@@ -289,4 +289,133 @@ int main() {
 }
 `,
   },
+  {
+    name: "Exam score analyzer",
+    code: `// Analyzes 20 exam scores: sorts, computes statistics,
+// and prints a histogram of the score distribution.
+
+void bubbleSort(int* arr, int n) {
+    for (int i = 0; i < n - 1; i = i + 1) {
+        for (int j = 0; j < n - 1 - i; j = j + 1) {
+            if (arr[j] > arr[j + 1]) {
+                int tmp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = tmp;
+            }
+        }
+    }
+}
+
+int findMin(int* arr, int n) {
+    int m = arr[0];
+    for (int i = 1; i < n; i = i + 1) {
+        if (arr[i] < m) { m = arr[i]; }
+    }
+    return m;
+}
+
+int findMax(int* arr, int n) {
+    int m = arr[0];
+    for (int i = 1; i < n; i = i + 1) {
+        if (arr[i] > m) { m = arr[i]; }
+    }
+    return m;
+}
+
+float computeMean(int* arr, int n) {
+    float sum = 0.0;
+    for (int i = 0; i < n; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    return sum / n;
+}
+
+float computeMedian(int* sorted, int n) {
+    if (n % 2 == 0) {
+        return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0;
+    }
+    return sorted[n / 2];
+}
+
+void printHistogram(int* arr, int n) {
+    int buckets[10];
+    for (int i = 0; i < 10; i = i + 1) {
+        buckets[i] = 0;
+    }
+    for (int i = 0; i < n; i = i + 1) {
+        int b = arr[i] / 10;
+        if (b >= 10) { b = 9; }
+        buckets[b] = buckets[b] + 1;
+    }
+    println("--- Score distribution ---");
+    for (int i = 0; i < 10; i = i + 1) {
+        print(i * 10);
+        print("-");
+        print(i * 10 + 9);
+        print(": ");
+        for (int j = 0; j < buckets[i]; j = j + 1) {
+            print("*");
+        }
+        print("  (");
+        print(buckets[i]);
+        println(")");
+    }
+}
+
+int main() {
+    int scores[20] = {72, 85, 91, 63, 78, 55, 88, 42, 95, 67,
+                      74, 83, 59, 76, 88, 31, 92, 70, 65, 80};
+    int n = 20;
+
+    println("=== Exam Score Analyzer — 20 students ===");
+    println(" ");
+
+    print("Raw scores:  ");
+    for (int i = 0; i < n; i = i + 1) {
+        print(scores[i]);
+        print(" ");
+    }
+    println(" ");
+
+    int sorted[20];
+    for (int i = 0; i < n; i = i + 1) {
+        sorted[i] = scores[i];
+    }
+    bubbleSort(sorted, n);
+
+    print("Sorted:      ");
+    for (int i = 0; i < n; i = i + 1) {
+        print(sorted[i]);
+        print(" ");
+    }
+    println(" ");
+    println(" ");
+
+    int minVal  = findMin(scores, n);
+    int maxVal  = findMax(scores, n);
+    float mean   = computeMean(scores, n);
+    float median = computeMedian(sorted, n);
+
+    int passing = 0;
+    for (int i = 0; i < n; i = i + 1) {
+        if (scores[i] >= 60) { passing = passing + 1; }
+    }
+
+    println("--- Statistics ---");
+    print("  Count   : "); println(n);
+    print("  Min     : "); println(minVal);
+    print("  Max     : "); println(maxVal);
+    print("  Range   : "); println(maxVal - minVal);
+    print("  Mean    : "); println(mean);
+    print("  Median  : "); println(median);
+    print("  Passing : "); print(passing); print(" / "); println(n);
+    print("  Failing : "); print(n - passing); print(" / "); println(n);
+    println(" ");
+
+    printHistogram(scores, n);
+
+    return 0;
+}
+`,
+  },
 ];
