@@ -37,6 +37,7 @@ todo por patrón. Si falta `.rs`/`.go`, ese lenguaje se salta para ese benchmark
 | `collatz`    | enteros, branches                              | básico |
 | `quicksort`  | recursión + punteros + memoria dinámica        | reco. |
 | `mandelbrot` | float anidado intensivo (escape-time)          | reco. |
+| `opt_heavy`  | expresiones que el optimizador puede simplificar | reco. |
 
 ## Metodología
 

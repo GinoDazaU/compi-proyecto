@@ -16,7 +16,7 @@ python3 build.py run --asm tests/analysis/input1.txt  # genera el assembly de un
 
 ## App web
 
-Cada carpeta (`backend/`, `frontend/`) puede levantarse por separado, o juntos con Docker:
+Cada carpeta (`app/backend/`, `app/frontend/`) puede levantarse por separado, o juntos con Docker:
 
 ```bash
 docker build -t compi . && docker run -p 8000:8000 compi
@@ -28,10 +28,9 @@ Disponible en `localhost:8000`.
 
 ```
 compiler/   → compilador (C++)
-backend/    → API REST (Python)
-frontend/   → app web (React)
-benchmarks/ → comparación con GCC/Clang
-docs/       → documentación técnica
+app/        → API REST + app web (Python/React)
+benchmarks/ → comparación con GCC, Clang, Rust y Go
+docs/       → documentación del proyecto
 ```
 
 ## Documentación

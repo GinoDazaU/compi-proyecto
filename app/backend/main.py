@@ -26,7 +26,7 @@ from pydantic import BaseModel
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("compiler-api")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 COMPILER_DIR = PROJECT_ROOT / "compiler"
 COMPILER_BIN = COMPILER_DIR / "build" / "compiler"
 
@@ -238,7 +238,7 @@ def run_code(req: SourceRequest):
 
 # ─── Frontend estático ────────────────────────────────────────────────────────
 
-FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+FRONTEND_DIST = PROJECT_ROOT / "app" / "frontend" / "dist"
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="static")
 

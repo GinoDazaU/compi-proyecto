@@ -22,8 +22,9 @@ compi-proyecto/
 │   │   ├── e2e/         # compilan, ejecutan y comparan stdout (.txt + .expected)
 │   │   └── sandbox/     # archivos de prueba libre
 │   └── build.py         # Script de compilación y pruebas
-├── backend/             # API REST en Python que expone el compilador
-├── frontend/            # App web React/Vite
+├── app/
+│   ├── backend/         # API REST en Python que expone el compilador
+│   └── frontend/        # App web React/Vite
 ├── benchmarks/          # Comparación con GCC y Clang
 └── docs/
 ```
