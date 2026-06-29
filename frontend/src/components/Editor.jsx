@@ -3,8 +3,7 @@ import { cpp } from "@codemirror/lang-cpp";
 import { keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 
-export default function Editor({ value, onChange, onRun }) {
-  // Ctrl/Cmd+Enter ejecuta sin tener que ir al botón.
+export default function Editor({ value, onChange, onRun, dark }) {
   const runKeymap = Prec.highest(
     keymap.of([{ key: "Mod-Enter", run: () => (onRun(), true) }]),
   );
@@ -13,6 +12,7 @@ export default function Editor({ value, onChange, onRun }) {
     <CodeMirror
       value={value}
       onChange={onChange}
+      theme={dark ? "dark" : "light"}
       extensions={[cpp(), runKeymap]}
       height="100%"
       className="h-full"

@@ -20,7 +20,7 @@ export default function Console({ result, loading }) {
 
   return (
     <div className="whitespace-pre-wrap">
-      {run.stdout && <span className="text-stone-800">{run.stdout}</span>}
+      {run.stdout && <span className="text-stone-800 dark:text-stone-200">{run.stdout}</span>}
       {run.stderr && <span className="text-red-600">{run.stderr}</span>}
       {!run.stdout && !run.stderr && <Muted>(no output)</Muted>}
     </div>

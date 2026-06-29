@@ -1,11 +1,11 @@
 export default function TokensTable({ tokens }) {
   if (!tokens?.length) {
-    return <div className="p-3 text-sm text-stone-400">No tokens.</div>;
+    return <div className="p-3 text-sm text-stone-400 dark:text-stone-500">No tokens.</div>;
   }
 
   return (
     <table className="w-full border-collapse text-left">
-      <thead className="sticky top-0 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
+      <thead className="sticky top-0 bg-stone-50 text-xs uppercase tracking-wide text-stone-500 dark:bg-stone-800 dark:text-stone-400">
         <tr>
           <th className="px-3 py-1.5 font-medium">Type</th>
           <th className="px-3 py-1.5 font-medium">Lexeme</th>
@@ -15,11 +15,11 @@ export default function TokensTable({ tokens }) {
       </thead>
       <tbody>
         {tokens.map((t, i) => (
-          <tr key={i} className="border-t border-stone-100">
-            <td className="px-3 py-1 text-green-700">{t.type}</td>
-            <td className="px-3 py-1 text-stone-800">{t.lexeme}</td>
-            <td className="px-3 py-1 text-stone-500">{t.line}</td>
-            <td className="px-3 py-1 text-stone-500">{t.col}</td>
+          <tr key={i} className="border-t border-stone-100 dark:border-stone-800">
+            <td className="px-3 py-1 text-green-700 dark:text-green-400">{t.type}</td>
+            <td className="px-3 py-1 text-stone-800 dark:text-stone-200">{t.lexeme}</td>
+            <td className="px-3 py-1 text-stone-500 dark:text-stone-400">{t.line}</td>
+            <td className="px-3 py-1 text-stone-500 dark:text-stone-400">{t.col}</td>
           </tr>
         ))}
       </tbody>

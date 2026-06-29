@@ -6,7 +6,6 @@ export default function ExampleMenu({ onSelect }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // Cierra el menú al hacer click fuera de él.
   useEffect(() => {
     if (!open) return;
     const onClickOutside = (e) => {
@@ -20,7 +19,7 @@ export default function ExampleMenu({ onSelect }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium normal-case tracking-normal text-stone-500 transition hover:bg-stone-100 hover:text-stone-700"
+        className="flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium normal-case tracking-normal text-stone-500 transition hover:bg-stone-100 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-200"
       >
         <BookOpen className="h-3.5 w-3.5" />
         Examples
@@ -28,7 +27,7 @@ export default function ExampleMenu({ onSelect }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-10 mt-1 max-h-72 w-56 overflow-y-auto rounded-md border border-stone-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 z-10 mt-1 max-h-72 w-56 overflow-y-auto rounded-md border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-800">
           {EXAMPLES.map((ex) => (
             <button
               key={ex.name}
@@ -36,7 +35,7 @@ export default function ExampleMenu({ onSelect }) {
                 onSelect(ex.code);
                 setOpen(false);
               }}
-              className="block w-full px-3 py-1.5 text-left text-sm normal-case tracking-normal text-stone-700 transition hover:bg-stone-50"
+              className="block w-full px-3 py-1.5 text-left text-sm normal-case tracking-normal text-stone-700 transition hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-700"
             >
               {ex.name}
             </button>

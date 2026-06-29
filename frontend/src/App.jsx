@@ -24,6 +24,20 @@ export default function App() {
   const [optimize, setOptimize] = useState(false);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem("dark");
+    const isDark = saved === null ? true : saved === "true";
+    document.documentElement.classList.toggle("dark", isDark);
+    return isDark;
+  });
+
+  const toggleDark = useCallback(() => {
+    setDark((d) => {
+      document.documentElement.classList.toggle("dark", !d);
+      localStorage.setItem("dark", String(!d));
+      return !d;
+    });
+  }, []);
 
   const run = useCallback(async () => {
     setLoading(true);
@@ -40,20 +54,20 @@ export default function App() {
   }, [code, optimize]);
 
   return (
-    <div className="flex h-full flex-col bg-stone-100 text-stone-900">
-      <Toolbar onRun={run} loading={loading} optimize={optimize} setOptimize={setOptimize} />
+    <div className="flex h-full flex-col bg-stone-100 text-stone-900 dark:bg-stone-900 dark:text-stone-100">
+      <Toolbar onRun={run} loading={loading} optimize={optimize} setOptimize={setOptimize} dark={dark} toggleDark={toggleDark} />
 
       <div className="flex min-h-0 flex-1">
-        <section className="flex min-w-0 flex-1 flex-col border-r border-stone-200">
-          <div className="flex items-center justify-between border-b border-stone-200 bg-stone-50 px-3 py-1.5">
-            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+        <section className="flex min-w-0 flex-1 flex-col border-r border-stone-200 dark:border-stone-700">
+          <div className="flex items-center justify-between border-b-2 border-stone-200 bg-stone-50 px-3 py-1.5 dark:border-stone-700 dark:bg-stone-800">
+            <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400">
               <FileCode2 className="h-3 w-3" />
               Editor
             </span>
             <ExampleMenu onSelect={setCode} />
           </div>
-          <div className="min-h-0 flex-1 overflow-auto bg-white">
-            <Editor value={code} onChange={setCode} onRun={run} />
+          <div className="min-h-0 flex-1 overflow-auto bg-white dark:bg-stone-900">
+            <Editor value={code} onChange={setCode} onRun={run} dark={dark} />
           </div>
         </section>
 

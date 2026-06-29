@@ -16,7 +16,7 @@ export default function AstTree({ ast }) {
   }, [ast]);
 
   return (
-    <div ref={containerRef} className="h-full w-full bg-stone-50">
+    <div ref={containerRef} className="h-full w-full bg-stone-50 dark:bg-stone-900">
       <Tree
         data={data}
         orientation="vertical"
@@ -41,13 +41,13 @@ function renderNode({ nodeDatum }) {
   return (
     <g>
       <foreignObject x={-75} y={-height / 2} width={150} height={height}>
-        <div className="flex h-full flex-col justify-center rounded-md border border-stone-300 bg-white px-2 py-1 shadow-sm">
-          <div className="truncate text-center text-[11px] font-semibold text-green-700">
+        <div className="flex h-full flex-col justify-center rounded-md border border-stone-300 bg-white px-2 py-1 shadow-sm dark:border-stone-600 dark:bg-stone-800">
+          <div className="truncate text-center text-[11px] font-semibold text-green-700 dark:text-green-400">
             {nodeDatum.name}
           </div>
           {attrs.map(([k, v]) => (
-            <div key={k} className="truncate text-center text-[10px] text-stone-500">
-              {k}: <span className="text-stone-700">{String(v)}</span>
+            <div key={k} className="truncate text-center text-[10px] text-stone-500 dark:text-stone-400">
+              {k}: <span className="text-stone-700 dark:text-stone-300">{String(v)}</span>
             </div>
           ))}
         </div>

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tamaño base de toda la app. Las clases text-xs/sm/base son rem, así que
    subir o bajar este valor escala TODO el texto (UI y editor) de una vez. */
 html {
@@ -14,6 +16,11 @@ body,
 
 body {
   margin: 0;
+  background-color: #1c1917;
+}
+
+html:not(.dark) body {
+  background-color: #f5f5f4;
 }
 
 @layer base {
@@ -33,4 +40,12 @@ body {
   stroke: #d6d3d1;
   stroke-width: 1.5px;
   fill: none;
+}
+
+.dark .rd3t-link {
+  stroke: #57534e;
+}
+
+.dark * {
+  scrollbar-color: #57534e #1c1917;
 }
