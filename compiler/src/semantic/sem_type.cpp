@@ -33,14 +33,6 @@ SemType SemType::promote(const SemType& a, const SemType& b) {
     return ra >= rb ? a : b;
 }
 
-SemType SemType::makeFunc(std::vector<SemType> params, const SemType& ret) {
-    SemType t;
-    t.base   = "fn";
-    t.params = std::move(params);
-    t.ret    = std::make_shared<SemType>(ret);
-    return t;
-}
-
 SemType SemType::fromTypeNode(const TypeNode* node) {
     if (!node) return SemType{"void"};
     SemType t;
@@ -50,16 +42,6 @@ SemType SemType::fromTypeNode(const TypeNode* node) {
 }
 
 std::string SemType::toString() const {
-    if (base == "fn") {
-        std::string s = "fn(";
-        for (size_t i = 0; i < params.size(); ++i) {
-            if (i) s += ",";
-            s += params[i].toString();
-        }
-        s += ")->";
-        s += ret ? ret->toString() : "void";
-        return s;
-    }
     std::string s = base;
     s.append(mods.size(), '*');
     return s;

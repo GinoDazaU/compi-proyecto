@@ -50,7 +50,7 @@ void exitScope() {
 `enterScope` apila un mapa vacío; `exitScope` lo descarta (y con él, todas las
 variables locales de ese bloque). El `assert` garantiza que nunca se desapile el
 global: siempre queda al menos un scope. El TypeChecker llama a este par al entrar
-y salir de cada `Block`, función, `for` y lambda.
+y salir de cada `Block`, función y `for`.
 
 ---
 

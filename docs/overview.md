@@ -91,10 +91,8 @@ Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 - Memoria dinámica: `new` / `delete`
 
 ### Avanzado
-- Templates simples (`template<typename T>`)
 - `auto` (inferencia de tipos)
 - Inferencia, conversión y promoción automática de tipos (conversiones implícitas `int`→`float`, etc.)
-- Lambdas básicas
 - Arrays multidimensionales
 
 ---

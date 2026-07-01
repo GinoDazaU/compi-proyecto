@@ -24,7 +24,6 @@ bool TypeChecker::isValidBase(const std::string& base) const {
     if (base == "int" || base == "float" || base == "bool" ||
         base == "char" || base == "string" || base == "void")
         return true;
-    if (in_template_ && base == template_param_) return true;
     return structs_.count(base) > 0;
 }
 
@@ -43,10 +42,6 @@ bool TypeChecker::isLvalue(Expr* e) const {
     if (auto* u = dynamic_cast<UnaryExpr*>(e))
         return u->op == UnaryOp::Deref;
     return false;
-}
-
-bool TypeChecker::isTemplateType(const SemType& t) const {
-    return in_template_ && !template_param_.empty() && t.base == template_param_;
 }
 
 bool TypeChecker::isArithmetic(const SemType& t) const {
@@ -120,21 +115,6 @@ void TypeChecker::firstPass(Program* program) {
                 info.params.push_back({pt});
             }
             funcs_[f->name] = info;
-
-        } else if (auto* tf = dynamic_cast<TemplateFuncDecl*>(decl)) {
-            auto* f = tf->func;
-            if (funcs_.count(f->name))
-                semError("function '" + f->name + "' already declared", f->line, f->col);
-            FuncInfo info;
-            info.template_param = tf->template_param;
-            info.return_type = f->return_type
-                ? SemType{f->return_type->base}
-                : SemType{"void"};
-            for (auto& p : f->params) {
-                SemType pt{p.type ? p.type->base : "void"};
-                info.params.push_back({pt});
-            }
-            funcs_[f->name] = info;
         }
     }
 }
@@ -175,7 +155,7 @@ void TypeChecker::visit(FuncDecl* node) {
     if (int_params > 6 || float_params > 8)
         semError("function '" + node->name + "' has too many parameters (max 6 integer, 8 float)", node->line, node->col);
 
-    if (!ret_type_.isVoid() && !isTemplateType(ret_type_)) {
+    if (!ret_type_.isVoid()) {
         if (!bodyHasReturn(node->body))
             semError("non-void function '" + node->name + "' must return a value", node->line, node->col);
     }
@@ -183,14 +163,6 @@ void TypeChecker::visit(FuncDecl* node) {
     node->body->accept(this);
     vars_.exitScope();
     in_loop_ = prev_loop;
-}
-
-void TypeChecker::visit(TemplateFuncDecl* node) {
-    in_template_    = true;
-    template_param_ = node->template_param;
-    visit(node->func);
-    in_template_    = false;
-    template_param_ = "";
 }
 
 // ─── Sentencias ───────────────────────────────────────────────────────────────
@@ -227,12 +199,12 @@ void TypeChecker::visit(VarDeclStmt* node) {
 
     for (auto* elem : node->init_list) {
         SemType et = visitExpr(elem);
-        if (!t.accepts(et) && !isTemplateType(t))
+        if (!t.accepts(et))
             semError("incompatible type in initializer list of '" + node->name + "'", node->line, node->col);
     }
 
     if (has_init && !node->type->is_auto) {
-        if (!t.accepts(init_type) && !isTemplateType(t) && !isTemplateType(init_type))
+        if (!t.accepts(init_type))
             semError("incompatible type in initializer of '" + node->name + "'", node->line, node->col);
     }
 
@@ -297,7 +269,7 @@ void TypeChecker::visit(ReturnStmt* node) {
         if (!node->expr)
             semError("non-void function must return a value", node->line, node->col);
         SemType et = visitExpr(node->expr);
-        if (!isTemplateType(ret_type_) && !isTemplateType(et) && !ret_type_.accepts(et))
+        if (!ret_type_.accepts(et))
             semError("incompatible return type: expected " + ret_type_.toString(), node->line, node->col);
     }
 }
@@ -337,21 +309,6 @@ void TypeChecker::visit(BinaryExpr* node) {
     SemType lt = visitExpr(node->left);
     SemType rt = visitExpr(node->right);
 
-    // Saltar verificación si hay tipos template
-    if (isTemplateType(lt) || isTemplateType(rt)) {
-        switch (node->op) {
-            case BinaryOp::Eq:  case BinaryOp::Neq:
-            case BinaryOp::Lt:  case BinaryOp::Gt:
-            case BinaryOp::Leq: case BinaryOp::Geq:
-            case BinaryOp::And: case BinaryOp::Or:
-                expr_type_ = SemType{"bool"};
-                break;
-            default:
-                expr_type_ = isTemplateType(lt) ? rt : lt;
-        }
-        return;
-    }
-
     switch (node->op) {
         case BinaryOp::Add: case BinaryOp::Sub:
         case BinaryOp::Mul: case BinaryOp::Div:
@@ -381,7 +338,6 @@ void TypeChecker::visit(BinaryExpr* node) {
 
 void TypeChecker::visit(UnaryExpr* node) {
     SemType t = visitExpr(node->expr);
-    if (isTemplateType(t)) { expr_type_ = t; return; }
 
     switch (node->op) {
         case UnaryOp::Neg:
@@ -420,8 +376,6 @@ void TypeChecker::visit(AssignExpr* node) {
 
     SemType lt = visitExpr(node->left);
     SemType rt = visitExpr(node->right);
-
-    if (isTemplateType(lt) || isTemplateType(rt)) { expr_type_ = lt; return; }
 
     if (!lt.accepts(rt))
         semError("incompatible type in assignment", node->line, node->col);
@@ -462,29 +416,13 @@ void TypeChecker::visit(IndexExpr* node) {
 void TypeChecker::visit(CallExpr* node) {
     auto* id = dynamic_cast<IdExpr*>(node->callee);
 
-    // Función de usuario o built-in por nombre (con prioridad solo si no está
-    // sombreada por una variable del mismo nombre).
+    // Solo se puede llamar a una función de usuario o built-in por nombre, y
+    // siempre que no esté sombreada por una variable del mismo nombre.
     bool isNamedFunc = id && funcs_.count(id->name) && !vars_.lookup(id->name);
-
     if (!isNamedFunc) {
-        // Nombre inexistente como función y como variable: error claro de siempre.
         if (id && !vars_.lookup(id->name))
             semError("call to undeclared function '" + id->name + "'", node->line, node->col);
-
-        // Llamada a un valor de tipo función: lambda guardada en variable
-        // (auto f = ...; f(...)) o lambda inline ([](...){...}(...)).
-        SemType ct = visitExpr(node->callee);
-        if (!ct.isFunc())
-            semError("call target is not callable", node->line, node->col);
-        if (node->args.size() != ct.params.size())
-            semError("wrong number of arguments in call", node->line, node->col);
-        for (size_t i = 0; i < node->args.size(); ++i) {
-            SemType at = visitExpr(node->args[i]);
-            if (!ct.params[i].accepts(at) && !isTemplateType(ct.params[i]) && !isTemplateType(at))
-                semError("argument " + std::to_string(i+1) + " incompatible in call", node->line, node->col);
-        }
-        expr_type_ = ct.ret ? *ct.ret : SemType{"void"};
-        return;
+        semError("call target is not callable", node->line, node->col);
     }
 
     const FuncInfo& fi = funcs_[id->name];
@@ -504,40 +442,17 @@ void TypeChecker::visit(CallExpr* node) {
     if (node->args.size() != fi.params.size())
         semError("wrong number of arguments in call to '" + id->name + "'", node->line, node->col);
 
-    // Para funciones template: inferir T de los argumentos
-    SemType resolved_T;
-    bool    T_resolved = false;
-
     for (size_t i = 0; i < node->args.size(); ++i) {
         SemType at = visitExpr(node->args[i]);
-        const SemType& pt = fi.params[i].type;
-        bool pt_is_T = !fi.template_param.empty() && pt.base == fi.template_param;
-
-        if (pt_is_T) {
-            if (!T_resolved) {
-                resolved_T = at;
-                T_resolved = true;
-            } else if (resolved_T != at) {
-                if (isArithmetic(at) && isArithmetic(resolved_T))
-                    resolved_T = SemType::promote(resolved_T, at);
-                else
-                    semError("inconsistent types in template arguments of '" + id->name + "'", node->line, node->col);
-            }
-        } else if (!isTemplateType(pt) && !isTemplateType(at) && !pt.accepts(at)) {
+        if (!fi.params[i].type.accepts(at))
             semError("argument " + std::to_string(i+1) + " incompatible in call to '" + id->name + "'", node->line, node->col);
-        }
     }
 
-    // Si el tipo de retorno es T, sustituir con el tipo concreto inferido
-    if (!fi.template_param.empty() && fi.return_type.base == fi.template_param && T_resolved)
-        expr_type_ = resolved_T;
-    else
-        expr_type_ = fi.return_type;
+    expr_type_ = fi.return_type;
 }
 
 void TypeChecker::visit(MemberExpr* node) {
     SemType bt = visitExpr(node->base);
-    if (isTemplateType(bt)) { expr_type_ = bt; return; }
 
     std::string sname;
     if (node->is_arrow) {
@@ -566,31 +481,4 @@ void TypeChecker::visit(PostfixExpr* node) {
     if (!isArithmetic(t) && !t.hasPointer())
         semError("postfix ++/-- requires a numeric or pointer type", node->line, node->col);
     expr_type_ = t;
-}
-
-void TypeChecker::visit(LambdaExpr* node) {
-    SemType prev_ret  = ret_type_;
-    bool    prev_loop = in_loop_;
-    in_loop_ = false;
-
-    ret_type_ = node->return_type
-        ? resolveType(node->return_type, node->line, node->col)
-        : SemType{"void"};
-
-    vars_.enterScope();
-    std::vector<SemType> ptypes;
-    for (auto& p : node->params) {
-        SemType pt = resolveType(p.type, node->line, node->col);
-        ptypes.push_back(pt);
-        vars_.declare(p.name, {pt});
-    }
-    node->body->accept(this);
-    vars_.exitScope();
-
-    SemType lambda_ret = ret_type_;
-    ret_type_ = prev_ret;
-    in_loop_  = prev_loop;
-    // El tipo de la lambda es su firma (params -> retorno), no void: así puede
-    // guardarse en una variable (auto f = ...) y llamarse (f(...)).
-    expr_type_ = SemType::makeFunc(std::move(ptypes), lambda_ret);
 }

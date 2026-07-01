@@ -38,7 +38,6 @@ private:
     // Top-level declarations
     TopDecl*           parseTopDecl();
     StructDecl*        parseStructDecl();
-    TemplateFuncDecl*  parseTemplateFuncDecl();
     FuncDecl*          parseFuncDecl(TypeNode* ret, std::string name);
     std::vector<Param> parseParamList();
     Param              parseParam();
@@ -65,7 +64,6 @@ private:
     Expr* parseUnary();
     Expr* parsePostfix();
     Expr* parsePrimary();
-    LambdaExpr* parseLambda();
 
     std::vector<Expr*> parseArgList();
     std::vector<Expr*> parseInitList();

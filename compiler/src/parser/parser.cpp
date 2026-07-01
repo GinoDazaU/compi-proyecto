@@ -49,7 +49,6 @@ bool Parser::isTypeStart() {
         case TokenType::ID: {
             TokenType n = peek().type;
             if (n == TokenType::ID)  return true;
-            if (n == TokenType::LT)  return true;
             if ((n == TokenType::STAR || n == TokenType::AMP) &&
                 peek(2).type == TokenType::ID) return true;
             return false;
@@ -75,10 +74,6 @@ TypeNode* Parser::parseType() {
                 break;
             case TokenType::ID:
                 t->base = consume().lexeme;
-                if (match(TokenType::LT)) {
-                    t->template_arg = parseType();
-                    expect(TokenType::GT);
-                }
                 break;
             default:
                 error("Expected type");
@@ -103,8 +98,7 @@ Program* Parser::parse() {
 // ─── Top-level declarations ───────────────────────────────────────────────────
 
 TopDecl* Parser::parseTopDecl() {
-    if (check(TokenType::KW_TEMPLATE)) return parseTemplateFuncDecl();
-    if (check(TokenType::KW_STRUCT))   return parseStructDecl();
+    if (check(TokenType::KW_STRUCT)) return parseStructDecl();
 
     int ln = cur().line, cl = cur().col;
     TypeNode* type = parseType();
@@ -135,22 +129,6 @@ StructDecl* Parser::parseStructDecl() {
     expect(TokenType::RBRACE);
     expect(TokenType::SEMICOLON);
     auto* node = new StructDecl(std::move(name), std::move(members));
-    node->line = ln; node->col = cl;
-    return node;
-}
-
-TemplateFuncDecl* Parser::parseTemplateFuncDecl() {
-    int ln = cur().line, cl = cur().col;
-    expect(TokenType::KW_TEMPLATE);
-    expect(TokenType::LT);
-    expect(TokenType::KW_TYPENAME);
-    std::string tparam = expect(TokenType::ID).lexeme;
-    expect(TokenType::GT);
-
-    TypeNode* ret = parseType();
-    std::string name = expect(TokenType::ID).lexeme;
-    FuncDecl* func = parseFuncDecl(ret, std::move(name));
-    auto* node = new TemplateFuncDecl(std::move(tparam), func);
     node->line = ln; node->col = cl;
     return node;
 }
@@ -536,27 +514,8 @@ Expr* Parser::parsePrimary() {
         expect(TokenType::RPAREN);
         return e;
     }
-    if (check(TokenType::LBRACKET))
-        return parseLambda();
 
     error("Expected expression");
-}
-
-LambdaExpr* Parser::parseLambda() {
-    int ln = cur().line, cl = cur().col;
-    expect(TokenType::LBRACKET);
-    expect(TokenType::RBRACKET);   // solo lambdas sin capturas: '[]'
-    expect(TokenType::LPAREN);
-    auto params = parseParamList();
-    expect(TokenType::RPAREN);
-
-    TypeNode* ret_type = nullptr;
-    if (match(TokenType::ARROW)) ret_type = parseType();
-
-    Block* body = parseBlock();
-    auto* node = new LambdaExpr(std::move(params), ret_type, body);
-    node->line = ln; node->col = cl;
-    return node;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

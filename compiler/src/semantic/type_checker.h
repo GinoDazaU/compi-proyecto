@@ -30,8 +30,7 @@ struct ParamInfo {
 struct FuncInfo {
     SemType                return_type;
     std::vector<ParamInfo> params;
-    bool                   is_variadic    = false;
-    std::string            template_param;  // no vacío si es función template
+    bool                   is_variadic = false;
 };
 
 // ─── Info de struct ───────────────────────────────────────────────────────────
@@ -63,9 +62,7 @@ private:
     std::unordered_map<std::string, StructInfo> structs_;
 
     SemType     ret_type_;
-    bool        in_loop_        = false;
-    bool        in_template_    = false;
-    std::string template_param_;
+    bool        in_loop_ = false;
     SemType     expr_type_;
 
     void    firstPass(Program* program);
@@ -75,7 +72,6 @@ private:
     bool    isValidBase(const std::string& base) const;
     SemType resolveType(const TypeNode* node, int line = 0, int col = 0);
     bool    isLvalue(Expr* e) const;
-    bool    isTemplateType(const SemType& t) const;
     bool    isArithmetic(const SemType& t) const;
     bool    isCondition(const SemType& t) const;
     SemType visitExpr(Expr* e);
@@ -99,7 +95,6 @@ public:
     void visit(CallExpr* node)         override;
     void visit(MemberExpr* node)       override;
     void visit(PostfixExpr* node)      override;
-    void visit(LambdaExpr* node)       override;
 
     void visit(Block* node)            override;
     void visit(VarDeclStmt* node)      override;
@@ -114,5 +109,4 @@ public:
 
     void visit(StructDecl* node)       override;
     void visit(FuncDecl* node)         override;
-    void visit(TemplateFuncDecl* node) override;
 };

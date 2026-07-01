@@ -44,7 +44,7 @@ Para consumir tokens y avanzar de manera segura, el parser define varios método
 Debido a que C++ es un lenguaje con ambigüedades sintácticas notables, el parser requiere a veces mirar múltiples tokens hacia adelante para decidir qué regla gramatical aplicar:
 
 #### A. Detección de Tipos (`isTypeStart`)
-Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `auto`, `int`, o un identificador de estructura seguido de un puntero `*` o parámetros de template `<...>`):
+Para distinguir entre una sentencia que declara una variable (`int x = 0;`) y una sentencia que es una expresión (`x = 0;`), el parser analiza si el token actual puede iniciar un tipo (keywords como `auto`, `int`, o un identificador de estructura seguido de un puntero `*`):
 ```cpp
 bool Parser::isTypeStart();
 ```
@@ -68,7 +68,7 @@ parseExpr()
                                └── parseMul() (*, /, %)
                                     └── parseUnary() (-, !, *, &, ++, --, new)
                                          └── parsePostfix() ([], (), ., ->, ++/-- postfix)
-                                              └── parsePrimary() (Mayor precedencia: literales, id, parentizados, lambdas)
+                                              └── parsePrimary() (Mayor precedencia: literales, id, parentizados)
 ```
 
 #### Ejemplo: Operadores Asociativos por la Izquierda (`parseAdd`)
@@ -99,30 +99,7 @@ Expr* Parser::parseAssign() {
 
 ---
 
-### 5. Lambdas (`parseLambda`)
-
-El subconjunto de C++ implementado incluye soporte para funciones anónimas (lambdas) **sin capturas**. El parser procesa su estructura:
-* **Corchetes vacíos** `[]` (sin lista de capturas).
-* **Lista de parámetros** `(int a, float b)`.
-* **Tipo de retorno opcional** `-> float`.
-* **Cuerpo** entre llaves `{ ... }`.
-
-```cpp
-LambdaExpr* Parser::parseLambda() {
-    expect(TokenType::LBRACKET);
-    expect(TokenType::RBRACKET);          // sin capturas: '[]'
-    expect(TokenType::LPAREN);
-    auto params = parseParamList();
-    expect(TokenType::RPAREN);
-    // ... tipo de retorno opcional '-> Type' ...
-    Block* body = parseBlock();
-    return new LambdaExpr(std::move(params), ret_type, body);
-}
-```
-
----
-
-### 6. Sistema de Manejo de Errores Sintácticos
+### 5. Sistema de Manejo de Errores Sintácticos
 
 Si el código fuente no respeta las reglas gramaticales del lenguaje (por ejemplo, falta un punto y coma al final de una sentencia o un paréntesis sin cerrar), el parser detiene la ejecución inmediatamente y reporta un error estructurado a través de la excepción `ParseError`.
 
@@ -138,7 +115,7 @@ Cuando se llama a `error("mensaje")` o `expect()`, se extraen los campos `line` 
 
 ---
 
-### 7. Integración con el AST y el Patrón Visitor
+### 6. Integración con el AST y el Patrón Visitor
 
 Cada vez que el parser identifica una regla exitosamente, crea instancias dinámicas (`new`) de clases derivadas de `Expr`, `Stmt` o `TopDecl` definidas en [ast.h].
 

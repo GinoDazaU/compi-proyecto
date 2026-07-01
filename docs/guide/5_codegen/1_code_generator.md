@@ -711,6 +711,3 @@ array 2D) intentaría leer memoria en lugar de quedarse con la dirección de la 
 - Cada **`visit`** traduce un nodo, apoyándose en los **helpers** (`emitLoad`,
   `emitPromote`, `emitLvalueAddr`, …) y respetando la convención: el valor queda en
   `%rax`/`%xmm0` y el tipo en `cur_type_`.
-- Lo **pendiente** en el código: `visit(LambdaExpr)` y `visit(TemplateFuncDecl)`
-  están vacíos (lambdas y templates), y la rama de llamar una lambda guardada en una
-  variable en `visit(CallExpr)`.

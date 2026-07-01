@@ -13,8 +13,6 @@ static const std::unordered_map<std::string, TokenType> KEYWORDS = {
     {"auto",        TokenType::KW_AUTO},
     {"string",      TokenType::KW_STRING},
     {"struct",      TokenType::KW_STRUCT},
-    {"template",    TokenType::KW_TEMPLATE},
-    {"typename",    TokenType::KW_TYPENAME},
     {"new",         TokenType::KW_NEW},
     {"delete",      TokenType::KW_DELETE},
     {"if",          TokenType::KW_IF},

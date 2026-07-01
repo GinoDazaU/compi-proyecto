@@ -45,11 +45,6 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Si el retorno no es `void`: debe existir al menos un `return expr` en el cuerpo → **error** si no hay ninguno.
 - El tipo del valor retornado debe ser compatible con el tipo de retorno declarado → **error** si no.
 
-### 2.3 Funciones template (`TemplateFuncDecl`)
-- El nombre del parámetro de tipo (ej. `T`) entra al scope de la función como tipo válido.
-- Se aplican las mismas reglas que `FuncDecl`.
-- Usar `T` como tipo en cualquier expresión o declaración dentro es válido.
-
 ---
 
 ## 3. Statements
@@ -75,7 +70,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - El update puede ser cualquier tipo de expresión.
 
 ### 3.5 `return`
-- Debe estar dentro de una función o lambda → **error** si está en el scope global.
+- Debe estar dentro de una función → **error** si está en el scope global.
 - Si la función retorna `void`: `return expr` es **error**; `return;` es válido.
 - Si la función retorna no-`void`: `return;` es **error**; el tipo de la expresión debe ser compatible → **error**.
 
@@ -131,7 +126,7 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - Resultado de la expresión: tipo del lvalue.
 
 ### 4.6 Llamadas a función (`CallExpr`)
-- El callee debe ser una función declarada, un built-in, o un valor de tipo función (variable con una lambda, o lambda inline) → **error** si no existe o no es invocable.
+- El callee debe ser una función declarada o un built-in → **error** si no existe o no es invocable.
 - El número de argumentos debe coincidir con el número de parámetros → **error**.
 - El tipo de cada argumento debe ser compatible con el tipo del parámetro correspondiente → **error**.
 - Resultado: tipo de retorno de la función.
@@ -160,19 +155,11 @@ No se permite conversión implícita entre `string`, structs, punteros y tipos n
 - `new Type[n]`: tipo no puede ser `void` → **error**; `n` debe ser entero → **error**. Resultado: `Type*`.
 - `new Type`: el tipo debe ser un struct declarado → **error**. Reserva un objeto con sus campos en cero. Resultado: `Type*`.
 
-### 4.12 Lambda (`LambdaExpr`)
-- El tipo de la lambda es su firma (`params -> retorno`); puede guardarse en `auto` y llamarse (ver 4.6).
-- Solo se permiten lambdas **sin capturas** (`[]`). Una lista de captura no vacía → **error**.
-- Sin capturas, el cuerpo solo puede usar sus propios parámetros y funciones; referenciar una variable local del scope exterior → **error**.
-- Las reglas del cuerpo son iguales a las de una función normal.
-- Si hay tipo de retorno explícito (`-> Type`), se verifican los `return` igual que en una función.
-- Si no hay tipo de retorno explícito, se infiere del primer `return` encontrado.
-
 ---
 
 ## 5. Reglas de Scope
 
-- Scopes: global → función/lambda → bloque → bloques anidados.
+- Scopes: global → función → bloque → bloques anidados.
 - Una variable no puede usarse antes de su declaración dentro del mismo scope → **error**.
 - Funciones y structs son visibles en todo el programa (recolectados en primera pasada).
 - Variables declaradas en el `for`-init existen solo dentro del `for`.

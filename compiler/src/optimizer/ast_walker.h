@@ -43,7 +43,6 @@ public:
     void visit(CallExpr* node) override;
     void visit(MemberExpr* node) override;
     void visit(PostfixExpr* node) override;
-    void visit(LambdaExpr* node) override;
 
     // Sentencias
     void visit(Block* node) override;
@@ -60,7 +59,6 @@ public:
     // Declaraciones globales
     void visit(StructDecl* node) override;
     void visit(FuncDecl* node) override;
-    void visit(TemplateFuncDecl* node) override;
 
 private:
     Expr* repl_ = nullptr;  // reemplazo pendiente para el slot que se visita

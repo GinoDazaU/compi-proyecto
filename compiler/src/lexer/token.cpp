@@ -19,8 +19,6 @@ const char* Token::typeName() const {
         case TokenType::KW_AUTO:        return "KW_AUTO";
         case TokenType::KW_STRING:      return "KW_STRING";
         case TokenType::KW_STRUCT:      return "KW_STRUCT";
-        case TokenType::KW_TEMPLATE:    return "KW_TEMPLATE";
-        case TokenType::KW_TYPENAME:    return "KW_TYPENAME";
         case TokenType::KW_NEW:         return "KW_NEW";
         case TokenType::KW_DELETE:      return "KW_DELETE";
         case TokenType::KW_IF:          return "KW_IF";

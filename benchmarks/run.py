@@ -122,7 +122,7 @@ def bench_one(case, cfg, outbin):
                                                stderr=subprocess.DEVNULL), EXEC_RUNS)
 
     label = "{} {}".format(cfg["tool"], cfg["flags"])
-    print("  [OK  ] {:<14} comp={:>8.2f}ms  bin={:>8}B  exec={:>8.2f}ms"
+    print("  [OK] {:<14} comp={:>8.2f}ms  bin={:>8}B  exec={:>8.2f}ms"
           .format(label, comp_ms, size_b, exec_ms))
     return [case, cfg["lang"], cfg["tool"], cfg["flags"], comp_ms, size_b, exec_ms]
 

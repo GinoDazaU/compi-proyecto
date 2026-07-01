@@ -17,23 +17,18 @@ promoción). Vamos a recorrerla.
 
 ```cpp
 struct SemType {
-    std::string         base;   // "int", "float", "MiStruct", "fn", ...
+    std::string         base;   // "int", "float", "MiStruct", ...
     std::vector<PtrMod> mods;   // modificadores en orden: *
-
-    // Solo cuando base == "fn" (lambda como valor): la firma.
-    std::vector<SemType>     params;   // tipos de los parámetros
-    std::shared_ptr<SemType> ret;      // tipo de retorno
 };
 ```
 
 Un `SemType` es **un nombre base + una lista de modificadores de puntero**. `int`
 es `{base:"int", mods:[]}`; `int**` es `{base:"int", mods:[Pointer, Pointer]}`.
-Los campos `params`/`ret` solo se usan para tipos función (sección 5).
 
-Fíjate en lo que **no** tiene, comparado con el `TypeNode` del AST: ni `is_auto`
-ni `template_arg`. Para cuando existe un `SemType`, `auto` ya fue reemplazado por
-el tipo inferido y los templates ya se resolvieron. El puente entre ambos mundos
-es `fromTypeNode`, que simplemente copia `base` y `mods`:
+Fíjate en lo que **no** tiene, comparado con el `TypeNode` del AST: `is_auto`.
+Para cuando existe un `SemType`, `auto` ya fue reemplazado por el tipo inferido.
+El puente entre ambos mundos es `fromTypeNode`, que simplemente copia `base` y
+`mods`:
 
 ```cpp
 SemType SemType::fromTypeNode(const TypeNode* node) {
@@ -144,28 +139,6 @@ Esto es lo que permite **no modelar los arrays aparte**: un array decae a punter
 (un `*` por dimensión), así `int arr[5]` se trata como `int*` y `arr[i]` se tipa
 con `deref()`. El `string` es la excepción: `s[i]` da `char` directamente, no por
 `deref` (un `string` no lleva `mods`).
-
----
-
-### 5. Tipos función: base `"fn"`
-
-Una lambda no es un escalar: tiene una **firma**. Para poder hacer
-`auto f = [](int x){...};` y luego `f(3)`, la lambda necesita un tipo propio, que
-se arma con `makeFunc`:
-
-```cpp
-SemType SemType::makeFunc(std::vector<SemType> params, const SemType& ret) {
-    SemType t;
-    t.base   = "fn";
-    t.params = std::move(params);
-    t.ret    = std::make_shared<SemType>(ret);
-    return t;
-}
-```
-
-`base == "fn"` marca "esto es invocable"; `isFunc()` lo detecta y el checker lo
-usa al verificar una llamada. Por eso `operator==` tiene un caso especial: cuando
-ambos son `fn`, compara también `params` y `ret`, no solo `base`.
 
 ---
 

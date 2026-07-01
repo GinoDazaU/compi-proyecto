@@ -90,7 +90,6 @@ void CodeGenerator::firstPass(Program* program) {
             for (auto& p : f->params) ptypes.push_back(SemType::fromTypeNode(p.type));
             func_params_[f->name] = std::move(ptypes);
         }
-        // TODO: TemplateFuncDecl
     }
 }
 
@@ -446,8 +445,7 @@ void CodeGenerator::visit(FuncDecl* node) {
 }
 
 // El layout (offsets, size) se calcula en firstPass; aquí no se emite código.
-void CodeGenerator::visit(StructDecl* /*node*/)       {}
-void CodeGenerator::visit(TemplateFuncDecl* /*node*/) { /* TODO */ }
+void CodeGenerator::visit(StructDecl* /*node*/) {}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Sentencias
@@ -636,8 +634,7 @@ void CodeGenerator::visit(StringLitExpr* node) {
     cur_type_ = SemType{"string"};
 }
 
-// Despacha según el callee: built-in print/println, función de usuario, o
-// (pendiente) una lambda guardada en una variable.
+// Despacha según el callee: built-in print/println o función de usuario.
 void CodeGenerator::visit(CallExpr* node) {
     if (auto* id = dynamic_cast<IdExpr*>(node->callee)) {
         if (id->name == "print" || id->name == "println") {
@@ -649,7 +646,6 @@ void CodeGenerator::visit(CallExpr* node) {
             return;
         }
     }
-    // TODO: llamada a lambda (valor de tipo función) — junto al codegen de lambdas
 }
 
 // ── print / println (built-ins) ──────────────────────────────────────────────
@@ -993,4 +989,3 @@ void CodeGenerator::visit(MemberExpr* node) {
 void CodeGenerator::visit(PostfixExpr* node) {
     emitIncDec(node->base, /*inc=*/node->is_inc, /*postfix=*/true);
 }
-void CodeGenerator::visit(LambdaExpr* /*node*/)    { /* TODO */ }

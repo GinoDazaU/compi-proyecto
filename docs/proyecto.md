@@ -13,9 +13,8 @@ El objetivo del presente proyecto es diseñar e implementar un compilador comple
     - Struct, arreglos y cadenas de caracteres (strings).
   - **Avanzadas:**
     - Punteros, direccionamiento de memoria y manejo de memoria dinámica.
-    - Tipos genéricos y plantillas (templates).
     - Inferencia, conversión y promoción automática de tipos.
-    - Arreglos multidimensionales y funciones lambda.
+    - Arreglos multidimensionales.
 - **Implementar un compilador completo** que incluya las fases de análisis léxico, sintáctico y semántico.
 - **Implementar un sistema de verificación de tipos** y manejo de errores léxicos, sintácticos y semánticos.
 - **Generar código ensamblador** para arquitectura x86.

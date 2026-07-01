@@ -13,7 +13,6 @@ Para poder organizar el código, todos los nodos del árbol se dividen en tres g
 1. **TopDecl (Declaraciones Globales)**: Representa cualquier elemento que se declara al nivel más alto del archivo (fuera de las funciones), como:
    * Funciones (`FuncDecl`)
    * Estructuras (`StructDecl`)
-   * Plantillas (`TemplateFuncDecl`)
 
 2. **Stmt (Sentencias/Instrucciones)**: Representa acciones que ejecutan lógica pero no producen un valor de retorno directo en sí mismas:
    * Declaración de variables locales (`VarDeclStmt`)
@@ -26,13 +25,12 @@ Para poder organizar el código, todos los nodos del árbol se dividen en tres g
    * Variables (`IdExpr`)
    * Operaciones (`BinaryExpr`, `UnaryExpr`, `AssignExpr`)
    * Memoria dinámica (`NewObjectExpr`, `NewArrayExpr`)
-   * Funciones anónimas (`LambdaExpr`)
 
 El nodo raíz de todo el archivo de código es la clase **Program**, que simplemente guarda una lista de declaraciones de nivel superior:
 ```cpp
 class Program {
 public:
-    std::vector<TopDecl*> decls; // Lista de funciones, structs, plantillas...
+    std::vector<TopDecl*> decls; // Lista de funciones y structs
 };
 ```
 
@@ -40,13 +38,12 @@ public:
 
 ### 2. Representación de Tipos (`TypeNode`)
 
-C++ permite tipos muy complejos (ej. `int*&` o `vector<int>`). Para modelar esto, `ast.h` define `TypeNode`:
+C++ permite tipos con modificadores (ej. `int**`). Para modelar esto, `ast.h` define `TypeNode`:
 
 ```cpp
 struct TypeNode {
     bool                is_auto  = false;  // ¿Usa inferencia de tipo auto?
     std::string         base;              // Tipo base: "int", "float", "MiStruct"
-    TypeNode*           template_arg = nullptr; // Para tipos genéricos como vector<T>
     std::vector<PtrMod> mods;              // Modificadores (*)
 };
 ```

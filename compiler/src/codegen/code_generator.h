@@ -28,6 +28,10 @@ struct VarEntry {
     // Tamaños de cada dimensión (solo arrays estáticos). El almacenamiento es
     // plano row-major, así que m[i][j] se direcciona con estos strides.
     std::vector<int> dims;
+
+    VarEntry() = default;
+    VarEntry(SemType t, int off, bool arr = false, std::vector<int> d = {})
+        : type(std::move(t)), offset(off), is_array(arr), dims(std::move(d)) {}
 };
 
 // ─── CodeGenerator ───────────────────────────────────────────────────────────
@@ -153,7 +157,6 @@ public:
     void visit(CallExpr* node)         override;
     void visit(MemberExpr* node)       override;
     void visit(PostfixExpr* node)      override;
-    void visit(LambdaExpr* node)       override;
 
     // ─── Sentencias ───────────────────────────────────────────────────────
     void visit(Block* node)            override;
@@ -171,5 +174,4 @@ public:
     void visit(Program* node)          override;
     void visit(StructDecl* node)       override;
     void visit(FuncDecl* node)         override;
-    void visit(TemplateFuncDecl* node) override;
 };

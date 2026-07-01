@@ -21,13 +21,14 @@ Es un listado ordenado de todas las categorías posibles de tokens que el compil
 * **Identificadores**: `ID` para nombres de variables, funciones o structs (ej. `mi_variable`, `calcular`).
 * **Keywords (Palabras reservadas)**:
   * Tipos básicos (`KW_INT`, `KW_FLOAT`, `KW_BOOL`, etc.).
-  * Estructuras y templates (`KW_STRUCT`, `KW_TEMPLATE`, `KW_TYPENAME`).
+  * Estructuras (`KW_STRUCT`).
   * Flujo de control (`KW_IF`, `KW_ELSE`, `KW_WHILE`, `KW_FOR`, `KW_RETURN`, etc.).
-* **Operadores**: Aritméticos (`PLUS`, `MINUS`, `STAR`...), Asignación (`ASSIGN`), Comparación (`EQ`, `NEQ`...), Lógicos (`AND`, `OR`...) y Bit a bit.
+* **Operadores**: Aritméticos (`PLUS`, `MINUS`, `STAR`...), Asignación (`ASSIGN`), Comparación (`EQ`, `NEQ`...) y Lógicos (`AND`, `OR`...).
 * **Delimitadores**: Paréntesis (`LPAREN`, `RPAREN`), llaves (`LBRACE`, `RBRACE`), corchetes, comas y punto y coma.
-* **Especiales**: 
+* **Especiales**:
   * `END`: Marca el fin del archivo (EOF - End Of File). Es clave para que el Parser sepa cuándo parar.
-  * `ERR`: Representa un token inválido (caracteres extraños o strings sin cerrar).
+
+Los tokens inválidos no se representan con un token: el lexer es *fail-fast* y lanza `LexError` (con línea y columna) apenas encuentra un carácter extraño o un literal sin cerrar.
 
 #### B. La estructura `Token`
 ```cpp

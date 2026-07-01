@@ -10,7 +10,6 @@ Notación: `*` = cero o más, `+` = uno o más, `[x]` = opcional, `|` = alternat
 Program     ::= TopDecl*
 
 TopDecl     ::= StructDecl
-              | TemplateFuncDecl
               | FuncDecl
 ```
 
@@ -21,7 +20,6 @@ TopDecl     ::= StructDecl
 ```
 Type        ::= BaseType PtrMod*
               | id PtrMod*
-              | id < Type > PtrMod*    -- template instanciado
               | auto
 
 BaseType    ::= int | float | bool | char | void | string
@@ -36,8 +34,6 @@ PtrMod      ::= *
 ```
 StructDecl    ::= struct id { MemberDecl* } ;
 MemberDecl    ::= Type id ;
-
-TemplateFuncDecl ::= template < typename id > FuncDecl
 
 FuncDecl      ::= Type id ( ParamList ) Block
 
@@ -120,20 +116,9 @@ Primary ::= id
           | CharLit
           | StringLit
           | ( Expr )
-          | Lambda
 
 InitList ::= ε | Expr (, Expr)*
 ArgList  ::= ε | Expr (, Expr)*
-```
-
----
-
-## Lambdas
-
-Solo se soportan lambdas **sin capturas** (corchetes vacíos `[]`).
-
-```
-Lambda       ::= [ ] ( ParamList ) [-> Type] Block
 ```
 
 ---
@@ -154,7 +139,6 @@ id        ::= [a-zA-Z_][a-zA-Z0-9_]*
 ## Notas
 
 - Las conversiones implícitas (`int` → `float`, etc.) se manejan en el semántico, no en la gramática.
-- Templates: solo se soportan funciones template con un parámetro de tipo (`typename T`). No se soportan clases template.
 
 ---
 

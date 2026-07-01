@@ -16,14 +16,11 @@ class VarDeclStmt;
 // PtrMod: * (trailing modifiers de un tipo)
 enum class PtrMod { Pointer };
 
-// Representa cualquier tipo del lenguaje, incluyendo const, punteros y templates
+// Representa cualquier tipo del lenguaje, incluyendo punteros
 struct TypeNode {
-    bool                is_auto       = false;
+    bool                is_auto = false;
     std::string         base;           // "int", "float", "void", id definido por usuario
-    TypeNode*           template_arg   = nullptr;  // para id<Type>
     std::vector<PtrMod> mods;           // modificadores en orden: *
-
-    ~TypeNode() { delete template_arg; }
 };
 
 // ─── Enums de operadores ───────────────────────────────────────────────────
@@ -64,7 +61,7 @@ public:
     virtual void accept(Visitor* v) = 0;
 };
 
-// ─── Block (definido temprano porque LambdaExpr lo necesita) ──────────────
+// ─── Block ─────────────────────────────────────────────────────────────────
 class Block : public Stmt {
 public:
     std::vector<Stmt*> stmts;
@@ -73,7 +70,7 @@ public:
     void accept(Visitor* v) override { v->visit(this); }
 };
 
-// ─── Param (compartido por FuncDecl y LambdaExpr) ─────────────────────────
+// ─── Param ─────────────────────────────────────────────────────────────────
 struct Param {
     TypeNode*   type;
     std::string name;
@@ -221,24 +218,6 @@ public:
 };
 
 
-
-// [ ] ( ParamList ) [-> Type] Block  (lambdas sin capturas)
-class LambdaExpr : public Expr {
-public:
-    std::vector<Param> params;
-    TypeNode*          return_type;  // nullptr si no hay ->
-    Block*             body;
-    LambdaExpr(std::vector<Param> p, TypeNode* rt, Block* b)
-        : params(std::move(p)), return_type(rt), body(b) {}
-    ~LambdaExpr() override {
-        for (auto& p : params) { delete p.type; }
-        delete return_type;
-        delete body;
-    }
-    void accept(Visitor* v) override { v->visit(this); }
-};
-
-
 // ═══════════════════════════════════════════════════════════════════════════
 // SENTENCIAS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -380,17 +359,6 @@ public:
         for (auto& p : params) { delete p.type; }
         delete body;
     }
-    void accept(Visitor* v) override { v->visit(this); }
-};
-
-// template < typename id > FuncDecl
-class TemplateFuncDecl : public TopDecl {
-public:
-    std::string template_param;  // nombre del typename, ej. "T"
-    FuncDecl*   func;
-    TemplateFuncDecl(std::string tp, FuncDecl* f)
-        : template_param(std::move(tp)), func(f) {}
-    ~TemplateFuncDecl() override { delete func; }
     void accept(Visitor* v) override { v->visit(this); }
 };
 

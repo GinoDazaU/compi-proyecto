@@ -25,7 +25,6 @@ std::string ASTJsonPrinter::typeStr(TypeNode* t) {
     if (t->is_auto) return "auto";
     std::string s;
     s += t->base;
-    if (t->template_arg) s += "<" + typeStr(t->template_arg) + ">";
     s.append(t->mods.size(), '*');
     return s;
 }
@@ -262,45 +261,6 @@ void ASTJsonPrinter::visit(PostfixExpr* node) {
     indent(); out << "\"base\":\n";
     node->base->accept(this);
     out << "\n";
-    depth--;
-    indent(); out << "}";
-}
-
-void ASTJsonPrinter::visit(LambdaExpr* node) {
-    indent(); out << "{\n";
-    depth++;
-    indent(); out << "\"type\": \"LambdaExpr\",\n";
-
-    // Params
-    indent(); out << "\"params\": [\n";
-    depth++;
-    for (size_t i = 0; i < node->params.size(); i++) {
-        indent(); out << "{\n";
-        depth++;
-        indent(); out << "\"type\": "; printString(typeStr(node->params[i].type)); out << ",\n";
-        indent(); out << "\"name\": "; printString(node->params[i].name); out << "\n";
-        depth--;
-        indent(); out << "}";
-        if (i + 1 < node->params.size()) out << ",\n";
-        else out << "\n";
-    }
-    depth--;
-    indent(); out << "],\n";
-
-    // Return type
-    indent(); out << "\"return_type\": ";
-    if (node->return_type) {
-        printString(typeStr(node->return_type));
-    } else {
-        out << "null";
-    }
-    out << ",\n";
-
-    // Body
-    indent(); out << "\"body\":\n";
-    node->body->accept(this);
-    out << "\n";
-
     depth--;
     indent(); out << "}";
 }
@@ -559,18 +519,6 @@ void ASTJsonPrinter::visit(FuncDecl* node) {
     node->body->accept(this);
     out << "\n";
 
-    depth--;
-    indent(); out << "}";
-}
-
-void ASTJsonPrinter::visit(TemplateFuncDecl* node) {
-    indent(); out << "{\n";
-    depth++;
-    indent(); out << "\"type\": \"TemplateFuncDecl\",\n";
-    indent(); out << "\"template_param\": "; printString(node->template_param); out << ",\n";
-    indent(); out << "\"func\":\n";
-    node->func->accept(this);
-    out << "\n";
     depth--;
     indent(); out << "}";
 }

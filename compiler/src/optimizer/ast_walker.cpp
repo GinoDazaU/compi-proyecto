@@ -46,7 +46,6 @@ void AstWalker::visit(CallExpr* node) {
 
 void AstWalker::visit(MemberExpr* node)  { walk(node->base); }
 void AstWalker::visit(PostfixExpr* node) { walk(node->base); }
-void AstWalker::visit(LambdaExpr* node)  { node->body->accept(this); }
 
 // ─── Sentencias ──────────────────────────────────────────────────────────────
 void AstWalker::visit(Block* node) {
@@ -86,6 +85,5 @@ void AstWalker::visit(ContinueStmt*)    {}
 void AstWalker::visit(DeleteStmt* node) { walk(node->expr); }
 
 // ─── Declaraciones globales ──────────────────────────────────────────────────
-void AstWalker::visit(StructDecl*)          {}
-void AstWalker::visit(FuncDecl* node)       { node->body->accept(this); }
-void AstWalker::visit(TemplateFuncDecl* node) { node->func->accept(this); }
+void AstWalker::visit(StructDecl*)    {}
+void AstWalker::visit(FuncDecl* node) { node->body->accept(this); }

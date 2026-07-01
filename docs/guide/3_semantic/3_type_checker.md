@@ -102,7 +102,6 @@ del resultado.
 void TypeChecker::visit(BinaryExpr* node) {
     SemType lt = visitExpr(node->left);
     SemType rt = visitExpr(node->right);
-    // (omitido: atajo para tipos template)
     switch (node->op) {
         case BinaryOp::Add: case BinaryOp::Sub:
         case BinaryOp::Mul: case BinaryOp::Div:
@@ -190,8 +189,6 @@ void TypeChecker::visit(FuncDecl* node) {
 - `ret_type_` permite que `visit(ReturnStmt)` compruebe que lo retornado sea
   compatible con la firma.
 - `in_loop_` permite que `break`/`continue` sepan si están dentro de un bucle.
-- `in_template_` / `template_param_` marcan si estamos en una función `template` y
-  cuál es el nombre del `typename`.
 
 Los built-ins `print` y `println` se registran en el constructor
 (`registerBuiltins`) como funciones **variádicas** que retornan `void`; por eso no

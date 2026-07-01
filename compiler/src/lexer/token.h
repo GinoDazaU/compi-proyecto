@@ -22,10 +22,8 @@ enum class TokenType {
     KW_AUTO,
     KW_STRING,
 
-    // Keywords — estructuras y templates
+    // Keywords — estructuras
     KW_STRUCT,
-    KW_TEMPLATE,
-    KW_TYPENAME,
 
     // Keywords — memoria dinámica
     KW_NEW,

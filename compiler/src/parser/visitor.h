@@ -19,7 +19,6 @@ class IndexExpr;
 class CallExpr;
 class MemberExpr;
 class PostfixExpr;
-class LambdaExpr;
 
 // Sentencias
 class Block;
@@ -36,7 +35,6 @@ class DeleteStmt;
 // Declaraciones Globales
 class StructDecl;
 class FuncDecl;
-class TemplateFuncDecl;
 
 class Visitor {
 public:
@@ -60,7 +58,6 @@ public:
     virtual void visit(CallExpr* node) = 0;
     virtual void visit(MemberExpr* node) = 0;
     virtual void visit(PostfixExpr* node) = 0;
-    virtual void visit(LambdaExpr* node) = 0;
 
     // Sentencias
     virtual void visit(Block* node) = 0;
@@ -77,5 +74,4 @@ public:
     // Declaraciones Globales
     virtual void visit(StructDecl* node) = 0;
     virtual void visit(FuncDecl* node) = 0;
-    virtual void visit(TemplateFuncDecl* node) = 0;
 };

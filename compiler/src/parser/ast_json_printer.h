@@ -23,7 +23,6 @@ public:
     void visit(CallExpr* node)         override;
     void visit(MemberExpr* node)       override;
     void visit(PostfixExpr* node)      override;
-    void visit(LambdaExpr* node)       override;
     void visit(Block* node)            override;
     void visit(VarDeclStmt* node)      override;
     void visit(ExprStmt* node)         override;
@@ -36,7 +35,6 @@ public:
     void visit(DeleteStmt* node)       override;
     void visit(StructDecl* node)       override;
     void visit(FuncDecl* node)         override;
-    void visit(TemplateFuncDecl* node) override;
 
 private:
     std::ostream& out;
