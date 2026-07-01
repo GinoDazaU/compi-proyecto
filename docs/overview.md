@@ -112,7 +112,7 @@ App React/Vite conectada a un servidor Python (FastAPI) que:
 
 ## Benchmarks
 
-Comparar el compilador propio contra GCC, Clang/LLVM, MSVC, Rust compiler y Go compiler en:
+Comparar el compilador propio contra GCC, Clang/LLVM y Rust compiler en:
 - Tiempo de compilación
 - Tamaño del binario generado
 - Velocidad de ejecución (programas de prueba: fibonacci, ordenamiento, etc.)

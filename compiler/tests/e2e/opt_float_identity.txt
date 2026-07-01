@@ -1,0 +1,10 @@
+// Regresión: el simplificador no debe quitar una identidad float que promueve
+// un int a float (si no, la división quedaría entera y cambiaría el resultado).
+int main() {
+    int n = 7;
+    float a = n * 1.0 / 2;   // 3.5  (con el bug: 7/2 entero → 3.0)
+    float b = n / 1.0 + 0.0; // 7.0  (con el bug: n queda int)
+    println(a);
+    println(b);
+    return 0;
+}

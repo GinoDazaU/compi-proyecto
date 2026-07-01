@@ -47,18 +47,18 @@ void AlgebraicSimplifier::visit(BinaryExpr* node) {
     Expr* R = node->right;
     switch (node->op) {
         case BinaryOp::Add:
-            if      (isZero(R)) replaceWith(detach(node->left));   // x + 0 → x
-            else if (isZero(L)) replaceWith(detach(node->right));  // 0 + x → x
+            if      (isZero(R) && safeToDrop(R, L)) replaceWith(detach(node->left));   // x + 0 → x
+            else if (isZero(L) && safeToDrop(L, R)) replaceWith(detach(node->right));  // 0 + x → x
             break;
         case BinaryOp::Sub:
-            if (isZero(R)) replaceWith(detach(node->left));        // x - 0 → x
+            if (isZero(R) && safeToDrop(R, L)) replaceWith(detach(node->left));        // x - 0 → x
             break;
         case BinaryOp::Mul:
-            if      (isOne(R)) replaceWith(detach(node->left));    // x * 1 → x
-            else if (isOne(L)) replaceWith(detach(node->right));   // 1 * x → x
+            if      (isOne(R) && safeToDrop(R, L)) replaceWith(detach(node->left));    // x * 1 → x
+            else if (isOne(L) && safeToDrop(L, R)) replaceWith(detach(node->right));   // 1 * x → x
             break;
         case BinaryOp::Div:
-            if (isOne(R)) replaceWith(detach(node->left));         // x / 1 → x
+            if (isOne(R) && safeToDrop(R, L)) replaceWith(detach(node->left));         // x / 1 → x
             break;
         default: break;
     }
@@ -68,11 +68,40 @@ void AlgebraicSimplifier::visit(BinaryExpr* node) {
 `isZero`/`isOne` son los helpers de `opt_util.h` (`2_constant_folding.md §2`), que
 reconocen `0`/`0.0`/`false` y `1`/`1.0`/`true` respectivamente. Las asimetrías son
 intencionales: `0 - x` **no** es `x` (es `-x`), por eso `Sub` solo mira el lado
-derecho; y `1 / x` **no** es `x`, por eso `Div` también.
+derecho; y `1 / x` **no** es `x`, por eso `Div` también. El guardián `safeToDrop`
+protege un caso más sutil, que veremos enseguida.
 
 ---
 
-## 3. El detalle clave: `detach`
+## 3. El detalle sutil: no cambiar el tipo
+
+Una identidad no solo puede **descartar** un operando; a veces también **cambia el
+tipo** del que sobrevive. El caso es una identidad `float` sobre un operando `int`:
+
+```cpp
+float x0 = px * 1.0 / W;   // px y W son int
+```
+
+El `* 1.0` promueve `px` de `int` a `float`, y por eso `/ W` es división de punto
+flotante. Simplificar `px * 1.0 → px` devolvería `px` a `int`, la división pasaría a
+ser **entera** (`px / W` = `0` para todo `px < W`) y el resultado cambiaría. Como el
+AST no lleva tipos anotados, el pase no puede consultarlos, así que `safeToDrop` es
+conservador: solo quita una identidad `float` si el operando que sobrevive también es
+un literal `float`.
+
+```cpp
+static bool safeToDrop(Expr* identity, Expr* survivor) {
+    return !isFloatLit(identity) || isFloatLit(survivor);
+}
+```
+
+Con una identidad entera (`1`, `0`) no hay promoción posible, así que siempre pasa. El
+precio es perder alguna simplificación válida (`y * 1.0` con `y` variable float), a
+cambio de nunca alterar el resultado del programa.
+
+---
+
+## 4. El detalle clave: `detach`
 
 Aquí aparece una sutileza de gestión de memoria. El mecanismo de reemplazo de
 `AstWalker` (`1_optimizer.md §4`) **borra el nodo viejo** cuando se hace

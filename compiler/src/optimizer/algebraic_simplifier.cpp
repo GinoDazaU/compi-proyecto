@@ -12,6 +12,13 @@ static Expr* detach(Expr*& slot) {
     return e;
 }
 
+// Una identidad float (`* 1.0`, `+ 0.0`) promueve el otro operando a float;
+// quitarla si el sobreviviente no es float cambiaría el tipo (y la semántica:
+// la división pasaría a entera). Sin tipos en el AST, exigimos que ambos lo sean.
+static bool safeToDrop(Expr* identity, Expr* survivor) {
+    return !isFloatLit(identity) || isFloatLit(survivor);
+}
+
 void AlgebraicSimplifier::visit(BinaryExpr* node) {
     AstWalker::visit(node);  // simplifica los hijos primero
 
@@ -20,18 +27,18 @@ void AlgebraicSimplifier::visit(BinaryExpr* node) {
 
     switch (node->op) {
         case BinaryOp::Add:
-            if      (isZero(R)) replaceWith(detach(node->left));   // x + 0 → x
-            else if (isZero(L)) replaceWith(detach(node->right));  // 0 + x → x
+            if      (isZero(R) && safeToDrop(R, L)) replaceWith(detach(node->left));   // x + 0 → x
+            else if (isZero(L) && safeToDrop(L, R)) replaceWith(detach(node->right));  // 0 + x → x
             break;
         case BinaryOp::Sub:
-            if (isZero(R)) replaceWith(detach(node->left));        // x - 0 → x
+            if (isZero(R) && safeToDrop(R, L)) replaceWith(detach(node->left));        // x - 0 → x
             break;
         case BinaryOp::Mul:
-            if      (isOne(R)) replaceWith(detach(node->left));    // x * 1 → x
-            else if (isOne(L)) replaceWith(detach(node->right));   // 1 * x → x
+            if      (isOne(R) && safeToDrop(R, L)) replaceWith(detach(node->left));    // x * 1 → x
+            else if (isOne(L) && safeToDrop(L, R)) replaceWith(detach(node->right));   // 1 * x → x
             break;
         case BinaryOp::Div:
-            if (isOne(R)) replaceWith(detach(node->left));         // x / 1 → x
+            if (isOne(R) && safeToDrop(R, L)) replaceWith(detach(node->left));         // x / 1 → x
             break;
         default:
             break;

@@ -44,7 +44,7 @@ METRICS = [
 # se usan las que estén presentes en el CSV.
 GROUPS = [
     ("sin optimización", "unopt", ["mio -O0",  "g++ -O0", "clang++ -O0", "rustc debug"]),
-    ("con optimización", "opt",   ["mio -opt", "g++ -O2", "clang++ -O2", "rustc release", "go build"]),
+    ("con optimización", "opt",   ["mio -opt", "g++ -O2", "clang++ -O2", "rustc release"]),
 ]
 
 # Color por "marca" del lenguaje (mismo color para opt y sin opt). Nuestro
@@ -58,7 +58,6 @@ COLORS = {
     "clang++ -O2":   "#7030A0",
     "rustc debug":   "#E8731A",  # naranja (Rust)
     "rustc release": "#E8731A",
-    "go build":      "#00ADD8",  # cian (Go)
 }
 
 

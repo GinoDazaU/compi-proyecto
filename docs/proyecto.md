@@ -21,7 +21,7 @@ El objetivo del presente proyecto es diseñar e implementar un compilador comple
 - **Generar código ensamblador** para arquitectura x86.
 - **Aplicar técnicas básicas de optimización** sobre el código generado.
 - **Desarrollar un conjunto de benchmarks** para evaluar el rendimiento del compilador.
-- **Realizar una comparación experimental** con compiladores de uso extendido como GCC, Clang/LLVM, MSVC, Ruste o Go Compiler.
+- **Realizar una comparación experimental** con compiladores de uso extendido como GCC, Clang/LLVM o Ruste.
 - **Analizar y documentar** los resultados obtenidos mediante tablas, gráficos y discusión técnica.
 - **Presentar y defender** el proyecto mediante una exposición técnica.
 

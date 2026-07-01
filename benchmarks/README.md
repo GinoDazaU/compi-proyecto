@@ -1,6 +1,6 @@
 # Benchmarks
 
-Comparación del compilador propio contra GCC, Clang, Rust y Go sobre los mismos
+Comparación del compilador propio contra GCC, Clang y Rust sobre los mismos
 algoritmos. Mide las tres métricas que pide `docs/proyecto.txt`: tiempo de
 compilación, tamaño del binario y velocidad de ejecución.
 
@@ -16,7 +16,6 @@ benchmarks/
 │       ├── <benchmark>.txt      # lenguaje propio  → compilador propio
 │       ├── <benchmark>.cpp      # C++              → g++ y clang
 │       ├── <benchmark>.rs       # Rust             → rustc      (opcional)
-│       ├── <benchmark>.go       # Go               → go build   (opcional)
 │       └── expected.txt         # salida correcta, idéntica en todas las versiones
 └── results/             # salidas generadas (no editar a mano)
     ├── results.csv      # métricas crudas
@@ -24,7 +23,7 @@ benchmarks/
 ```
 
 Convención: nombre de carpeta = nombre base de los archivos. `run.py` descubre
-todo por patrón. Si falta `.rs`/`.go`, ese lenguaje se salta para ese benchmark.
+todo por patrón. Si falta `.rs`, ese lenguaje se salta para ese benchmark.
 
 ## Benchmarks
 

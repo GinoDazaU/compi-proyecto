@@ -51,9 +51,6 @@ def mine(flags, opt):
             "steps": lambda src, out: [(asm + [src], out + ".s"),
                                        (["g++", "-o", out, out + ".s"], None)]}
 
-GO = {"lang": "go", "tool": "go", "flags": "build", "ext": "go", "tools": ["go"],
-      "steps": lambda src, out: [(["go", "build", "-o", out, src], None)]}
-
 CONFIGS = [
     mine("-O0",  False),
     mine("-opt", True),
@@ -63,7 +60,6 @@ CONFIGS = [
     cpp("clang++",  "-O2"),
     rust([],        "debug"),
     rust(["-O"],    "release"),
-    GO,
 ]
 
 

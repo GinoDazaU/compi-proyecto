@@ -115,7 +115,7 @@ if (auto* iff = dynamic_cast<IfStmt*>(s)) {
 
 `litTruth` extrae el valor de verdad de un literal (`bool`, `int` o `float`; `0` es
 falso, lo demás verdadero). El patrón es el mismo `detach` del
-`AlgebraicSimplifier` (`4_algebraic_simplification.md §3`): la rama que se conserva
+`AlgebraicSimplifier` (`4_algebraic_simplification.md §4`): la rama que se conserva
 se pone a `nullptr` en el `IfStmt` **antes** de borrarlo, para que el destructor del
 `if` no la arrastre — solo libere la condición y la rama descartada.
 

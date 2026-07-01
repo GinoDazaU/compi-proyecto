@@ -29,7 +29,7 @@ Disponible en `localhost:8000`.
 ```
 compiler/   → compilador (C++)
 app/        → API REST + app web (Python/React)
-benchmarks/ → comparación con GCC, Clang, Rust y Go
+benchmarks/ → comparación con GCC, Clang y Rust
 docs/       → documentación del proyecto
 ```
 
