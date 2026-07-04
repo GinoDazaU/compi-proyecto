@@ -43,8 +43,8 @@ METRICS = [
 # Grupos de toolchains para el detalle. El orden define columnas y colores; solo
 # se usan las que estén presentes en el CSV.
 GROUPS = [
-    ("sin optimización", "unopt", ["mio -O0",  "g++ -O0", "clang++ -O0", "rustc debug"]),
-    ("con optimización", "opt",   ["mio -opt", "g++ -O2", "clang++ -O2", "rustc release"]),
+    ("sin optimización", "unopt", ["mio -O0",  "g++ -O0", "clang++ -O0"]),
+    ("con optimización", "opt",   ["mio -opt", "g++ -O2", "clang++ -O2"]),
 ]
 
 # Color por "marca" del lenguaje (mismo color para opt y sin opt). Nuestro
@@ -56,8 +56,6 @@ COLORS = {
     "g++ -O2":       "#1F77B4",
     "clang++ -O0":   "#7030A0",  # morado (Clang/LLVM)
     "clang++ -O2":   "#7030A0",
-    "rustc debug":   "#E8731A",  # naranja (Rust)
-    "rustc release": "#E8731A",
 }
 
 

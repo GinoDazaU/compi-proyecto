@@ -39,10 +39,6 @@ def cpp(tool, flags):
     return {"lang": "c++", "tool": tool, "flags": flags, "ext": "cpp", "tools": [tool],
             "steps": lambda src, out: [([tool, flags, "-o", out, src], None)]}
 
-def rust(flags, label):
-    return {"lang": "rust", "tool": "rustc", "flags": label, "ext": "rs", "tools": ["rustc"],
-            "steps": lambda src, out: [(["rustc"] + flags + ["-o", out, src], None)]}
-
 def mine(flags, opt):
     # paso 1: compilador propio txt→.s (con --opt si corresponde); paso 2: g++ enlaza
     asm = [COMPILER, "--asm"] + (["--opt"] if opt else [])
@@ -58,8 +54,6 @@ CONFIGS = [
     cpp("g++",      "-O2"),
     cpp("clang++",  "-O0"),
     cpp("clang++",  "-O2"),
-    rust([],        "debug"),
-    rust(["-O"],    "release"),
 ]
 
 
