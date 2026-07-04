@@ -176,17 +176,44 @@ dinámica, strings y cortocircuito lógico.
 
 ---
 
-## 7. Benchmarks
+## 7. Benchmarks y Evaluación Comparativa
 
-> _Sección en elaboración — informe a cargo de **_(nombre del compañero)_**._
+Evaluación cuantitativa del compilador `mio` frente a los toolchains comerciales **GCC** y **Clang/LLVM** sobre un conjunto de 8 programas de prueba en un entorno Linux nativo. Para un análisis detallado a bajo nivel y con el desglose completo por benchmark de cada métrica, ver el documento anexo **[benchmarks.md](benchmarks.md)**.
 
-Comparación experimental del compilador contra herramientas de uso extendido
-(**GCC**, **Clang/LLVM** y **Rust**) sobre programas de prueba (fibonacci,
-ordenamientos, criba, etc.), midiendo tiempo de compilación, tamaño del binario y
-velocidad de ejecución.
+### 7.1 Metodología y Métricas
+Se midieron tres ejes fundamentales sobre 8 benchmarks (`fib`, `collatz`, `sort`, `sieve`, `series_pi`, `mandelbrot`, `quicksort` y `opt_heavy`):
+* **Tiempo de ejecución (ms):** Mediana de N ejecuciones CPU-bound.
+* **Tamaño del binario (bytes):** Peso del ejecutable ELF final.
+* **Tiempo de compilación (ms):** Desde la llamada inicial hasta el ejecutable enlazado.
 
-Los casos y scripts están en `benchmarks/`. _(El análisis con tablas y gráficos se
-adjunta en el documento anexo / se completará en esta sección.)_
+Se compararon las siguientes configuraciones de toolchains:
+* **`mio -O0` / `mio -opt`**: Compilador propio sin y con optimizaciones de AST.
+* **`g++ -O0` / `g++ -O2`**: GCC en modo desarrollo y producción.
+* **`clang++ -O0` / `clang++ -O2`**: Clang/LLVM en modo desarrollo y producción.
+
+### 7.2 Resultados Experimentales Consolidados
+La siguiente tabla resume los resultados generales. Los tamaños de binarios corresponden a la media aritmética, y los tiempos de ejecución y compilación a la media geométrica del ratio relativo frente a `g++ -O2` (referencia = 1.00):
+
+| Toolchain | Tamaño medio (bytes) | Ejecución (×) | Compilación (×) |
+|---|---|---|---|
+| **mio -O0** | 16550 | 6.26 | 0.73 |
+| **g++ -O0** | 16001 | 3.19 | 0.88 |
+| **clang++ -O0** | 15933 | 3.65 | 1.09 |
+| **mio -opt** | 16533 | 5.74 | 0.77 |
+| **g++ -O2** | 15981 | 1.00 | 1.00 |
+| **clang++ -O2** | 15933 | 0.82 | 1.22 |
+
+*Gráficos de resumen disponibles en el reporte específico: [Ejecución](../benchmarks/results/summary/exec.png), [Compilación](../benchmarks/results/summary/compile.png) y [Tamaño](../benchmarks/results/summary/size.png).*
+
+### 7.3 Discusión Técnica y Análisis de Código
+1. **Modelo de Pila vs. Registros (Tiempos de Ejecución):**
+   `mio -O0` es **6.26× más lento** que `g++ -O2` y **~2×** más lento que `g++ -O0`. Esto se debe a que `mio` genera código basado en un **modelo de pila (stack-machine)** para evaluar expresiones binarias (múltiples accesos de lectura/escritura a memoria mediante `pushq`, `popq` y offsets negativos respecto a `%rbp`), mientras que GCC/Clang aplican asignación local de registros incluso en `-O0`. Esto genera una alta presión sobre la caché L1d y reduce notablemente el throughput de instrucciones en `mio`.
+2. **Impacto de la Optimización AST (`-opt`):**
+   En el benchmark de optimización intensiva (`opt_heavy`), `mio -opt` logra una mejora del **40.4%** en tiempo de ejecución (reducción de **371.9 ms a 221.5 ms**) y disminuye en 136 bytes el tamaño del binario. Esto se justifica por la aplicación exitosa de *constant folding*, *constant propagation*, simplificación algebraica (ej. `i * 1 + 0` → `i`) y la eliminación de ramas muertas (`if (1 == 0)`). No obstante, el impacto es nulo en loops de cómputo puro sin constantes propagables, debido a que las optimizaciones operan sobre el AST antes de emitir código y no abordan optimizaciones de backend como la asignación global de registros.
+3. **Tiempos de Compilación (Ventaja de Pipeline Directo):**
+   `mio` es el compilador más rápido del conjunto, requiriendo en promedio solo el **73%** del tiempo de `g++ -O2`. Esta notable velocidad se debe a un pipeline directo AST → assembly sin representaciones intermedias complejas (IR) ni costosos pases de análisis o asignación global de registros.
+4. **Tamaño de Binario:**
+   Los ejecutables de `mio` son solo un **3-4%** más grandes que los de GCC y Clang. Esto se debe a la mayor densidad de instrucciones del código de pila y a la inclusión de cadenas de formato estándar redundantes para funciones de salida.
 
 ---
 
@@ -218,10 +245,9 @@ Todo el detalle técnico vive en `docs/`:
 | `docs/grammar.md` | gramática (CFG) del subconjunto de C++ |
 | `docs/semantic_rules.md` | reglas de tipos, compatibilidad y scope |
 | `docs/codegen.md` | plan de generación de código x86-64 |
+| `docs/benchmarks.md` | **reporte y evaluación comparativa de benchmarks** |
 | `docs/decisiones/` | decisiones de diseño puntuales |
 | `docs/guide/` | **guía técnica fase por fase** (lexer → codegen) |
 
 La `docs/guide/` es la referencia más completa: explica el *cómo* está implementada
 cada fase, con fragmentos de código comentados.
-</content>
-</invoke>
