@@ -14,21 +14,24 @@ python3 build.py run --asm tests/analysis/input1.txt  # genera el assembly de un
 
 `run` reenvía sus argumentos al compilador, que acepta `--tokens`, `--ast`, `--json`, `--asm` y `--opt`.
 
-## App web
+## App Web (Serverless)
 
-Cada carpeta (`app/backend/`, `app/frontend/`) puede levantarse por separado, o juntos con Docker:
+La aplicación web corre 100% en el navegador usando WebAssembly para compilar el código C++ a ensamblador x86-64 y simulando la ejecución en un entorno nativo simulado en JavaScript.
+
+Desde `app/frontend/`:
 
 ```bash
-docker build -t compi . && docker run -p 8000:8000 compi
+npm install
+npm run dev
 ```
 
-Disponible en `localhost:8000`.
+La app usa **Vite** y puede ser desplegada automáticamente en **Vercel** subiendo la carpeta `app/frontend` como directorio raíz.
 
 ## Estructura
 
 ```
 compiler/   → compilador (C++)
-app/        → API REST + app web (Python/React)
+app/        → frontend (React + WebAssembly + Simulador x86)
 benchmarks/ → comparación con GCC, Clang y Rust
 docs/       → documentación del proyecto
 ```
@@ -44,7 +47,6 @@ docs/       → documentación del proyecto
 
 ## Requisitos
 
-- g++ con soporte C++17
-- Python 3
-- Node.js (solo para el frontend)
-- Docker (opcional)
+- g++ con soporte C++17 (para desarrollo local)
+- Emscripten (para compilar WebAssembly en `app/frontend/wasm`)
+- Node.js (para correr/desplegar el frontend)

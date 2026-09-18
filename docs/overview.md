@@ -23,8 +23,7 @@ compi-proyecto/
 │   │   └── sandbox/     # archivos de prueba libre
 │   └── build.py         # Script de compilación y pruebas
 ├── app/
-│   ├── backend/         # API REST en Python que expone el compilador
-│   └── frontend/        # App web React/Vite
+│   └── frontend/        # App web React/Vite (Serverless WebAssembly)
 ├── benchmarks/          # Comparación con GCC y Clang
 └── docs/
 ```
@@ -99,12 +98,12 @@ Emite assembly x86-64 AT&T syntax, enlazable con `g++`.
 
 ## Frontend web (bonus)
 
-App React/Vite conectada a un servidor Python (FastAPI) que:
-1. Expone el compilador como API REST
-2. Muestra un editor de código con syntax highlighting
-3. Visualiza el AST generado
-4. Muestra el assembly x86-64 generado
-5. Ejecuta el programa compilado y muestra el output
+App React/Vite 100% serverless:
+1. Compila el propio compilador C++ a **WebAssembly** usando Emscripten.
+2. Muestra un editor de código con syntax highlighting.
+3. El código C++ se compila en el navegador usando el módulo WebAssembly y devuelve el AST y Assembly.
+4. El assembly x86-64 generado se ejecuta directamente en el navegador mediante un simulador nativo escrito en JavaScript (`X86Simulator`).
+5. Ejecuta el programa y muestra el output sin necesidad de backend.
 
 ---
 
