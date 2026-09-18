@@ -203,7 +203,7 @@ export class X86Simulator {
         this.ip = this.labels['main'];
         const callStack = [];
 
-        let limit = 100000; // prevent infinite loops
+        let limit = 50000000; // prevent infinite loops but allow heavy benchmarks (50M)
         while (this.ip < this.instructions.length && limit > 0) {
             limit--;
             const inst = this.instructions[this.ip];
